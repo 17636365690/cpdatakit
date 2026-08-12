@@ -4,6 +4,15 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+- PyPI Trusted Publishing workflow with tagged, inspected distributions and OIDC authentication.
+- Five-minute synthetic-data quickstart and a repository social-preview asset.
+
+### Changed
+
+- The README now offers a one-command GitHub Release installation for non-contributors.
+
 ## [0.1.0] - 2026-08-12
 
 ### Added

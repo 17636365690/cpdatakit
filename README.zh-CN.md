@@ -18,6 +18,16 @@ CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角�
 
 ## 安装与快速开始
 
+直接从当前 GitHub Release 安装：
+
+```powershell
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
+```
+
+然后按照[五分钟快速教程](docs/quickstart.md)验证、统计、转换并绘制固定种子生成的示例。
+如果 CPDataKit 对你的工作有帮助，欢迎 Star 仓库，并通过 Issue 告诉我们你需要的数据契约
+或与求解器无关的工作流。
+
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
