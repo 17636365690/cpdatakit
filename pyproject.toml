@@ -43,7 +43,9 @@ cpdatakit = "cpdatakit.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/17636365690/cpdatakit"
+Documentation = "https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md"
 Issues = "https://github.com/17636365690/cpdatakit/issues"
+Changelog = "https://github.com/17636365690/cpdatakit/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cpdatakit"]
@@ -55,6 +57,7 @@ include = [
   "/sample_data",
   "/examples",
   "/docs",
+  "/assets",
   "/.github",
   "/README.md",
   "/README.zh-CN.md",

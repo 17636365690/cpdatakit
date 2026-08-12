@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/releases/latest)
+[![License](https://img.shields.io/github/license/17636365690/cpdatakit)](LICENSE)
 
 **Crystal Plasticity Data Quality Toolkit** is a solver-independent Python toolkit for
 validating, normalizing, summarizing, and visualizing crystal-plasticity simulation
@@ -37,6 +38,15 @@ must be declared or use `user_`. CPDataKit never guesses stress/strain measures,
 orientation representation, units, or identifier semantics. See [the data format](docs/data-format.md).
 
 ## Install
+
+Install the current wheel directly from the GitHub Release:
+
+```bash
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
+```
+
+Then follow the [five-minute quickstart](docs/quickstart.md) to validate, summarize, convert, and
+plot a deterministic example. Installing from the source checkout is intended for contributors:
 
 ```bash
 git clone https://github.com/17636365690/cpdatakit.git
@@ -134,6 +144,10 @@ python -m build
 Architecture, extension boundaries, and maintainer checks are in [docs](docs/architecture.md).
 Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md) and the
 [Code of Conduct](CODE_OF_CONDUCT.md).
+
+If CPDataKit helps your workflow, star the repository to improve discoverability and open an issue
+describing the data contract or solver-neutral workflow you need. Concrete research use cases guide
+the roadmap more than raw popularity metrics.
 
 ## Known limitations and roadmap
 
