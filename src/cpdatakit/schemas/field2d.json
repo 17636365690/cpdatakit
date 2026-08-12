@@ -1,0 +1,13 @@
+{
+  "profile": "field2d",
+  "schema_version": "1.0",
+  "extension_prefix": "user_",
+  "conventions": {"coordinate_system":"Cartesian","field_semantics":"must be declared by the producer"},
+  "fields": [
+    {"name":"x","aliases":[],"required":true,"dtype":"float","shape":[],"role":"coordinate","unit":"um","allow_missing":false,"description":"Cartesian x coordinate."},
+    {"name":"y","aliases":[],"required":true,"dtype":"float","shape":[],"role":"coordinate","unit":"um","allow_missing":false,"description":"Cartesian y coordinate."},
+    {"name":"value","aliases":["scalar"],"required":true,"dtype":"float","shape":[],"role":"scalar_field","unit":"dimensionless","allow_missing":false,"description":"Declared scalar field value."},
+    {"name":"grain_id","aliases":[],"required":false,"dtype":"integer","shape":[],"role":"grain_index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"description":"Producer-defined grain identifier."},
+    {"name":"phase_id","aliases":[],"required":false,"dtype":"integer","shape":[],"role":"phase_index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"description":"Producer-defined phase identifier."}
+  ]
+}

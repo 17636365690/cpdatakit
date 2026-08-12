@@ -1,0 +1,18 @@
+CPDataKit
+Copyright 2026 CPDataKit contributors
+
+Direct runtime dependencies reviewed for v0.1.0:
+- NumPy: BSD-3-Clause core; packaged metadata also identifies licenses for vendored components.
+- pandas: BSD-3-Clause.
+- h5py: BSD-3-Clause.
+- Matplotlib: PSF-based Matplotlib license (BSD-compatible).
+- Pint: BSD-3-Clause.
+
+These are permissive licenses with no evident incompatibility with Apache-2.0 for this project's
+ordinary dependency use. Dependencies are not copied into this source distribution. This notice
+is informational, is not legal advice, and must be refreshed against the versions shipped by each
+release. See each installed distribution and upstream repository for complete license texts.
+
+DAMASK, Abaqus, and Dassault Systèmes names may be trademarks of their respective owners. Their
+software and data are not distributed with CPDataKit, and they are not core dependencies.
+

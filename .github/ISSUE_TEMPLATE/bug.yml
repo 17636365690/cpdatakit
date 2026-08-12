@@ -1,0 +1,18 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes: {label: Description, description: What happened and what did you expect?}
+    validations: {required: true}
+  - type: textarea
+    id: reproduce
+    attributes: {label: Reproduction, description: Minimal commands and synthetic data only.}
+    validations: {required: true}
+  - type: input
+    id: versions
+    attributes: {label: Versions, description: CPDataKit, Python, and operating system.}
+    validations: {required: true}
+

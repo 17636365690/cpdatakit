@@ -1,0 +1,1 @@
+"""Bundled CPDataKit profile schemas."""
