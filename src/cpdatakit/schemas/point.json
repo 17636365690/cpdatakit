@@ -1,0 +1,21 @@
+{
+  "profile": "point",
+  "schema_version": "1.0",
+  "extension_prefix": "user_",
+  "conventions": {
+    "stress_measure": "must be explicitly declared when stress is present",
+    "strain_measure": "must be explicitly declared when strain is present",
+    "tensor_component_order": "must be explicitly declared for tensor fields",
+    "orientation_representation": "must be explicitly declared for orientation fields",
+    "grain_id_semantics": "producer-defined non-negative identifier",
+    "phase_id_semantics": "producer-defined non-negative identifier"
+  },
+  "fields": [
+    {"name":"point_id","aliases":["material_point"],"required":true,"dtype":"integer","shape":[],"role":"index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"unique":true,"description":"Unique point index."},
+    {"name":"grain_id","aliases":[],"required":false,"dtype":"integer","shape":[],"role":"grain_index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"description":"Producer-defined grain identifier."},
+    {"name":"phase_id","aliases":[],"required":false,"dtype":"integer","shape":[],"role":"phase_index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"description":"Producer-defined phase identifier."},
+    {"name":"x","aliases":[],"required":false,"dtype":"float","shape":[],"role":"coordinate","unit":"um","allow_missing":false,"description":"Cartesian x coordinate."},
+    {"name":"y","aliases":[],"required":false,"dtype":"float","shape":[],"role":"coordinate","unit":"um","allow_missing":false,"description":"Cartesian y coordinate."},
+    {"name":"z","aliases":[],"required":false,"dtype":"float","shape":[],"role":"coordinate","unit":"um","allow_missing":false,"description":"Cartesian z coordinate."}
+  ]
+}

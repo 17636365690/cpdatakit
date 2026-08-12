@@ -1,0 +1,562 @@
+[
+  {
+    "x": 0.0,
+    "y": 0.0,
+    "value": 9.0,
+    "grain_id": 9,
+    "phase_id": 0
+  },
+  {
+    "x": 1.0,
+    "y": 0.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 2.0,
+    "y": 0.0,
+    "value": 10.0,
+    "grain_id": 10,
+    "phase_id": 1
+  },
+  {
+    "x": 3.0,
+    "y": 0.0,
+    "value": 11.0,
+    "grain_id": 11,
+    "phase_id": 2
+  },
+  {
+    "x": 4.0,
+    "y": 0.0,
+    "value": 4.0,
+    "grain_id": 4,
+    "phase_id": 1
+  },
+  {
+    "x": 5.0,
+    "y": 0.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 6.0,
+    "y": 0.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 7.0,
+    "y": 0.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 8.0,
+    "y": 0.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 9.0,
+    "y": 0.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 0.0,
+    "y": 1.0,
+    "value": 3.0,
+    "grain_id": 3,
+    "phase_id": 0
+  },
+  {
+    "x": 1.0,
+    "y": 1.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 2.0,
+    "y": 1.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 3.0,
+    "y": 1.0,
+    "value": 10.0,
+    "grain_id": 10,
+    "phase_id": 1
+  },
+  {
+    "x": 4.0,
+    "y": 1.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 5.0,
+    "y": 1.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 6.0,
+    "y": 1.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 7.0,
+    "y": 1.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 8.0,
+    "y": 1.0,
+    "value": 10.0,
+    "grain_id": 10,
+    "phase_id": 1
+  },
+  {
+    "x": 9.0,
+    "y": 1.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 0.0,
+    "y": 2.0,
+    "value": 6.0,
+    "grain_id": 6,
+    "phase_id": 0
+  },
+  {
+    "x": 1.0,
+    "y": 2.0,
+    "value": 3.0,
+    "grain_id": 3,
+    "phase_id": 0
+  },
+  {
+    "x": 2.0,
+    "y": 2.0,
+    "value": 6.0,
+    "grain_id": 6,
+    "phase_id": 0
+  },
+  {
+    "x": 3.0,
+    "y": 2.0,
+    "value": 4.0,
+    "grain_id": 4,
+    "phase_id": 1
+  },
+  {
+    "x": 4.0,
+    "y": 2.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 5.0,
+    "y": 2.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 6.0,
+    "y": 2.0,
+    "value": 3.0,
+    "grain_id": 3,
+    "phase_id": 0
+  },
+  {
+    "x": 7.0,
+    "y": 2.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 8.0,
+    "y": 2.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 9.0,
+    "y": 2.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 0.0,
+    "y": 3.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 1.0,
+    "y": 3.0,
+    "value": 4.0,
+    "grain_id": 4,
+    "phase_id": 1
+  },
+  {
+    "x": 2.0,
+    "y": 3.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 3.0,
+    "y": 3.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 4.0,
+    "y": 3.0,
+    "value": 6.0,
+    "grain_id": 6,
+    "phase_id": 0
+  },
+  {
+    "x": 5.0,
+    "y": 3.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 6.0,
+    "y": 3.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 7.0,
+    "y": 3.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 8.0,
+    "y": 3.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 9.0,
+    "y": 3.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 0.0,
+    "y": 4.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 1.0,
+    "y": 4.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 2.0,
+    "y": 4.0,
+    "value": 5.0,
+    "grain_id": 5,
+    "phase_id": 2
+  },
+  {
+    "x": 3.0,
+    "y": 4.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 4.0,
+    "y": 4.0,
+    "value": 11.0,
+    "grain_id": 11,
+    "phase_id": 2
+  },
+  {
+    "x": 5.0,
+    "y": 4.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 6.0,
+    "y": 4.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 7.0,
+    "y": 4.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 8.0,
+    "y": 4.0,
+    "value": 11.0,
+    "grain_id": 11,
+    "phase_id": 2
+  },
+  {
+    "x": 9.0,
+    "y": 4.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 0.0,
+    "y": 5.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 1.0,
+    "y": 5.0,
+    "value": 5.0,
+    "grain_id": 5,
+    "phase_id": 2
+  },
+  {
+    "x": 2.0,
+    "y": 5.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 3.0,
+    "y": 5.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 4.0,
+    "y": 5.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 5.0,
+    "y": 5.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 6.0,
+    "y": 5.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 7.0,
+    "y": 5.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 8.0,
+    "y": 5.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 9.0,
+    "y": 5.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 0.0,
+    "y": 6.0,
+    "value": 6.0,
+    "grain_id": 6,
+    "phase_id": 0
+  },
+  {
+    "x": 1.0,
+    "y": 6.0,
+    "value": 4.0,
+    "grain_id": 4,
+    "phase_id": 1
+  },
+  {
+    "x": 2.0,
+    "y": 6.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 3.0,
+    "y": 6.0,
+    "value": 11.0,
+    "grain_id": 11,
+    "phase_id": 2
+  },
+  {
+    "x": 4.0,
+    "y": 6.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 5.0,
+    "y": 6.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 6.0,
+    "y": 6.0,
+    "value": 11.0,
+    "grain_id": 11,
+    "phase_id": 2
+  },
+  {
+    "x": 7.0,
+    "y": 6.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 8.0,
+    "y": 6.0,
+    "value": 3.0,
+    "grain_id": 3,
+    "phase_id": 0
+  },
+  {
+    "x": 9.0,
+    "y": 6.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 0.0,
+    "y": 7.0,
+    "value": 4.0,
+    "grain_id": 4,
+    "phase_id": 1
+  },
+  {
+    "x": 1.0,
+    "y": 7.0,
+    "value": 0.0,
+    "grain_id": 0,
+    "phase_id": 0
+  },
+  {
+    "x": 2.0,
+    "y": 7.0,
+    "value": 9.0,
+    "grain_id": 9,
+    "phase_id": 0
+  },
+  {
+    "x": 3.0,
+    "y": 7.0,
+    "value": 2.0,
+    "grain_id": 2,
+    "phase_id": 2
+  },
+  {
+    "x": 4.0,
+    "y": 7.0,
+    "value": 1.0,
+    "grain_id": 1,
+    "phase_id": 1
+  },
+  {
+    "x": 5.0,
+    "y": 7.0,
+    "value": 7.0,
+    "grain_id": 7,
+    "phase_id": 1
+  },
+  {
+    "x": 6.0,
+    "y": 7.0,
+    "value": 3.0,
+    "grain_id": 3,
+    "phase_id": 0
+  },
+  {
+    "x": 7.0,
+    "y": 7.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 8.0,
+    "y": 7.0,
+    "value": 8.0,
+    "grain_id": 8,
+    "phase_id": 2
+  },
+  {
+    "x": 9.0,
+    "y": 7.0,
+    "value": 9.0,
+    "grain_id": 9,
+    "phase_id": 0
+  }
+]

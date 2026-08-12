@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cpdatakit"
+version = "0.1.0"
+description = "Solver-independent quality tooling for crystal-plasticity datasets"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [{name = "CPDataKit contributors"}]
+keywords = ["crystal-plasticity", "materials-science", "data-validation", "hdf5"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "h5py>=3.8",
+  "matplotlib>=3.7",
+  "pint>=0.22",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2",
+  "pre-commit>=3.5",
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+cpdatakit = "cpdatakit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/17636365690/cpdatakit"
+Issues = "https://github.com/17636365690/cpdatakit/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cpdatakit"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/tests",
+  "/sample_data",
+  "/examples",
+  "/docs",
+  "/.github",
+  "/README.md",
+  "/README.zh-CN.md",
+  "/LICENSE",
+  "/NOTICE",
+  "/CHANGELOG.md",
+  "/CITATION.cff",
+  "/CONTRIBUTING.md",
+  "/CODE_OF_CONDUCT.md",
+  "/SECURITY.md",
+  "/MAINTAINERS.md",
+  "/.editorconfig",
+  "/.gitignore",
+  "/.pre-commit-config.yaml",
+]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]

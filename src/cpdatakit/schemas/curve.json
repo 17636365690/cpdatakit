@@ -1,0 +1,17 @@
+{
+  "profile": "curve",
+  "schema_version": "1.0",
+  "extension_prefix": "user_",
+  "conventions": {
+    "stress_measure": "must be declared by the producer; example uses Cauchy stress",
+    "strain_measure": "must be declared by the producer; example uses true strain",
+    "tensor_component_order": "must be declared when tensor-valued fields are used",
+    "orientation_representation": "must be declared when orientations are used"
+  },
+  "fields": [
+    {"name":"step","aliases":["increment"],"required":true,"dtype":"integer","shape":[],"role":"index","unit":"dimensionless","allow_missing":false,"minimum":0,"index":true,"unique":true,"description":"Non-negative unique loading step."},
+    {"name":"strain","aliases":[],"required":true,"dtype":"float","shape":[],"role":"strain","unit":"dimensionless","allow_missing":false,"description":"Explicitly declared scalar strain measure."},
+    {"name":"stress","aliases":[],"required":true,"dtype":"float","shape":[],"role":"stress","unit":"MPa","allow_missing":false,"description":"Explicitly declared scalar stress measure."},
+    {"name":"time","aliases":[],"required":false,"dtype":"float","shape":[],"role":"time","unit":"s","allow_missing":false,"minimum":0,"description":"Elapsed time."}
+  ]
+}
