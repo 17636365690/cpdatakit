@@ -7,7 +7,7 @@ from pathlib import Path
 import cpdatakit
 from cpdatakit.cli import main
 from cpdatakit.model import Dataset
-from examples.generate_sample_data import generate
+from cpdatakit.samples import generate_sample_data
 
 
 def test_public_api(curve: Dataset) -> None:
@@ -73,8 +73,8 @@ def test_cli_hdf5_and_plot(curve: Dataset, tmp_path: Path) -> None:
 
 def test_sample_generation_is_reproducible(tmp_path: Path) -> None:
     first, second = tmp_path / "one", tmp_path / "two"
-    generate(first)
-    generate(second)
+    generate_sample_data(first)
+    generate_sample_data(second)
     for path in first.iterdir():
         other = second / path.name
         assert (
