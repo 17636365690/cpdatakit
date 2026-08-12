@@ -1,7 +1,7 @@
 CPDataKit
 Copyright 2026 CPDataKit contributors
 
-Direct runtime dependencies reviewed for v0.1.0:
+Direct runtime dependencies reviewed for v0.1.x:
 - NumPy: BSD-3-Clause core; packaged metadata also identifies licenses for vendored components.
 - pandas: BSD-3-Clause.
 - h5py: BSD-3-Clause.

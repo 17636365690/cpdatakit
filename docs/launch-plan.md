@@ -21,6 +21,6 @@ Suggested topics: `crystal-plasticity`, `materials-science`, `scientific-python`
 
 Create the GitHub repository, set the description/topics, enable private vulnerability reporting
 and branch protection, push only after reviewing `git status`/`git diff --stat`, let CI pass on
-every matrix job, create issues, then tag and publish v0.1.0 using the release notes. Do not upload
+every matrix job, create issues, then tag and publish v0.1.1 using the release notes. Do not upload
 to PyPI until package ownership, name availability, two-factor authentication, and trusted
 publishing are configured.

@@ -1,14 +1,12 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       tag:
         description: Existing Git tag to publish
         required: true
-        default: v0.1.0
+        default: v0.1.1
 
 permissions:
   contents: read
@@ -16,22 +14,58 @@ permissions:
 jobs:
   build:
     name: Build distributions
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
           cache: pip
+      - name: Verify trusted dispatch and synchronized release metadata
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "This workflow must be dispatched from main, got: ${GITHUB_REF}" >&2
+            exit 1
+          fi
+          if [[ ! "${RELEASE_TAG}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "Release ref must be a semantic-version tag, got: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          if ! git show-ref --verify --quiet "refs/tags/${RELEASE_TAG}"; then
+            echo "Tag does not exist: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "refs/tags/${RELEASE_TAG}^{commit}" origin/main; then
+            echo "Tag is not on the main branch: ${RELEASE_TAG}" >&2
+            exit 1
+          fi
+          git checkout --detach "refs/tags/${RELEASE_TAG}"
+          python scripts/check_release.py "${RELEASE_TAG}"
       - name: Build and inspect distributions
         run: |
           python -m pip install --upgrade build twine
           python -m build
+          python scripts/check_release.py "${RELEASE_TAG}" --dist-dir dist
           python -m twine check dist/*
-      - uses: actions/upload-artifact@v5
+      - name: Install wheel and run the five-minute quickstart
+        shell: bash
+        run: |
+          python -m venv wheel-env
+          wheel-env/bin/python -m pip install dist/*.whl
+          wheel-env/bin/python -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('quickstart-smoke')"
+          wheel-env/bin/cpdatakit validate quickstart-smoke/synthetic_curve.csv --schema curve --json-output validation.json
+          wheel-env/bin/cpdatakit summary quickstart-smoke/synthetic_curve.csv --schema curve --json-output summary.json
+          wheel-env/bin/cpdatakit convert quickstart-smoke/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Fixed-seed release quickstart"
+          wheel-env/bin/cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: python-package-distributions
           path: dist/
@@ -47,8 +81,8 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: python-package-distributions
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1

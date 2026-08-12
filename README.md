@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/releases/latest)
-[![License](https://img.shields.io/github/license/17636365690/cpdatakit)](LICENSE)
+[![License](https://img.shields.io/github/license/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/blob/main/LICENSE)
 
 **Crystal Plasticity Data Quality Toolkit** is a solver-independent Python toolkit for
 validating, normalizing, summarizing, and visualizing crystal-plasticity simulation
@@ -35,18 +35,28 @@ operation log. CPDataKit HDF5 is not DAMASK DADF5 or Abaqus ODB.
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
 missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
 must be declared or use `user_`. CPDataKit never guesses stress/strain measures, tensor order,
-orientation representation, units, or identifier semantics. See [the data format](docs/data-format.md).
+orientation representation, units, or identifier semantics. See
+[the data format](https://github.com/17636365690/cpdatakit/blob/main/docs/data-format.md).
 
 ## Install
 
-Install the current wheel directly from the GitHub Release:
+When `v0.1.1` is visible on PyPI, install it with:
+
+```bash
+python -m pip install cpdatakit
+```
+
+Until then, install the current `v0.1.0` wheel directly from GitHub:
 
 ```bash
 python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
 ```
 
-Then follow the [five-minute quickstart](docs/quickstart.md) to validate, summarize, convert, and
-plot a deterministic example. Installing from the source checkout is intended for contributors:
+Then follow the
+[five-minute quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
+to validate, summarize, convert, and plot a deterministic example.
+
+Installing from the source checkout is intended for contributors:
 
 ```bash
 git clone https://github.com/17636365690/cpdatakit.git
@@ -141,9 +151,11 @@ ruff format --check .
 python -m build
 ```
 
-Architecture, extension boundaries, and maintainer checks are in [docs](docs/architecture.md).
-Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md).
+Architecture, extension boundaries, and maintainer checks are in the
+[architecture documentation](https://github.com/17636365690/cpdatakit/blob/main/docs/architecture.md).
+Contributions follow
+[CONTRIBUTING.md](https://github.com/17636365690/cpdatakit/blob/main/CONTRIBUTING.md) and the
+[Code of Conduct](https://github.com/17636365690/cpdatakit/blob/main/CODE_OF_CONDUCT.md).
 
 If CPDataKit helps your workflow, star the repository to improve discoverability and open an issue
 describing the data contract or solver-neutral workflow you need. Concrete research use cases guide
@@ -151,14 +163,18 @@ the roadmap more than raw popularity metrics.
 
 ## Known limitations and roadmap
 
-Version 0.1.0 handles in-memory tabular data and an explicit two-dimensional scalar sample
+Version 0.1.1 handles in-memory tabular data and an explicit two-dimensional scalar sample
 representation. It does not perform solver integration, constitutive integration, 3D interactive
 graphics, automatic scientific inference, streaming, or distributed processing. DAMASK and
 Abaqus are only reserved adapter boundaries; no unverified adapter is shipped. See the
-[roadmap](docs/roadmap.md) for the next three versions.
+[roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
+versions.
 
 ## Citation and license
 
-Use [CITATION.cff](CITATION.cff) to cite the software. CPDataKit is licensed under Apache-2.0;
-see [LICENSE](LICENSE). Direct runtime dependency licenses and review notes are in
-[NOTICE](NOTICE). No real experimental or commercial-solver data are redistributed.
+Use [CITATION.cff](https://github.com/17636365690/cpdatakit/blob/main/CITATION.cff) to cite the
+software. CPDataKit is licensed under Apache-2.0; see
+[LICENSE](https://github.com/17636365690/cpdatakit/blob/main/LICENSE). Direct runtime dependency
+licenses and review notes are in
+[NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE). No real experimental or
+commercial-solver data are redistributed.
