@@ -61,7 +61,7 @@ def normalize_dataset(
             raise NormalizationError("Both input_unit and output_unit are required for conversion")
         if item.input_unit and item.output_unit:
             try:
-                factor = (1 * _UREG(item.input_unit)).to(item.output_unit).magnitude
+                factor = _UREG.Quantity(1, item.input_unit).to(item.output_unit).magnitude
             except (DimensionalityError, UndefinedUnitError) as exc:
                 raise NormalizationError(
                     f"Cannot convert {item.source!r} from {item.input_unit!r} "

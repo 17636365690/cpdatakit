@@ -177,7 +177,7 @@ def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResu
             continue
         supplied = units.get(spec.name, spec.unit)
         try:
-            (1 * _UREG(supplied)).to(spec.unit)
+            _UREG.Quantity(1, supplied).to(spec.unit)
         except (DimensionalityError, UndefinedUnitError) as exc:
             result.errors.append(
                 _issue(

@@ -42,6 +42,16 @@ def test_mapping_conflict_and_units() -> None:
         )
 
 
+def test_dimensionless_unit_conversion_is_cross_version_safe() -> None:
+    source = Dataset(pd.DataFrame({"increment": [0, 1]}))
+    result = normalize_dataset(
+        source,
+        "curve",
+        [FieldMapping("increment", "step", "1", "dimensionless")],
+    )
+    assert result.data["step"].tolist() == [0.0, 1.0]
+
+
 def test_summary_values_and_not_available(curve: Dataset) -> None:
     report = summarize_dataset(curve, "curve")
     assert report["record_count"] == 3
