@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cpdatakit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Solver-independent quality tooling for crystal-plasticity datasets"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,7 @@ dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
   "ruff>=0.6",
+  "twine>=5.1",
 ]
 
 [project.scripts]
@@ -58,6 +59,7 @@ include = [
   "/examples",
   "/docs",
   "/assets",
+  "/scripts",
   "/.github",
   "/README.md",
   "/README.zh-CN.md",

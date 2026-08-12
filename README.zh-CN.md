@@ -18,13 +18,20 @@ CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角�
 
 ## 安装与快速开始
 
-直接从当前 GitHub Release 安装：
+`v0.1.1` 显示在 PyPI 后，使用以下命令安装：
+
+```powershell
+python -m pip install cpdatakit
+```
+
+在此之前，请直接安装 GitHub 上现有的 `v0.1.0` wheel：
 
 ```powershell
 python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
 ```
 
-然后按照[五分钟快速教程](docs/quickstart.md)验证、统计、转换并绘制固定种子生成的示例。
+然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
+验证、统计、转换并绘制固定种子生成的示例。
 如果 CPDataKit 对你的工作有帮助，欢迎 Star 仓库，并通过 Issue 告诉我们你需要的数据契约
 或与求解器无关的工作流。
 
@@ -59,8 +66,12 @@ print(result.valid, summary)
 
 ## 文档、限制与贡献
 
-详细格式见 [docs/data-format.md](docs/data-format.md)，架构、适配器、维护和路线图见 `docs/`。
+详细格式见[数据格式文档](https://github.com/17636365690/cpdatakit/blob/main/docs/data-format.md)，
+架构、适配器、维护和路线图见仓库 `docs/`。
 首版不实现求解器、本构积分、ODB/DADF5 直接读取、科学正确性认证、GUI、3D 交互或分布式
-处理。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。项目采用 Apache-2.0，依赖许可
-核查见 [NOTICE](NOTICE)，引用信息见 [CITATION.cff](CITATION.cff)。
+处理。贡献前请阅读
+[CONTRIBUTING.md](https://github.com/17636365690/cpdatakit/blob/main/CONTRIBUTING.md)。项目采用
+Apache-2.0，依赖许可核查见
+[NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE)，引用信息见
+[CITATION.cff](https://github.com/17636365690/cpdatakit/blob/main/CITATION.cff)。
 

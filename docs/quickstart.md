@@ -5,8 +5,7 @@ curve, writes an auditable HDF5 file, and renders a stress-strain plot.
 
 ## 1. Install the current release
 
-Until the PyPI trusted publisher is activated, install the signed-off wheel attached to the GitHub
-release:
+Create and activate an isolated environment first:
 
 ```bash
 python -m venv .venv
@@ -16,13 +15,23 @@ On Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
 ```
 
 On POSIX shells:
 
 ```bash
 source .venv/bin/activate
+```
+
+When `v0.1.1` is visible on PyPI, install it with:
+
+```bash
+python -m pip install cpdatakit
+```
+
+Until then, install the current `v0.1.0` wheel from GitHub instead:
+
+```bash
 python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
 ```
 

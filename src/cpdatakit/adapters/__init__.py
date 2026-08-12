@@ -1,4 +1,4 @@
-"""Extension interfaces; no solver-specific adapter is bundled in v0.1.0."""
+"""Extension interfaces; no solver-specific adapter is bundled in v0.1.x."""
 
 from __future__ import annotations
 
