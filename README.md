@@ -1,5 +1,8 @@
 # CPDataKit
 
+[![CI](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/releases/latest)
+
 **Crystal Plasticity Data Quality Toolkit** is a solver-independent Python toolkit for
 validating, normalizing, summarizing, and visualizing crystal-plasticity simulation
 datasets.
