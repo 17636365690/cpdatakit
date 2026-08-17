@@ -21,21 +21,25 @@ Aliases are documentation, not automatic guesses. An alias is only applied throu
 
 CSV and JSON take units from the selected schema. A `Dataset` or CPDataKit HDF5 may carry explicit
 per-field units, which must be dimensionally compatible with schema units. Pint performs only
-declared conversions. Producers must declare stress measure, strain measure, tensor component
-order, orientation representation, and identifier semantics when relevant.
+declared conversions, including both scale and offset for affine units such as degrees Celsius.
+Producers must declare stress measure, strain measure, tensor component order, orientation
+representation, and identifier semantics when relevant.
 
 ## HDF5 layout
 
 Root attributes: `format=CPDataKit`, `format_version=1.0`, `profile`, `schema_version`,
 `units_json`, `field_mapping_json`, `provenance_json`, and `validation_summary_json`.
-Normalized columns are datasets under `/data`. Provenance includes source description, basename,
-SHA-256 (never an absolute source path), UTC conversion timestamp, package/Python versions, and
-operation log. Readers reject missing markers/groups and corrupt files.
+Normalized columns are non-scalar datasets under `/data`, all with the same non-zero record count.
+Provenance includes source description, basename, SHA-256 (never an absolute source path), UTC
+conversion timestamp, package/Python versions, and operation log. Readers reject missing
+markers/groups, empty or inconsistent tables, and corrupt files.
 
 ## Validation meaning
 
 A report contains `valid`, `errors`, `warnings`, codes, field names, messages, affected counts,
 and optional suggestions. Checks cover declared fields/types/shapes/ranges, missing and non-finite
 values, empty strings, duplicates, index validity, unit compatibility, extensions, and schema
-version. `valid=true` means only that declared structural checks passed.
+version. Numeric fields reject booleans, complex values, datetimes, and numeric-looking strings;
+boolean fields accept only boolean values. Range and integer checks apply elementwise to shaped
+numeric fields. `valid=true` means only that declared structural checks passed.
 

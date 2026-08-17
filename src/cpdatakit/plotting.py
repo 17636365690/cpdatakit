@@ -59,7 +59,13 @@ def plot_histogram(
     contract = load_schema(schema)
     if field not in dataset.data or field not in contract.field_map():
         raise CPDataKitError(f"Histogram field is absent or undeclared: {field}")
-    values = np.asarray(dataset.data[field], dtype=float)
+    spec = contract.field_map()[field]
+    if spec.dtype not in {"float", "integer"} or spec.shape:
+        raise CPDataKitError(f"Histogram field must be a declared scalar numeric field: {field}")
+    try:
+        values = np.asarray(dataset.data[field], dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise CPDataKitError(f"Histogram field is not numeric: {field}") from exc
     values = values[np.isfinite(values)]
     if not len(values):
         raise CPDataKitError(f"Histogram field has no finite data: {field}")

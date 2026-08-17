@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
 
-from cpdatakit.exceptions import OutputExistsError
+from cpdatakit.exceptions import CPDataKitError, OutputExistsError
 from cpdatakit.model import Dataset
 from cpdatakit.plotting import (
     plot_counts,
@@ -40,6 +40,18 @@ def test_histogram_counts_and_field2d(curve: Dataset) -> None:
         {"units": {"x": "um", "y": "um", "value": "1"}},
     )
     assert plot_field2d(field, "field2d")[1].get_title()
+
+
+def test_histogram_rejects_shaped_numeric_fields(tmp_path: Path) -> None:
+    schema = tmp_path / "vector.json"
+    schema.write_text(
+        '{"profile":"point","schema_version":"1.0","fields":['
+        '{"name":"vector","dtype":"float","required":true,"shape":[2],"unit":"1"}]}',
+        encoding="utf-8",
+    )
+    dataset = Dataset(pd.DataFrame({"vector": [[1.0, 2.0], [3.0, 4.0]]}))
+    with pytest.raises(CPDataKitError, match="scalar numeric"):
+        plot_histogram(dataset, schema, "vector")
 
 
 @pytest.mark.parametrize("extension", [".png", ".svg"])

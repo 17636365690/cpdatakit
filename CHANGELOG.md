@@ -4,6 +4,15 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Fixed
+
+- Enforce custom-schema dtype, shape, bounds, alias, and option declarations at load time.
+- Validate boolean and shaped numeric fields without accepting unrelated coercible values.
+- Handle nested custom values safely during duplicate-record detection.
+- Apply affine unit conversions with both scale and offset.
+- Reject malformed CPDataKit HDF5 tables with consistent `DataReadError` failures.
+- Reject shaped or non-numeric histogram fields with a concise domain error.
+
 ## [0.1.1] - 2026-08-12
 
 ### Added

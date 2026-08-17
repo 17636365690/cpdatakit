@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import pandas as pd
 from pint import DimensionalityError, UndefinedUnitError, UnitRegistry
 
 from .exceptions import NormalizationError
@@ -61,16 +62,17 @@ def normalize_dataset(
             raise NormalizationError("Both input_unit and output_unit are required for conversion")
         if item.input_unit and item.output_unit:
             try:
-                factor = _UREG.Quantity(1, item.input_unit).to(item.output_unit).magnitude
+                values = series.astype(float).to_numpy()
+            except (TypeError, ValueError) as exc:
+                raise NormalizationError(f"Field {item.source!r} is not numeric") from exc
+            try:
+                converted = _UREG.Quantity(values, item.input_unit).to(item.output_unit).magnitude
             except (DimensionalityError, UndefinedUnitError) as exc:
                 raise NormalizationError(
                     f"Cannot convert {item.source!r} from {item.input_unit!r} "
                     f"to {item.output_unit!r}: {exc}"
                 ) from exc
-            try:
-                series = series.astype(float) * factor
-            except (TypeError, ValueError) as exc:
-                raise NormalizationError(f"Field {item.source!r} is not numeric") from exc
+            series = pd.Series(converted, index=series.index, name=series.name)
             units[item.target] = item.output_unit
         elif item.source in units:
             units[item.target] = units[item.source]
