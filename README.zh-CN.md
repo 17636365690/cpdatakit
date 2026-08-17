@@ -24,10 +24,10 @@ CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角�
 python -m pip install cpdatakit
 ```
 
-在此之前，请直接安装 GitHub 上现有的 `v0.1.0` wheel：
+在此之前，请直接安装 GitHub 上的 `v0.1.1` wheel：
 
 ```powershell
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.1/cpdatakit-0.1.1-py3-none-any.whl"
 ```
 
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)

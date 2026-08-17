@@ -4,6 +4,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-17
+
 ### Fixed
 
 - Enforce custom-schema dtype, shape, bounds, alias, and option declarations at load time.
@@ -12,8 +14,6 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 - Apply affine unit conversions with both scale and offset.
 - Reject malformed CPDataKit HDF5 tables with consistent `DataReadError` failures.
 - Reject shaped or non-numeric histogram fields with a concise domain error.
-
-## [0.1.1] - 2026-08-12
 
 ### Added
 

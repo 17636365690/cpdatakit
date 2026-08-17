@@ -46,10 +46,10 @@ When `v0.1.1` is visible on PyPI, install it with:
 python -m pip install cpdatakit
 ```
 
-Until then, install the current `v0.1.0` wheel directly from GitHub:
+Until then, install the current `v0.1.1` wheel directly from GitHub:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.0/cpdatakit-0.1.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.1/cpdatakit-0.1.1-py3-none-any.whl"
 ```
 
 Then follow the
