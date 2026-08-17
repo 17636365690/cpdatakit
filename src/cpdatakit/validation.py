@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from numbers import Real
+
 import numpy as np
 import pandas as pd
 from pint import DimensionalityError, UndefinedUnitError, UnitRegistry
@@ -24,9 +26,40 @@ def _issue(
     return ValidationIssue(code, field, message, int(affected), suggestion, severity)  # type: ignore[arg-type]
 
 
-def _numeric_mask(series: pd.Series) -> tuple[pd.Series, pd.Series]:
-    converted = pd.to_numeric(series, errors="coerce")
-    return converted, series.notna() & converted.isna()
+def _is_real_number(value: object) -> bool:
+    return isinstance(value, Real) and not isinstance(value, (bool, np.bool_))
+
+
+def _matches_shape(value: object, shape: list[int]) -> bool:
+    return isinstance(value, (list, tuple, np.ndarray)) and list(np.asarray(value).shape) == shape
+
+
+def _array_dtype_matches(value: object, dtype: str) -> bool:
+    kind = np.asarray(value).dtype.kind
+    if dtype in {"float", "integer"}:
+        return kind in {"i", "u", "f"}
+    if dtype == "string":
+        return kind in {"S", "U"}
+    if dtype == "boolean":
+        return kind == "b"
+    return False
+
+
+def _make_hashable(value: object) -> object:
+    if isinstance(value, np.ndarray):
+        return _make_hashable(value.tolist())
+    if isinstance(value, dict):
+        pairs = [(_make_hashable(key), _make_hashable(item)) for key, item in value.items()]
+        return tuple(sorted(pairs, key=repr))
+    if isinstance(value, (list, tuple)):
+        return tuple(_make_hashable(item) for item in value)
+    if isinstance(value, (set, frozenset)):
+        return tuple(sorted((_make_hashable(item) for item in value), key=repr))
+    try:
+        hash(value)
+    except TypeError:
+        return repr(value)
+    return value
 
 
 def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResult) -> None:
@@ -54,12 +87,9 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                 "Provide values or explicitly permit missing values in the schema.",
             )
         )
-    if spec.dtype in {"float", "integer"} and spec.shape:
+    if spec.shape:
         invalid_shape = series.notna() & ~series.map(
-            lambda value: (
-                isinstance(value, (list, tuple, np.ndarray))
-                and list(np.asarray(value).shape) == spec.shape
-            )
+            lambda value: _matches_shape(value, spec.shape)
         )
         if invalid_shape.any():
             result.errors.append(
@@ -71,31 +101,76 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                 )
             )
         valid_values = series[~invalid_shape & series.notna()]
-        invalid_numeric = valid_values.map(
-            lambda value: not np.issubdtype(np.asarray(value).dtype, np.number)
-        )
-        if invalid_numeric.any():
+        invalid_dtype = valid_values.map(lambda value: not _array_dtype_matches(value, spec.dtype))
+        if invalid_dtype.any():
             result.errors.append(
                 _issue(
                     "invalid_dtype",
                     spec.name,
-                    f"Expected numeric {spec.dtype} array values.",
-                    invalid_numeric.sum(),
+                    f"Expected {spec.dtype} array values.",
+                    invalid_dtype.sum(),
                 )
             )
-        numeric_values = valid_values[~invalid_numeric]
-        non_finite = numeric_values.map(lambda value: not np.isfinite(value).all())
-        if non_finite.any():
-            result.errors.append(
-                _issue(
-                    "non_finite",
-                    spec.name,
-                    "Array field contains positive or negative infinity.",
-                    non_finite.sum(),
+        arrays = valid_values[~invalid_dtype].map(np.asarray)
+        if spec.dtype in {"float", "integer"}:
+            non_finite = arrays.map(lambda value: not np.isfinite(value).all())
+            if non_finite.any():
+                result.errors.append(
+                    _issue(
+                        "non_finite",
+                        spec.name,
+                        "Array field contains NaN or positive or negative infinity.",
+                        non_finite.sum(),
+                    )
                 )
-            )
+            if spec.dtype == "integer":
+                fractional = arrays.map(
+                    lambda value: bool(np.any(value[np.isfinite(value)] % 1 != 0))
+                )
+                if fractional.any():
+                    result.errors.append(
+                        _issue(
+                            "invalid_integer",
+                            spec.name,
+                            "Integer array field has fractional values.",
+                            fractional.sum(),
+                        )
+                    )
+            if spec.minimum is not None:
+                low = arrays.map(lambda value: bool(np.any(value < spec.minimum)))
+                if low.any():
+                    result.errors.append(
+                        _issue(
+                            "below_minimum",
+                            spec.name,
+                            f"Array values are below {spec.minimum}.",
+                            low.sum(),
+                        )
+                    )
+            if spec.maximum is not None:
+                high = arrays.map(lambda value: bool(np.any(value > spec.maximum)))
+                if high.any():
+                    result.errors.append(
+                        _issue(
+                            "above_maximum",
+                            spec.name,
+                            f"Array values exceed {spec.maximum}.",
+                            high.sum(),
+                        )
+                    )
+        elif spec.dtype == "string":
+            empty = arrays.map(lambda value: any(not str(item).strip() for item in value.flat))
+            if empty.any():
+                result.errors.append(
+                    _issue(
+                        "empty_string",
+                        spec.name,
+                        "Array field contains empty strings.",
+                        empty.sum(),
+                    )
+                )
     elif spec.dtype in {"float", "integer"}:
-        values, invalid = _numeric_mask(series)
+        invalid = series.notna() & ~series.map(_is_real_number)
         if invalid.any():
             result.errors.append(
                 _issue(
@@ -106,18 +181,28 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                     f"Convert {spec.name!r} to {spec.dtype} explicitly.",
                 )
             )
-        finite = values.notna() & ~np.isfinite(values)
-        if finite.any():
+        non_finite = (
+            series.notna()
+            & ~invalid
+            & series.map(lambda value: _is_real_number(value) and not np.isfinite(value))
+        )
+        if non_finite.any():
             result.errors.append(
                 _issue(
                     "non_finite",
                     spec.name,
-                    "Field contains positive or negative infinity.",
-                    finite.sum(),
+                    "Field contains NaN or positive or negative infinity.",
+                    non_finite.sum(),
                 )
             )
         if spec.dtype == "integer":
-            fractional = values.notna() & np.isfinite(values) & (values % 1 != 0)
+            fractional = (
+                series.notna()
+                & ~invalid
+                & series.map(
+                    lambda value: _is_real_number(value) and np.isfinite(value) and value % 1 != 0
+                )
+            )
             if fractional.any():
                 result.errors.append(
                     _issue(
@@ -128,7 +213,11 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                     )
                 )
         if spec.minimum is not None:
-            low = values.notna() & (values < spec.minimum)
+            low = (
+                series.notna()
+                & ~invalid
+                & series.map(lambda value: _is_real_number(value) and value < spec.minimum)
+            )
             if low.any():
                 result.errors.append(
                     _issue(
@@ -136,7 +225,11 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                     )
                 )
         if spec.maximum is not None:
-            high = values.notna() & (values > spec.maximum)
+            high = (
+                series.notna()
+                & ~invalid
+                & series.map(lambda value: _is_real_number(value) and value > spec.maximum)
+            )
             if high.any():
                 result.errors.append(
                     _issue("above_maximum", spec.name, f"Values exceed {spec.maximum}.", high.sum())
@@ -152,33 +245,35 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
             result.errors.append(
                 _issue("empty_string", spec.name, "Field contains empty strings.", empty.sum())
             )
-    if spec.shape and spec.dtype not in {"float", "integer"}:
-        bad_shape = series.notna() & ~series.map(
-            lambda value: (
-                isinstance(value, (list, tuple, np.ndarray))
-                and list(np.asarray(value).shape) == spec.shape
-            )
-        )
-        if bad_shape.any():
+    elif spec.dtype == "boolean":
+        invalid = series.notna() & ~series.map(lambda value: isinstance(value, (bool, np.bool_)))
+        if invalid.any():
             result.errors.append(
-                _issue(
-                    "invalid_shape",
-                    spec.name,
-                    f"Expected per-record shape {spec.shape}.",
-                    bad_shape.sum(),
-                )
+                _issue("invalid_dtype", spec.name, "Expected boolean values.", invalid.sum())
             )
 
 
 def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResult) -> None:
-    units: dict[str, str] = dataset.metadata.get("units", {})
+    units = dataset.metadata.get("units", {})
+    if not isinstance(units, dict):
+        result.errors.append(
+            _issue(
+                "invalid_units_metadata",
+                None,
+                "Dataset units metadata must be an object mapping field names to units.",
+                len(dataset.data),
+            )
+        )
+        return
     for spec in schema.fields:
         if spec.name not in dataset.data or not spec.unit:
             continue
         supplied = units.get(spec.name, spec.unit)
         try:
+            if not isinstance(supplied, str) or not supplied.strip():
+                raise ValueError("unit must be a non-empty string")
             _UREG.Quantity(1, supplied).to(spec.unit)
-        except (DimensionalityError, UndefinedUnitError) as exc:
+        except (DimensionalityError, UndefinedUnitError, TypeError, ValueError) as exc:
             result.errors.append(
                 _issue(
                     "unit_incompatible",
@@ -206,9 +301,7 @@ def validate_dataset(
     for spec in contract.fields:
         _check_field(value.data, spec, result)
     _check_units(value, contract, result)
-    comparable = value.data.map(
-        lambda item: tuple(item) if isinstance(item, (list, np.ndarray)) else item
-    )
+    comparable = value.data.map(_make_hashable)
     duplicates = comparable.duplicated(keep=False)
     if duplicates.any():
         result.warnings.append(
@@ -237,11 +330,12 @@ def validate_dataset(
                 )
     allowed = set(expected)
     for column in value.data.columns:
-        if column not in allowed and not column.startswith(contract.extension_prefix):
+        is_extension = isinstance(column, str) and column.startswith(contract.extension_prefix)
+        if column not in allowed and not is_extension:
             result.errors.append(
                 _issue(
                     "undeclared_field",
-                    column,
+                    str(column),
                     "Custom fields must use prefix "
                     f"{contract.extension_prefix!r} or be declared in the schema.",
                     len(value.data),

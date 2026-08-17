@@ -80,6 +80,21 @@ def test_structurally_wrong_hdf5(tmp_path: Path) -> None:
         load_dataset(path)
 
 
+@pytest.mark.parametrize("case", ["empty", "scalar", "mismatched"])
+def test_malformed_cpdatakit_hdf5_raises_data_read_error(tmp_path: Path, case: str) -> None:
+    path = tmp_path / f"{case}.h5"
+    with h5py.File(path, "w") as handle:
+        handle.attrs["format"] = "CPDataKit"
+        data = handle.create_group("data")
+        if case == "scalar":
+            data.create_dataset("value", data=1.0)
+        elif case == "mismatched":
+            data.create_dataset("x", data=[0.0, 1.0])
+            data.create_dataset("y", data=[0.0])
+    with pytest.raises(DataReadError):
+        load_dataset(path)
+
+
 def test_path_styles_are_representable() -> None:
     assert PureWindowsPath(r"C:\data\curve.csv").suffix == ".csv"
     assert PurePosixPath("/data/curve.csv").suffix == ".csv"
