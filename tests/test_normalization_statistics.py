@@ -52,6 +52,23 @@ def test_dimensionless_unit_conversion_is_cross_version_safe() -> None:
     assert result.data["step"].tolist() == [0.0, 1.0]
 
 
+def test_offset_unit_conversion_applies_scale_and_offset(tmp_path) -> None:
+    schema = tmp_path / "temperature.json"
+    schema.write_text(
+        '{"profile":"point","schema_version":"1.0","fields":['
+        '{"name":"temperature","dtype":"float","required":true,"unit":"K"}]}',
+        encoding="utf-8",
+    )
+    source = Dataset(pd.DataFrame({"temperature": [0.0, 100.0]}))
+    result = normalize_dataset(
+        source,
+        schema,
+        [FieldMapping("temperature", "temperature", "degC", "K")],
+    )
+    assert result.data["temperature"].tolist() == pytest.approx([273.15, 373.15])
+    assert result.metadata["units"]["temperature"] == "K"
+
+
 def test_summary_values_and_not_available(curve: Dataset) -> None:
     report = summarize_dataset(curve, "curve")
     assert report["record_count"] == 3

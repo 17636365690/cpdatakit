@@ -97,3 +97,67 @@ def test_numeric_custom_field_requires_unit(tmp_path) -> None:
     )
     with pytest.raises(SchemaError, match="must declare a unit"):
         validate_dataset(pd.DataFrame({"step": [0]}), schema)
+
+
+@pytest.mark.parametrize(
+    ("field", "message"),
+    [
+        ('{"name":"value","dtype":"decimal","unit":"1"}', "unsupported dtype"),
+        ('{"name":"value","dtype":"float","shape":"2","unit":"1"}', "shape"),
+    ],
+)
+def test_malformed_field_schema_is_rejected(tmp_path, field: str, message: str) -> None:
+    schema = tmp_path / "malformed.json"
+    schema.write_text(
+        f'{{"profile":"point","schema_version":"1.0","fields":[{field}]}}',
+        encoding="utf-8",
+    )
+    with pytest.raises(SchemaError, match=message):
+        validate_dataset(pd.DataFrame({"value": [1]}), schema)
+
+
+def test_boolean_schema_enforces_boolean_values(tmp_path) -> None:
+    schema = tmp_path / "boolean.json"
+    schema.write_text(
+        '{"profile":"point","schema_version":"1.0","fields":['
+        '{"name":"flag","dtype":"boolean","required":true,"unit":null}]}',
+        encoding="utf-8",
+    )
+    assert validate_dataset(pd.DataFrame({"flag": [True, False]}), schema).valid
+    assert "invalid_dtype" in codes(
+        validate_dataset(pd.DataFrame({"flag": ["not boolean"]}), schema)
+    )
+
+
+@pytest.mark.parametrize("value", [True, 1 + 0j, pd.Timestamp("2026-08-17")])
+def test_scalar_numeric_fields_reject_non_real_values(value) -> None:
+    dataset = pd.DataFrame({"step": [0], "strain": [0.0], "stress": [value]})
+    assert "invalid_dtype" in codes(validate_dataset(dataset, "curve"))
+
+
+def test_shaped_numeric_fields_enforce_ranges_and_integer_values(tmp_path) -> None:
+    schema = tmp_path / "arrays.json"
+    schema.write_text(
+        '{"profile":"point","schema_version":"1.0","fields":['
+        '{"name":"vector","dtype":"float","required":true,"shape":[2],'
+        '"unit":"1","minimum":0,"maximum":1},'
+        '{"name":"indices","dtype":"integer","required":true,"shape":[2],"unit":"1"}]}',
+        encoding="utf-8",
+    )
+    dataset = pd.DataFrame({"vector": [[-1.0, 0.5], [0.5, 2.0]], "indices": [[0, 1], [2, 3.5]]})
+    assert {"below_minimum", "above_maximum", "invalid_integer"}.issubset(
+        codes(validate_dataset(dataset, schema))
+    )
+
+
+def test_nested_extension_values_do_not_crash_duplicate_detection() -> None:
+    matrix = np.array([[1.0, 2.0], [3.0, 4.0]])
+    dataset = pd.DataFrame(
+        {
+            "step": [0, 0],
+            "strain": [0.0, 0.0],
+            "stress": [1.0, 1.0],
+            "user_metadata": [{"matrix": matrix}, {"matrix": matrix.copy()}],
+        }
+    )
+    assert "duplicate_record" in codes(validate_dataset(dataset, "curve"))

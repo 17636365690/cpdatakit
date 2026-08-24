@@ -39,15 +39,26 @@ def _read_hdf5(path: Path) -> Dataset:
             if "data" not in handle or not isinstance(handle["data"], h5py.Group):
                 raise DataReadError("CPDataKit HDF5 is missing the /data group")
             columns: dict[str, Any] = {}
+            record_count: int | None = None
             for name, item in handle["data"].items():
                 if not isinstance(item, h5py.Dataset):
                     continue
                 values = item[()]
+                if values.ndim == 0:
+                    raise DataReadError(f"CPDataKit HDF5 field {name!r} must contain records")
                 if values.dtype.kind in {"S", "O"}:
                     values = np.asarray(
                         [v.decode("utf-8") if isinstance(v, bytes) else v for v in values]
                     )
+                if record_count is None:
+                    record_count = len(values)
+                elif len(values) != record_count:
+                    raise DataReadError("CPDataKit HDF5 fields have inconsistent record counts")
                 columns[name] = list(values) if values.ndim > 1 else values
+            if not columns:
+                raise DataReadError("CPDataKit HDF5 /data group contains no fields")
+            if record_count == 0:
+                raise DataReadError("CPDataKit HDF5 contains no records")
             metadata = {
                 "profile": str(handle.attrs.get("profile", "")),
                 "schema_version": str(handle.attrs.get("schema_version", "")),
@@ -58,11 +69,12 @@ def _read_hdf5(path: Path) -> Dataset:
                     str(handle.attrs.get("validation_summary_json", "{}"))
                 ),
             }
+            frame = pd.DataFrame(columns)
     except DataReadError:
         raise
     except (OSError, ValueError, KeyError, TypeError, UnicodeError) as exc:
         raise DataReadError(f"Cannot read CPDataKit HDF5 {path}: {exc}") from exc
-    return Dataset(pd.DataFrame(columns), metadata, path)
+    return Dataset(frame, metadata, path)
 
 
 def load_dataset(path: str | Path) -> Dataset:
