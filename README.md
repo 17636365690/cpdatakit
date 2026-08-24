@@ -5,32 +5,36 @@
 [![PyPI](https://img.shields.io/pypi/v/cpdatakit)](https://pypi.org/project/cpdatakit/)
 [![License](https://img.shields.io/github/license/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/blob/main/LICENSE)
 
-**Crystal Plasticity Data Quality Toolkit** is a solver-independent Python toolkit for
-validating, normalizing, summarizing, and visualizing crystal-plasticity simulation
-datasets.
+CPDataKit is a solver-independent Python toolkit for checking, normalizing, summarizing, and
+plotting crystal-plasticity simulation data.
 
-> **Alpha software:** CPDataKit verifies conformance to an explicit data contract. It does
-> not certify that a simulation, constitutive model, or physical interpretation is correct.
-> Bundled datasets are deterministic, wholly synthetic examples for demonstration and tests.
+> **Alpha software:** A passing validation report means that the records match the selected
+> schema. It does not say that a simulation, constitutive model, or physical interpretation is
+> correct. The bundled data are generated from a fixed seed and contain no experimental or
+> commercial-solver output.
 
-## Why and for whom
+## When it helps
 
-CPDataKit helps researchers, simulation engineers, and data stewards make tabular materials
-simulation data explicit and traceable before analysis or exchange. The core package is not a
-finite-element solver, DAMASK post-processor, Abaqus plug-in, UMAT runner, or ODB reader. It has
-no official affiliation with DAMASK, Abaqus, or Dassault Systèmes.
+A hand-off can be as small as a column name. One exporter writes `eps`, another writes `strain`.
+One stores `sigma_pa` in Pa, another expects `stress` in MPa. CPDataKit puts those choices in a
+schema and an explicit mapping file, then keeps the validation result with the converted data.
+
+Use it before an analysis script, when exchanging files with a colleague, or when you need to
+explain later why a column was renamed. The package stays at the data boundary. It does not run
+a solver, post-process DAMASK, act as an Abaqus plug-in, run a UMAT, or read ODB files. CPDataKit
+has no official affiliation with DAMASK, Abaqus, or Dassault Systèmes.
 
 ## Supported contracts and formats
 
-The open CPDataKit schema v1.0 defines three profiles:
+The built-in CPDataKit schema v1.0 has three profiles:
 
-- `curve`: ordered macroscopic steps such as time, strain, stress, and load curves;
-- `point`: material-point, integration-point, element, or sample records;
+- `curve`: ordered macroscopic steps such as time, strain, stress, and load curves.
+- `point`: material-point, integration-point, element, or sample records.
 - `field2d`: scalar samples with two-dimensional Cartesian coordinates.
 
 Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
-take units and semantics from the selected schema. HDF5 embeds units, mapping, validation
-summary, source filename and SHA-256, UTC conversion time, Python/CPDataKit versions, and an
+take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
+summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
 operation log. CPDataKit HDF5 is not DAMASK DADF5 or Abaqus ODB.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
@@ -41,7 +45,7 @@ orientation representation, units, or identifier semantics. See
 
 ## Install
 
-Install the current `v0.2.0` release from PyPI:
+Install version `0.2.0` from PyPI:
 
 ```bash
 python -m pip install cpdatakit
@@ -85,17 +89,17 @@ Regenerate the fixed-seed examples at any time:
 python examples/generate_sample_data.py --output sample_data
 ```
 
-## Supported workflows
+## Workflows covered by the repository
 
-CPDataKit supports these concrete, repository-demonstrated workflows:
+The examples and tests cover these paths:
 
-- validate exported curve, point, or two-dimensional field records against an explicit contract;
-- normalize exporter-specific column names and units with a reviewable JSON mapping file;
-- preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order;
-- convert records into auditable HDF5 with units, mapping, provenance, and validation metadata;
+- validate exported curve, point, or two-dimensional field records against an explicit contract.
+- normalize exporter-specific column names and units with a reviewable JSON mapping file.
+- preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
+- convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
 
-## Project and integration links
+## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
 - [v0.2.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.2.0)
@@ -130,10 +134,10 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 for the JSON format and no-inference rules.
 
-Use `--force` to replace an output. Expected errors are concise and have no traceback; put the
-global `--debug` option before the subcommand to debug unexpected failures. A validation or
-summary command returns `0` for conforming data and `1` for findings; usage/read/output failures
-return `2`. Run `cpdatakit --help` or `cpdatakit <command> --help` for details.
+Use `--force` to replace an output. Expected errors are concise and have no traceback. Put the
+global `--debug` option before the subcommand when an unexpected failure needs more detail. A
+validation or summary command returns `0` for conforming data and `1` for findings. Usage, read,
+and output failures return `2`. Run `cpdatakit --help` or `cpdatakit <command> --help` for details.
 
 ## Python API
 
@@ -186,23 +190,22 @@ Contributions follow
 [CONTRIBUTING.md](https://github.com/17636365690/cpdatakit/blob/main/CONTRIBUTING.md) and the
 [Code of Conduct](https://github.com/17636365690/cpdatakit/blob/main/CODE_OF_CONDUCT.md).
 
-If CPDataKit helps your workflow, star the repository to improve discoverability and open an issue
-describing the data contract or solver-neutral workflow you need. Concrete research use cases guide
-the roadmap more than raw popularity metrics.
+When you need a new data contract or input format, open an issue with a small synthetic sample and
+the field rules it should follow. That gives the next change something concrete to test.
 
 ## Known limitations and roadmap
 
-Version 0.2.0 handles in-memory tabular data, explicit vectors/tensors, and an explicit two-dimensional scalar sample
-representation. It does not perform solver integration, constitutive integration, 3D interactive
-graphics, automatic scientific inference, streaming, or distributed processing. DAMASK and
-Abaqus are only reserved adapter boundaries; no unverified adapter is shipped. See the
+Version 0.2.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
+It has no solver adapters, constitutive integration, 3D interactive graphics, automatic scientific
+inference, streaming, or distributed processing. DAMASK and Abaqus remain reserved adapter
+boundaries. Adding either requires format evidence, license review, and reproducible test data. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 
 ## Citation and license
 
 Use [CITATION.cff](https://github.com/17636365690/cpdatakit/blob/main/CITATION.cff) to cite the
-software. CPDataKit is licensed under Apache-2.0; see
+software. CPDataKit is licensed under Apache-2.0. See
 [LICENSE](https://github.com/17636365690/cpdatakit/blob/main/LICENSE). Direct runtime dependency
 licenses and review notes are in
 [NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE). No real experimental or

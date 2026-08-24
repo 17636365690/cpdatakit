@@ -1,11 +1,11 @@
 # Five-minute quickstart
 
-This walkthrough uses only deterministic synthetic data. It validates a declared crystal-plasticity
-curve, writes an auditable HDF5 file, and renders a stress-strain plot.
+This run uses deterministic synthetic data. It validates a declared crystal-plasticity curve,
+writes an HDF5 file with provenance, and renders a stress-strain plot.
 
 ## 1. Install the current release
 
-Create and activate an isolated environment first:
+Start in a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -41,7 +41,7 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 python -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('cpdatakit-demo')"
 ```
 
-The generator uses a fixed seed and creates no experimental or commercial-solver data.
+The generator uses a fixed seed. It creates no experimental or commercial-solver data.
 
 ## 3. Validate and summarize
 
@@ -51,7 +51,7 @@ cpdatakit summary cpdatakit-demo/synthetic_curve.csv --schema curve --json-outpu
 ```
 
 The validation report records schema findings. The summary contains field-level descriptive
-statistics and a copy of the validation result.
+statistics and the validation result used to produce it.
 
 ## 4. Convert with provenance
 
@@ -68,8 +68,9 @@ time, software versions, validation summary, and operation log.
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
 ```
 
-You should now have `validation.json`, `summary.json`, `curve.h5`, and `stress-strain.png`.
-CPDataKit checks explicit data contracts; it does not certify physical correctness.
+At this point, the directory contains `validation.json`, `summary.json`, `curve.h5`, and
+`stress-strain.png`. CPDataKit checks the data contract. Physical correctness remains outside
+the package's scope.
 
 ## Try invalid data
 
@@ -80,5 +81,5 @@ The generator also creates a deliberately malformed point dataset. A validation 
 cpdatakit validate cpdatakit-demo/intentionally_invalid_point.csv --schema point
 ```
 
-If this workflow is useful, please star the repository so other materials researchers can find it,
-and open an issue with the data contract or solver-neutral workflow you would like supported.
+To try another case, edit one of the generated CSV files and run `validate` again. For a new data
+contract or input format, open an issue with a small synthetic sample and its field rules.

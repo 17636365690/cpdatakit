@@ -1,18 +1,22 @@
 # CPDataKit
 
-CPDataKit（Crystal Plasticity Data Quality Toolkit）是一个与求解器无关的 Python 工具包，
-用于验证、标准化、统计和可视化晶体塑性模拟数据。
+CPDataKit 是一个与求解器无关的 Python 工具包，用来在晶体塑性模拟数据进入分析脚本或交给
+其他工具前，检查字段、单位和形状，并完成标准化、统计和绘图。
 
-> 当前为 alpha 版本。验证通过只表示数据符合显式 schema，不能证明模拟、材料模型或
-> 物理解释正确。仓库内数据均由固定随机种子生成，仅用于演示和测试。
+> 当前为 alpha 版本。验证通过表示记录符合所选 schema，不表示模拟、材料模型或物理解释
+> 正确。仓库内数据由固定随机种子生成，不含实验数据或商业求解器输出。
 
-## 项目边界
+## 什么时候用
 
-CPDataKit 面向材料计算研究人员、模拟工程师和数据维护者。它不是有限元求解器、DAMASK
-后处理器、Abaqus 插件、UMAT 执行器或 ODB 读取器；项目与 DAMASK、Abaqus 及 Dassault
-Systèmes 没有官方隶属关系。
+数据交接时，字段名和单位很容易分叉。比如导出器给出 `eps` 和 `sigma_pa`，分析脚本却需要
+`strain` 和 `stress`。CPDataKit 把这些约定写进 schema 和 mapping 文件，并把验证结果保存
+到输出 HDF5。
 
-MVP 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
+它适合放在分析脚本前、文件交接时，或者需要追溯字段改名原因的地方。CPDataKit 不运行求解器，
+不负责 DAMASK 后处理、Abaqus 插件、UMAT 执行或 ODB 读取。项目与 DAMASK、Abaqus 及
+Dassault Systèmes 没有官方隶属关系。
+
+v0.2.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。工具不会猜测应力/应变量、张量顺序、取向表达、单位或 ID 含义。
 
@@ -33,9 +37,9 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 验证、统计、转换并绘制固定种子生成的示例。
 
-## 支持的实际工作流
+## 仓库里的工作流
 
-当前仓库已经提供并验证了以下具体工作流：
+示例和测试覆盖以下路径：
 
 - 在分析或交换前，按显式 schema 验证 curve、point 和二维 field 数据；
 - 使用 JSON mapping 文件处理不同导出器的字段名和单位；
@@ -51,8 +55,8 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [示例目录](https://github.com/17636365690/cpdatakit/tree/main/examples)
 - [路线图与 Issue](https://github.com/17636365690/cpdatakit/issues)
-如果 CPDataKit 对你的工作有帮助，欢迎 Star 仓库，并通过 Issue 告诉我们你需要的数据契约
-或与求解器无关的工作流。
+如果需要新的数据契约或输入格式，请在 Issue 中附一个小型合成样例和字段规则，后续改动就有
+具体的测试对象。
 
 ```powershell
 python -m venv .venv
