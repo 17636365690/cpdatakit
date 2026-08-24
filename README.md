@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/17636365690/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/cpdatakit)](https://pypi.org/project/cpdatakit/)
 [![License](https://img.shields.io/github/license/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/blob/main/LICENSE)
 
 **Crystal Plasticity Data Quality Toolkit** is a solver-independent Python toolkit for
@@ -40,16 +41,16 @@ orientation representation, units, or identifier semantics. See
 
 ## Install
 
-When `v0.1.1` is visible on PyPI, install it with:
+Install the current `v0.2.0` release from PyPI:
 
 ```bash
 python -m pip install cpdatakit
 ```
 
-Until then, install the current `v0.1.1` wheel directly from GitHub:
+For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.1/cpdatakit-0.1.1-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
 ```
 
 Then follow the
@@ -84,6 +85,28 @@ Regenerate the fixed-seed examples at any time:
 python examples/generate_sample_data.py --output sample_data
 ```
 
+## Supported workflows
+
+CPDataKit supports these concrete, repository-demonstrated workflows:
+
+- validate exported curve, point, or two-dimensional field records against an explicit contract;
+- normalize exporter-specific column names and units with a reviewable JSON mapping file;
+- preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order;
+- convert records into auditable HDF5 with units, mapping, provenance, and validation metadata;
+- run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
+
+These are supported workflows rather than claims of external adoption. No unverified downstream
+project or laboratory is presented as a CPDataKit user.
+
+## Project and integration links
+
+- [PyPI package](https://pypi.org/project/cpdatakit/)
+- [v0.2.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.2.0)
+- [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
+- [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
+- [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
+- [Roadmap and Issue tracker](https://github.com/17636365690/cpdatakit/issues)
+
 ## Command line
 
 Validate and write a JSON report:
@@ -100,6 +123,15 @@ cpdatakit convert sample_data/synthetic_curve.csv --schema curve --output curve.
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.svg
 ```
+
+For an exporter with different names or units, provide an explicit mapping file:
+
+```bash
+cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h5
+```
+
+See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
+for the JSON format and no-inference rules.
 
 Use `--force` to replace an output. Expected errors are concise and have no traceback; put the
 global `--debug` option before the subcommand to debug unexpected failures. A validation or
@@ -163,7 +195,7 @@ the roadmap more than raw popularity metrics.
 
 ## Known limitations and roadmap
 
-Version 0.1.1 handles in-memory tabular data and an explicit two-dimensional scalar sample
+Version 0.2.0 handles in-memory tabular data, explicit vectors/tensors, and an explicit two-dimensional scalar sample
 representation. It does not perform solver integration, constitutive integration, 3D interactive
 graphics, automatic scientific inference, streaming, or distributed processing. DAMASK and
 Abaqus are only reserved adapter boundaries; no unverified adapter is shipped. See the

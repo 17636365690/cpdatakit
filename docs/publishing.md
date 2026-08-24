@@ -23,12 +23,12 @@ timestamp, file-order, or backend drift before a release is published.
 ## First publication
 
 After the pending publisher exists and the release commit is tagged, open the workflow on the
-`main` branch and run **Publish to PyPI** manually with tag `v0.1.1`. The workflow and the `pypi`
+`main` branch and run **Publish to PyPI** manually with the release tag. The workflow and the `pypi`
 environment reject dispatches from other refs. It also rejects missing/off-main tags and
 inconsistent version metadata; builds both distributions from the exact tag; runs `twine check`;
 and exchanges GitHub's short-lived OIDC identity for a temporary PyPI credential. Review and
 approve the queued `pypi` deployment only after confirming the tag and build job. After the
-workflow succeeds, verify a clean `pip install cpdatakit==0.1.1`, then publish the matching GitHub
+workflow succeeds, verify a clean `pip install cpdatakit==<version>`, then publish the matching GitHub
 Release and attach the already-verified distributions. Publishing a GitHub Release does not
 trigger PyPI, which avoids duplicate uploads of immutable files.
 

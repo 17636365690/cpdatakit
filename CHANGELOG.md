@@ -4,9 +4,22 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-24
+
 ### Added
 
+- Public schema-authoring helpers for constructing, validating, serializing, writing, and
+  documenting external JSON contracts.
+- Optional tensor component-order declarations for vector and matrix fields.
+- Strict JSON mapping files for CLI validation, summaries, conversion, and plots.
+- Hypothesis property coverage for malformed nested shapes, non-finite values, dtype boundaries,
+  and tensor HDF5 round trips.
 - Add CodeQL v4 scanning for Python code on pushes, pull requests, and a weekly schedule.
+
+### Fixed
+
+- Keep explicit field mappings and unit conversions auditable in CLI-produced HDF5 metadata.
+- Reject unsupported mapping keys and malformed schema component declarations before processing data.
 
 ### Changed
 
