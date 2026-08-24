@@ -1,0 +1,67 @@
+# Schema authoring and explicit mapping
+
+CPDataKit exposes small helpers for creating, checking, documenting, and writing external JSON
+contracts. They validate the contract before it reaches a reader or normalizer:
+
+```python
+from cpdatakit import (
+    describe_schema,
+    make_field_schema,
+    make_profile_schema,
+    write_schema,
+)
+
+schema = make_profile_schema(
+    "point",
+    [
+        make_field_schema(
+            "point_id", "integer", required=True, unit="dimensionless", index=True, unique=True
+        ),
+        make_field_schema(
+            "stress",
+            "float",
+            required=True,
+            shape=[2, 2],
+            components=["xx", "xy", "yx", "yy"],
+            unit="MPa",
+        ),
+    ],
+    conventions={"stress_measure": "Cauchy stress"},
+)
+write_schema(schema, "point-tensor.json")
+print(describe_schema(schema))
+```
+
+`validate_schema` accepts a built-in profile, a JSON path, a `ProfileSchema`, or a JSON-like
+mapping. `schema_to_dict` and `schema_to_json` provide canonical serialization for review and
+version control. `write_schema` refuses to overwrite an existing file unless `force=True`.
+
+## CLI mapping files
+
+All field renames and unit conversions must be explicit. Pass a JSON mapping file to `validate`,
+`summary`, `convert`, or `plot`:
+
+```json
+{
+  "mappings": [
+    {
+      "source": "sigma_pa",
+      "target": "stress",
+      "input_unit": "Pa",
+      "output_unit": "MPa",
+      "source_note": "exporter column documented by the producer"
+    }
+  ],
+  "drop_unmapped": false
+}
+```
+
+Example:
+
+```bash
+cpdatakit convert input.csv --schema curve --mapping mapping.json --output curve.h5
+```
+
+The mapping file never enables scientific inference. Targets must be declared by the schema,
+sources must exist in the input, duplicate targets are rejected, and existing output files still
+require `--force` before replacement.

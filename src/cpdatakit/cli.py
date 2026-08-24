@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from . import __version__
 from .exceptions import CPDataKitError
 from .io import load_dataset, write_hdf5
+from .normalization import load_mapping_file, normalize_dataset
 from .plotting import (
     plot_counts,
     plot_field2d,
@@ -28,6 +29,11 @@ from .validation import validate_dataset
 def _common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("data", type=Path, help="Input CSV, JSON records, or CPDataKit HDF5")
     parser.add_argument("--schema", required=True, help="Built-in profile or JSON schema path")
+    parser.add_argument(
+        "--mapping",
+        type=Path,
+        help="JSON file declaring explicit source/target fields and optional unit conversions",
+    )
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -80,6 +86,14 @@ def _write_json(payload: dict[str, Any], target: Path | None, force: bool) -> No
 def _run(args: argparse.Namespace) -> int:
     schema = load_schema(args.schema)
     dataset = load_dataset(args.data)
+    if args.mapping is not None:
+        mappings, drop_unmapped = load_mapping_file(args.mapping)
+        dataset = normalize_dataset(
+            dataset,
+            schema,
+            mappings,
+            drop_unmapped=drop_unmapped,
+        )
     result = validate_dataset(dataset, schema)
     if args.command == "validate":
         _write_json(result.to_dict(), args.json_output, args.force)
