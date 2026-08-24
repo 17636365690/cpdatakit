@@ -2,6 +2,13 @@
 
 CPDataKit uses PyPI Trusted Publishing so no long-lived PyPI token is stored in GitHub.
 
+## Reproducible distributions
+
+The build backend is pinned in `pyproject.toml`, and CI sets `SOURCE_DATE_EPOCH` from the
+source commit used for the build. The quality and PyPI workflows build both distributions twice
+and compare their SHA-256 digests before either copy is inspected or uploaded. This catches
+timestamp, file-order, or backend drift before a release is published.
+
 ## One-time owner setup
 
 1. Sign in to <https://pypi.org/manage/account/publishing/> with two-factor authentication enabled.

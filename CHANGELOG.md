@@ -4,6 +4,15 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+- Add CodeQL v4 scanning for Python code on pushes, pull requests, and a weekly schedule.
+
+### Changed
+
+- Pin Hatchling and normalize the tagged commit timestamp for reproducible distributions.
+- Build distributions twice in CI and reject byte-level differences before packaging.
+
 ## [0.1.1] - 2026-08-17
 
 ### Fixed
