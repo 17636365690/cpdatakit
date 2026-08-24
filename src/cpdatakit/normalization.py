@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from pathlib import Path
 
 import pandas as pd
 from pint import DimensionalityError, UndefinedUnitError, UnitRegistry
@@ -23,6 +25,61 @@ class FieldMapping:
     input_unit: str | None = None
     output_unit: str | None = None
     source_note: str = "user supplied"
+
+
+def load_mapping_file(path: str | Path) -> tuple[list[FieldMapping], bool]:
+    """Load a strict JSON mapping file for explicit CLI normalization."""
+    mapping_path = Path(path)
+    try:
+        payload = json.loads(mapping_path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise NormalizationError(f"Mapping file does not exist: {mapping_path}") from exc
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise NormalizationError(f"Cannot read mapping file {mapping_path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise NormalizationError("Mapping file root must be a JSON object")
+    raw_mappings = payload.get("mappings")
+    if not isinstance(raw_mappings, list):
+        raise NormalizationError("Mapping file 'mappings' must be a list")
+    drop_unmapped = payload.get("drop_unmapped", False)
+    if not isinstance(drop_unmapped, bool):
+        raise NormalizationError("Mapping file 'drop_unmapped' must be boolean")
+
+    allowed = {"source", "target", "input_unit", "output_unit", "source_note"}
+    mappings: list[FieldMapping] = []
+    for index, raw in enumerate(raw_mappings):
+        if not isinstance(raw, dict):
+            raise NormalizationError(f"Mapping {index} must be a JSON object")
+        unknown = set(raw) - allowed
+        if unknown:
+            raise NormalizationError(
+                f"Mapping {index} contains unsupported keys: {sorted(unknown)}"
+            )
+        source = raw.get("source")
+        target = raw.get("target")
+        if not isinstance(source, str) or not source.strip():
+            raise NormalizationError(f"Mapping {index} source must be a non-empty string")
+        if not isinstance(target, str) or not target.strip():
+            raise NormalizationError(f"Mapping {index} target must be a non-empty string")
+        input_unit = raw.get("input_unit")
+        output_unit = raw.get("output_unit")
+        source_note = raw.get("source_note", "user supplied")
+        if input_unit is not None and not isinstance(input_unit, str):
+            raise NormalizationError(f"Mapping {index} input_unit must be a string or null")
+        if output_unit is not None and not isinstance(output_unit, str):
+            raise NormalizationError(f"Mapping {index} output_unit must be a string or null")
+        if not isinstance(source_note, str):
+            raise NormalizationError(f"Mapping {index} source_note must be a string")
+        mappings.append(
+            FieldMapping(
+                source=source,
+                target=target,
+                input_unit=input_unit,
+                output_unit=output_unit,
+                source_note=source_note,
+            )
+        )
+    return mappings, drop_unmapped
 
 
 def normalize_dataset(

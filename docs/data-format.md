@@ -17,6 +17,32 @@ and an extension prefix. Schema version other than `1.0` is rejected.
 Aliases are documentation, not automatic guesses. An alias is only applied through an explicit
 `FieldMapping`. Custom fields must be fully declared in a custom schema or begin with `user_`.
 
+## Tensor-valued tabular encoding
+
+JSON records and CPDataKit HDF5 represent a vector or tensor as one value per record. The value
+must match the declared `shape`; a schema may also declare `components` in row-major order so the
+component names are explicit and stable. For example:
+
+```json
+{
+  "name": "stress",
+  "dtype": "float",
+  "shape": [2, 2],
+  "components": ["xx", "xy", "yx", "yy"],
+  "unit": "MPa",
+  "required": true
+}
+```
+
+The JSON representation is a nested array such as `[[1.0, 0.0], [0.0, 1.0]]`; the HDF5
+representation is a dataset with shape `(record_count, 2, 2)`. CPDataKit never infers component
+order from field names. CSV inputs should use scalar columns or be converted to JSON/HDF5 by an
+explicit producer because CSV has no portable nested-array representation.
+
+Schema version `1.0` accepts the optional `components` declaration for migration-safe contracts.
+A future schema version may make tensor roles and component vocabularies normative; readers reject
+unsupported versions instead of guessing a migration.
+
 ## Unit and convention rules
 
 CSV and JSON take units from the selected schema. A `Dataset` or CPDataKit HDF5 may carry explicit
