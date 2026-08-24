@@ -95,9 +95,6 @@ CPDataKit supports these concrete, repository-demonstrated workflows:
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata;
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
 
-These are supported workflows rather than claims of external adoption. No unverified downstream
-project or laboratory is presented as a CPDataKit user.
-
 ## Project and integration links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
