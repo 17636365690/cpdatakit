@@ -18,20 +18,42 @@ CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角�
 
 ## 安装与快速开始
 
-`v0.1.1` 显示在 PyPI 后，使用以下命令安装：
+当前 `v0.2.0` 已发布到 PyPI，使用以下命令安装：
 
 ```powershell
 python -m pip install cpdatakit
 ```
 
-在此之前，请直接安装 GitHub 上的 `v0.1.1` wheel：
+如果需要固定 GitHub Release wheel，可使用：
 
 ```powershell
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.1/cpdatakit-0.1.1-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
 ```
 
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 验证、统计、转换并绘制固定种子生成的示例。
+
+## 支持的实际工作流
+
+当前仓库已经提供并验证了以下具体工作流：
+
+- 在分析或交换前，按显式 schema 验证 curve、point 和二维 field 数据；
+- 使用 JSON mapping 文件处理不同导出器的字段名和单位；
+- 以声明的 shape 和 component order 保存向量/张量数据；
+- 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
+- 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
+
+这些是仓库实际支持的工作流，不等同于外部采用声明。当前没有经过核验的第三方下游项目，
+因此不会把其他项目虚构为 CPDataKit 用户。
+
+## 项目与集成链接
+
+- [PyPI 软件包](https://pypi.org/project/cpdatakit/)
+- [v0.2.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.2.0)
+- [五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
+- [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
+- [示例目录](https://github.com/17636365690/cpdatakit/tree/main/examples)
+- [路线图与 Issue](https://github.com/17636365690/cpdatakit/issues)
 如果 CPDataKit 对你的工作有帮助，欢迎 Star 仓库，并通过 Issue 告诉我们你需要的数据契约
 或与求解器无关的工作流。
 
@@ -46,6 +68,14 @@ cpdatakit convert sample_data/synthetic_curve.csv --schema curve --output curve.
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.png
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.svg
 ```
+
+对于字段名或单位不同的导出数据，可显式提供 mapping 文件：
+
+```powershell
+cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h5
+```
+
+详见[schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)。
 
 输出已存在时默认拒绝覆盖；显式传入 `--force` 才会替换。验证/统计发现不合规数据时退出码
 为 `1`，参数、读取和输出错误为 `2`。使用 `cpdatakit --help` 查看完整帮助。

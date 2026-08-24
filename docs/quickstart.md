@@ -23,16 +23,16 @@ On POSIX shells:
 source .venv/bin/activate
 ```
 
-When `v0.1.1` is visible on PyPI, install it with:
+Install the current release from PyPI:
 
 ```bash
 python -m pip install cpdatakit
 ```
 
-Until then, install the current `v0.1.1` wheel from GitHub instead:
+For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.1.1/cpdatakit-0.1.1-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example
