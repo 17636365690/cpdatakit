@@ -43,9 +43,6 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
 
-这些是仓库实际支持的工作流，不等同于外部采用声明。当前没有经过核验的第三方下游项目，
-因此不会把其他项目虚构为 CPDataKit 用户。
-
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
