@@ -283,6 +283,14 @@ def load_dataset(path: str | Path) -> Dataset:
         raise DataReadError(f"Cannot read {input_path}: {exc}") from exc
 
 
+def _resolve_hdf5_storage_chunk_size(chunk_size: int | None) -> int | None:
+    if chunk_size is None:
+        return None
+    if isinstance(chunk_size, bool) or not isinstance(chunk_size, Integral) or chunk_size <= 0:
+        raise ValueError("hdf5_chunk_size must be a positive integer")
+    return int(chunk_size)
+
+
 def write_hdf5(
     dataset: Dataset,
     output: str | Path,
@@ -294,8 +302,10 @@ def write_hdf5(
     operation_log: list[str] | None = None,
     force: bool = False,
     allow_invalid: bool = False,
+    hdf5_chunk_size: int | None = None,
 ) -> Path:
     """Write the documented CPDataKit HDF5 interchange format."""
+    resolved_chunk_size = _resolve_hdf5_storage_chunk_size(hdf5_chunk_size)
     target = Path(output)
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass force=True to replace it")
@@ -350,7 +360,10 @@ def write_hdf5(
                             ) from exc
                     else:
                         values = values.astype(h5py.string_dtype(encoding="utf-8"))
-                group.create_dataset(name, data=values)
+                chunks = None
+                if resolved_chunk_size is not None and len(values):
+                    chunks = (min(resolved_chunk_size, len(values)), *values.shape[1:])
+                group.create_dataset(name, data=values, chunks=chunks)
         os.replace(temp_path, target)
     except BaseException:
         if temp_path is not None:
