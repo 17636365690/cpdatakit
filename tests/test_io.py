@@ -175,6 +175,16 @@ def test_hdf5_rejects_invalid_metadata(tmp_path: Path, attrs: dict[str, object])
         load_dataset(path)
 
 
+def test_hdf5_field_selection_still_checks_all_record_counts(tmp_path: Path) -> None:
+    path = tmp_path / "inconsistent-selection.h5"
+    _write_minimal_cpdatakit_hdf5(path)
+    with h5py.File(path, "r+") as handle:
+        handle["data"].create_dataset("stress", data=[0.0])
+
+    with pytest.raises(DataReadError, match="inconsistent record counts"):
+        load_hdf5(path, fields=["step"])
+
+
 def test_load_hdf5_selects_fields_and_half_open_range(tmp_path: Path) -> None:
     path = _make_test_hdf5(tmp_path, rows=5)
     selected = load_hdf5(path, fields=["stress", "step"], start=1, stop=4)

@@ -144,9 +144,11 @@ def _resolve_hdf5_bounds(
 def _resolve_hdf5_selection(
     group: h5py.Group, fields: Iterable[str] | None
 ) -> tuple[list[str], int]:
-    names = _normalize_hdf5_fields(group, fields)
+    available = [name for name, item in group.items() if isinstance(item, h5py.Dataset)]
+    if not available:
+        raise DataReadError("CPDataKit HDF5 /data group contains no fields")
     record_count: int | None = None
-    for name in names:
+    for name in available:
         item = group[name]
         if item.ndim == 0:
             raise DataReadError(f"CPDataKit HDF5 field {name!r} must contain records")
@@ -159,6 +161,7 @@ def _resolve_hdf5_selection(
         raise DataReadError("CPDataKit HDF5 /data group contains no fields")
     if record_count == 0:
         raise DataReadError("CPDataKit HDF5 contains no records")
+    names = _normalize_hdf5_fields(group, fields)
     return names, record_count
 
 
