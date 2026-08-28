@@ -30,8 +30,8 @@ def _is_real_number(value: object) -> bool:
     return isinstance(value, Real) and not isinstance(value, (bool, np.bool_))
 
 
-def _matches_shape(value: object, shape: list[int]) -> bool:
-    return isinstance(value, (list, tuple, np.ndarray)) and list(np.asarray(value).shape) == shape
+def _matches_shape(value: object, shape: tuple[int, ...]) -> bool:
+    return isinstance(value, (list, tuple, np.ndarray)) and tuple(np.asarray(value).shape) == shape
 
 
 def _array_dtype_matches(value: object, dtype: str) -> bool:

@@ -24,17 +24,23 @@ class FieldSchema:
     name: str
     dtype: Literal["float", "integer", "string", "boolean"]
     required: bool = False
-    shape: list[int] = field(default_factory=list)
-    components: list[str] = field(default_factory=list)
+    shape: tuple[int, ...] = field(default_factory=tuple)
+    components: tuple[str, ...] = field(default_factory=tuple)
     role: str = "custom"
     unit: str | None = None
     allow_missing: bool = False
-    aliases: list[str] = field(default_factory=list)
+    aliases: tuple[str, ...] = field(default_factory=tuple)
     minimum: float | None = None
     maximum: float | None = None
     index: bool = False
     unique: bool = False
     description: str = ""
+
+    def __post_init__(self) -> None:
+        for name in ("shape", "components", "aliases"):
+            value = getattr(self, name)
+            if isinstance(value, list):
+                object.__setattr__(self, name, tuple(value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,11 +77,11 @@ def _validate_field(item: FieldSchema) -> None:
     ]
     if invalid_options:
         raise SchemaError(f"Field {item.name!r} options must be boolean: {sorted(invalid_options)}")
-    if not isinstance(item.shape, list) or any(
+    if not isinstance(item.shape, tuple) or any(
         not isinstance(size, int) or isinstance(size, bool) or size <= 0 for size in item.shape
     ):
-        raise SchemaError(f"Field {item.name!r} shape must be a list of positive integers")
-    if not isinstance(item.components, list) or any(
+        raise SchemaError(f"Field {item.name!r} shape must be a tuple of positive integers")
+    if not isinstance(item.components, tuple) or any(
         not isinstance(component, str) or not component.strip() for component in item.components
     ):
         raise SchemaError(f"Field {item.name!r} components must be non-empty strings")
@@ -90,7 +96,7 @@ def _validate_field(item: FieldSchema) -> None:
         )
     if item.shape and item.index:
         raise SchemaError(f"Index field {item.name!r} must be scalar")
-    if not isinstance(item.aliases, list) or any(
+    if not isinstance(item.aliases, tuple) or any(
         not isinstance(alias, str) or not alias.strip() for alias in item.aliases
     ):
         raise SchemaError(f"Field {item.name!r} aliases must be non-empty strings")
@@ -203,12 +209,12 @@ def make_field_schema(
         name=name,
         dtype=dtype,
         required=required,
-        shape=list(shape),
-        components=list(components),
+        shape=tuple(shape),
+        components=tuple(components),
         role=role,
         unit=unit,
         allow_missing=allow_missing,
-        aliases=list(aliases),
+        aliases=tuple(aliases),
         minimum=minimum,
         maximum=maximum,
         index=index,
