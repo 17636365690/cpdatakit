@@ -1,6 +1,6 @@
 # Stability, HDF5 Performance, and Quality Gates Design
 
-**Date:** 2026-08-28  
+**Date:** 2026-08-28
 **Status:** Approved in chat; implementation pending
 
 ## Goal
@@ -127,4 +127,3 @@ Tests will follow red-green-refactor for production behavior:
    write performance for small files; the opt-in writer option preserves compatibility.
 4. **Run coverage in every OS/Python matrix job.** Rejected because it duplicates work; one
    Ubuntu quality job is sufficient for the project-wide threshold.
-
