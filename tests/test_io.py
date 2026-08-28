@@ -9,7 +9,12 @@ import pandas as pd
 import pytest
 
 import cpdatakit
-from cpdatakit.exceptions import DataReadError, OutputExistsError
+from cpdatakit.exceptions import (
+    CPDataKitError,
+    DataReadError,
+    DataValidationError,
+    OutputExistsError,
+)
 from cpdatakit.io import iter_hdf5_chunks, load_dataset, load_hdf5, write_hdf5
 from cpdatakit.model import Dataset
 from cpdatakit.schema import load_schema
@@ -216,6 +221,47 @@ def test_hdf5_chunk_size_must_be_positive_integer(tmp_path: Path, chunk_size: ob
     path = _make_test_hdf5(tmp_path, rows=5)
     with pytest.raises(DataReadError):
         list(iter_hdf5_chunks(path, chunk_size=chunk_size))
+
+
+def test_write_hdf5_rejects_invalid_validation_by_default(
+    curve_csv: Path, tmp_path: Path
+) -> None:
+    dataset = load_dataset(curve_csv)
+    schema = load_schema("curve")
+    result = validate_dataset(dataset.data.drop(columns=["stress"]), schema)
+    output = tmp_path / "invalid.h5"
+
+    with pytest.raises(DataValidationError) as exc_info:
+        write_hdf5(dataset, output, schema, result)
+
+    assert isinstance(exc_info.value, CPDataKitError)
+    assert not output.exists()
+
+
+def test_write_hdf5_allows_explicit_invalid_output(curve_csv: Path, tmp_path: Path) -> None:
+    dataset = load_dataset(curve_csv)
+    schema = load_schema("curve")
+    result = validate_dataset(dataset.data.drop(columns=["stress"]), schema)
+    output = tmp_path / "invalid-allowed.h5"
+
+    write_hdf5(dataset, output, schema, result, allow_invalid=True)
+
+    assert load_dataset(output).metadata["validation_summary"]["valid"] is False
+
+
+def test_write_hdf5_removes_temp_file_after_serialization_failure(tmp_path: Path) -> None:
+    schema = load_schema("point")
+    dataset = Dataset(
+        pd.DataFrame({"point_id": [0, 1], "vector": [[1.0, 2.0], [3.0]]})
+    )
+    result = validate_dataset(dataset, schema)
+    output = tmp_path / "broken.h5"
+
+    with pytest.raises(DataReadError, match="inconsistent array shapes"):
+        write_hdf5(dataset, output, schema, result, allow_invalid=True)
+
+    assert not output.exists()
+    assert list(tmp_path.glob(f".{output.name}.*")) == []
 
 
 def test_path_styles_are_representable() -> None:

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from collections.abc import Iterable, Iterator
 from numbers import Integral
 from pathlib import Path
@@ -12,7 +14,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from ..exceptions import DataReadError, OutputExistsError
+from ..exceptions import DataReadError, DataValidationError, OutputExistsError
 from ..model import Dataset, ValidationResult
 from ..provenance import build_provenance
 from ..schema import SUPPORTED_PROFILES, SUPPORTED_SCHEMA_VERSION, ProfileSchema
@@ -300,11 +302,16 @@ def write_hdf5(
     source_description: str | None = None,
     operation_log: list[str] | None = None,
     force: bool = False,
+    allow_invalid: bool = False,
 ) -> Path:
     """Write the documented CPDataKit HDF5 interchange format."""
     target = Path(output)
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass force=True to replace it")
+    if not validation.valid and not allow_invalid:
+        raise DataValidationError(
+            "Cannot write a dataset with validation errors; pass allow_invalid=True explicitly"
+        )
     target.parent.mkdir(parents=True, exist_ok=True)
     declared_units = {item.name: item.unit for item in schema.fields if item.name in dataset.data}
     units = {**declared_units, **dataset.metadata.get("units", {})}
@@ -314,36 +321,48 @@ def write_hdf5(
     provenance = build_provenance(
         dataset.source, source_description=source_description, operation_log=operation_log
     )
-    with h5py.File(target, "w") as handle:
-        handle.attrs["format"] = "CPDataKit"
-        handle.attrs["format_version"] = "1.0"
-        handle.attrs["profile"] = schema.profile
-        handle.attrs["schema_version"] = schema.schema_version
-        handle.attrs["units_json"] = json.dumps(units, sort_keys=True)
-        handle.attrs["field_mapping_json"] = json.dumps(stored_mapping, sort_keys=True)
-        handle.attrs["provenance_json"] = json.dumps(provenance, sort_keys=True)
-        handle.attrs["validation_summary_json"] = json.dumps(
-            {
-                "valid": validation.valid,
-                "error_count": len(validation.errors),
-                "warning_count": len(validation.warnings),
-            },
-            sort_keys=True,
+    temp_path: Path | None = None
+    try:
+        temp_fd, temp_name = tempfile.mkstemp(
+            prefix=f".{target.name}.", suffix=target.suffix, dir=target.parent
         )
-        group = handle.create_group("data")
-        for name in dataset.data.columns:
-            values = dataset.data[name].to_numpy()
-            if values.dtype.kind in {"O", "U"}:
-                if len(values) and all(
-                    isinstance(item, (list, tuple, np.ndarray)) for item in values
-                ):
-                    try:
-                        values = np.stack(values)
-                    except ValueError as exc:
-                        raise DataReadError(
-                            f"Cannot write inconsistent array shapes in field {name!r}"
-                        ) from exc
-                else:
-                    values = values.astype(h5py.string_dtype(encoding="utf-8"))
-            group.create_dataset(name, data=values)
+        temp_path = Path(temp_name)
+        os.close(temp_fd)
+        with h5py.File(temp_path, "w") as handle:
+            handle.attrs["format"] = "CPDataKit"
+            handle.attrs["format_version"] = "1.0"
+            handle.attrs["profile"] = schema.profile
+            handle.attrs["schema_version"] = schema.schema_version
+            handle.attrs["units_json"] = json.dumps(units, sort_keys=True)
+            handle.attrs["field_mapping_json"] = json.dumps(stored_mapping, sort_keys=True)
+            handle.attrs["provenance_json"] = json.dumps(provenance, sort_keys=True)
+            handle.attrs["validation_summary_json"] = json.dumps(
+                {
+                    "valid": validation.valid,
+                    "error_count": len(validation.errors),
+                    "warning_count": len(validation.warnings),
+                },
+                sort_keys=True,
+            )
+            group = handle.create_group("data")
+            for name in dataset.data.columns:
+                values = dataset.data[name].to_numpy()
+                if values.dtype.kind in {"O", "U"}:
+                    if len(values) and all(
+                        isinstance(item, (list, tuple, np.ndarray)) for item in values
+                    ):
+                        try:
+                            values = np.stack(values)
+                        except ValueError as exc:
+                            raise DataReadError(
+                                f"Cannot write inconsistent array shapes in field {name!r}"
+                            ) from exc
+                    else:
+                        values = values.astype(h5py.string_dtype(encoding="utf-8"))
+                group.create_dataset(name, data=values)
+        os.replace(temp_path, target)
+    except BaseException:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+        raise
     return target
