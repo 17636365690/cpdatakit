@@ -484,9 +484,7 @@ def test_mapping_rejects_unknown_key(tmp_path: Path, capsys) -> None:
 
 def test_invalid_schema_version_is_rejected(tmp_path: Path) -> None:
     schema = tmp_path / "unsupported.json"
-    schema.write_text(
-        '{"profile":"curve","schema_version":"2.0","fields":[]}', encoding="utf-8"
-    )
+    schema.write_text('{"profile":"curve","schema_version":"2.0","fields":[]}', encoding="utf-8")
     with pytest.raises(SchemaError, match="Unsupported schema version"):
         load_schema(schema)
 
