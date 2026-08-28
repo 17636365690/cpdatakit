@@ -60,9 +60,7 @@ def _required_json_object(handle: h5py.File, name: str, path: Path) -> dict[str,
             f"Invalid HDF5 metadata JSON in attribute {name!r}: {path}: {exc.msg}"
         ) from exc
     if not isinstance(value, dict):
-        raise DataReadError(
-            f"HDF5 metadata attribute {name!r} must encode a JSON object: {path}"
-        )
+        raise DataReadError(f"HDF5 metadata attribute {name!r} must encode a JSON object: {path}")
     return value
 
 
@@ -80,9 +78,7 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
 
     schema_version = _required_text_attr(handle, "schema_version", path)
     if schema_version != SUPPORTED_SCHEMA_VERSION:
-        raise DataReadError(
-            f"Unsupported HDF5 metadata schema_version {schema_version!r}: {path}"
-        )
+        raise DataReadError(f"Unsupported HDF5 metadata schema_version {schema_version!r}: {path}")
 
     return {
         "profile": profile,
@@ -90,15 +86,11 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
         "units": _required_json_object(handle, "units_json", path),
         "field_mapping": _required_json_object(handle, "field_mapping_json", path),
         "provenance": _required_json_object(handle, "provenance_json", path),
-        "validation_summary": _required_json_object(
-            handle, "validation_summary_json", path
-        ),
+        "validation_summary": _required_json_object(handle, "validation_summary_json", path),
     }
 
 
-def _normalize_hdf5_fields(
-    group: h5py.Group, fields: Iterable[str] | None
-) -> list[str]:
+def _normalize_hdf5_fields(group: h5py.Group, fields: Iterable[str] | None) -> list[str]:
     available = [name for name, item in group.items() if isinstance(item, h5py.Dataset)]
     if fields is None:
         names = available
@@ -122,9 +114,7 @@ def _normalize_hdf5_fields(
     return names
 
 
-def _resolve_hdf5_bounds(
-    record_count: int, start: int | None, stop: int | None
-) -> tuple[int, int]:
+def _resolve_hdf5_bounds(record_count: int, start: int | None, stop: int | None) -> tuple[int, int]:
     def normalize(value: int | None, name: str, default: int) -> int:
         if value is None:
             return default
@@ -135,9 +125,7 @@ def _resolve_hdf5_bounds(
     resolved_start = normalize(start, "start", 0)
     resolved_stop = normalize(stop, "stop", record_count)
     if not 0 <= resolved_start <= resolved_stop <= record_count:
-        raise DataReadError(
-            f"HDF5 read bounds must satisfy 0 <= start <= stop <= {record_count}"
-        )
+        raise DataReadError(f"HDF5 read bounds must satisfy 0 <= start <= stop <= {record_count}")
     return resolved_start, resolved_stop
 
 

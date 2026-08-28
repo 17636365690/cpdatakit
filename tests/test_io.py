@@ -233,9 +233,7 @@ def test_hdf5_chunk_size_must_be_positive_integer(tmp_path: Path, chunk_size: ob
         list(iter_hdf5_chunks(path, chunk_size=chunk_size))
 
 
-def test_write_hdf5_rejects_invalid_validation_by_default(
-    curve_csv: Path, tmp_path: Path
-) -> None:
+def test_write_hdf5_rejects_invalid_validation_by_default(curve_csv: Path, tmp_path: Path) -> None:
     dataset = load_dataset(curve_csv)
     schema = load_schema("curve")
     result = validate_dataset(dataset.data.drop(columns=["stress"]), schema)
@@ -261,9 +259,7 @@ def test_write_hdf5_allows_explicit_invalid_output(curve_csv: Path, tmp_path: Pa
 
 def test_write_hdf5_removes_temp_file_after_serialization_failure(tmp_path: Path) -> None:
     schema = load_schema("point")
-    dataset = Dataset(
-        pd.DataFrame({"point_id": [0, 1], "vector": [[1.0, 2.0], [3.0]]})
-    )
+    dataset = Dataset(pd.DataFrame({"point_id": [0, 1], "vector": [[1.0, 2.0], [3.0]]}))
     result = validate_dataset(dataset, schema)
     output = tmp_path / "broken.h5"
 

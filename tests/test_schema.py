@@ -68,11 +68,7 @@ def test_field_schema_normalizes_collection_fields_to_tuples() -> None:
 def test_schema_json_keeps_collection_fields_as_lists() -> None:
     schema = make_profile_schema(
         "point",
-        [
-            make_field_schema(
-                "vector", "float", shape=[2], components=["x", "y"], unit="MPa"
-            )
-        ],
+        [make_field_schema("vector", "float", shape=[2], components=["x", "y"], unit="MPa")],
     )
     payload = schema_to_dict(schema)
     assert payload["fields"][0]["shape"] == [2]
