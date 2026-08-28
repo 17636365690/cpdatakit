@@ -4,6 +4,28 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+- Explicit `load_hdf5()` field/range reads and `iter_hdf5_chunks()` lazy chunk iteration, with
+  metadata-preserving `Dataset` results and record-axis slicing.
+- A deterministic HDF5 read benchmark covering full, selected-field, and chunked reads.
+- An adapter contribution acceptance checklist covering format evidence, licensing, fixtures,
+  conventions, offline tests, ambiguity handling, and dependency boundaries.
+
+### Fixed
+
+- Require all eight CPDataKit HDF5 root attributes, exact supported version markers, and JSON
+  metadata objects; reject missing, unsupported, malformed, or inconsistent envelopes.
+- Refuse invalid HDF5 validation results unless `allow_invalid=True` is explicit, and make writes
+  atomic with temporary-file cleanup after serialization failures.
+
+### Changed
+
+- Keep `FieldSchema` collection fields immutable in memory while preserving list-shaped schema JSON
+  output.
+- Expand regression coverage for HDF5 metadata, bounded reads, safe writes, schema immutability,
+  nested fields, CLI failures, and the adapter abstraction.
+
 ## [0.2.0] - 2026-08-24
 
 ### Added
