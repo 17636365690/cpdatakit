@@ -51,6 +51,20 @@ declared conversions, including both scale and offset for affine units such as d
 Producers must declare stress measure, strain measure, tensor component order, orientation
 representation, and identifier semantics when relevant.
 
+## In-memory stability
+
+`Dataset.copy()` deep-copies the DataFrame and the complete nested `metadata` mapping while
+preserving the optional source path. Mutating a nested mapping or list through a copied dataset
+therefore cannot change the original dataset. This isolation is part of the safe normalization
+boundary; callers should use `copy()` when a transformation needs an independent working value.
+
+`ProfileSchema.conventions` is recursively immutable in memory. Nested mappings are read-only,
+sequences are represented as tuples, sets as frozensets, and other values are defensively copied.
+This prevents a caller from changing a schema through a nested value after construction. The
+serialization boundary remains JSON-friendly: `schema_to_dict()` and `schema_to_json()` thaw
+conventions back to JSON objects and lists, so the on-disk schema representation does not expose
+the tuple-backed in-memory form.
+
 ## HDF5 layout
 
 Every CPDataKit HDF5 file must contain all eight root attributes: `format=CPDataKit`,
@@ -75,6 +89,14 @@ finishes, removing the temporary file if serialization fails.
 For larger files, `load_hdf5()` supports explicit field selection and half-open record ranges,
 while `iter_hdf5_chunks()` yields bounded reads. `load_dataset(path)` remains the stable full-read
 entry point for existing workflows.
+
+Storage chunking is opt-in through `write_hdf5(..., hdf5_chunk_size=N)`, where `N` is a positive
+integer. The default `None` keeps the existing layout for small files and existing producers. When
+configured, `N` applies to the record axis: a field with values shaped `(record_count, *tail_shape)`
+is stored with chunks `(min(N, record_count), *tail_shape)`. Vector and tensor trailing dimensions
+are therefore retained rather than flattened. `hdf5_chunk_size` controls the HDF5 storage layout;
+the `chunk_size` argument to `iter_hdf5_chunks()` controls the number of records returned per
+reader iteration. Full, field-selected, and bounded/chunked reads preserve the same logical values.
 
 ## Validation meaning
 

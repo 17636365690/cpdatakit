@@ -8,7 +8,11 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 - Explicit `load_hdf5()` field/range reads and `iter_hdf5_chunks()` lazy chunk iteration, with
   metadata-preserving `Dataset` results and record-axis slicing.
+- Opt-in record-axis HDF5 storage chunking through `write_hdf5(..., hdf5_chunk_size=N)`; the
+  default layout remains unchanged when the option is omitted.
 - A deterministic HDF5 read benchmark covering full, selected-field, and chunked reads.
+- 100k- and 1M-record benchmark commands that report storage chunk size, exact record counts,
+  elapsed time, and peak RSS where available.
 - An adapter contribution acceptance checklist covering format evidence, licensing, fixtures,
   conventions, offline tests, ambiguity handling, and dependency boundaries.
 
@@ -21,8 +25,14 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ### Changed
 
+- Make `Dataset.copy()` isolate nested metadata so copied working datasets cannot mutate the
+  original metadata tree.
+- Make `ProfileSchema.conventions` recursively immutable in memory while keeping
+  `schema_to_dict()` and `schema_to_json()` output as JSON objects and lists.
 - Keep `FieldSchema` collection fields immutable in memory while preserving list-shaped schema JSON
   output.
+- Enforce an 85% project coverage gate in CI and smoke-test `load_hdf5` and `iter_hdf5_chunks` from
+  a clean wheel installation.
 - Expand regression coverage for HDF5 metadata, bounded reads, safe writes, schema immutability,
   nested fields, CLI failures, and the adapter abstraction.
 

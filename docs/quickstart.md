@@ -89,6 +89,49 @@ every chunk is a `Dataset` with the HDF5 metadata and source path preserved. Rea
 along the record axis, so vector and tensor values keep their per-record shapes. Use
 `load_dataset()` when the existing full-read workflow is sufficient.
 
+## 7. Opt into record-axis HDF5 storage chunks
+
+For a larger sequential-read workload, choose the HDF5 storage layout explicitly while keeping
+the same read APIs:
+
+```python
+from cpdatakit.io import load_dataset, load_hdf5, write_hdf5
+from cpdatakit.schema import load_schema
+from cpdatakit.validation import validate_dataset
+
+dataset = load_dataset("cpdatakit-demo/synthetic_curve.csv")
+schema = load_schema("curve")
+validation = validate_dataset(dataset, schema)
+write_hdf5(
+    dataset,
+    "curve-chunked.h5",
+    schema,
+    validation,
+    force=True,
+    hdf5_chunk_size=4096,
+)
+window = load_hdf5("curve-chunked.h5", fields=["step", "stress"], start=10, stop=20)
+```
+
+`hdf5_chunk_size` is an opt-in positive record count for the HDF5 storage chunks. Omitting it, or
+passing `None`, keeps the default layout. The value applies only to the first record axis, so
+vector and tensor trailing dimensions remain intact. It is separate from the reader-side
+`iter_hdf5_chunks(..., chunk_size=...)` batch size. Use `load_hdf5()` for a selected window,
+`iter_hdf5_chunks()` for bounded iteration, and `load_dataset()` for the existing full-read path.
+
+## 8. Measure read scaling
+
+From a repository checkout with the development environment active, run both diagnostic sizes:
+
+```bash
+python scripts/benchmark_hdf5_read.py --records 100000 --chunk-size 4096 --hdf5-chunk-size 4096
+python scripts/benchmark_hdf5_read.py --records 1000000 --chunk-size 4096 --hdf5-chunk-size 4096
+```
+
+Each command prints JSON for full, selected-field, and chunked reads, including record counts,
+elapsed time, peak RSS where available, and the configured storage chunk size. Compare runs on the
+same machine and treat the benchmark as scaling evidence rather than a timing-based CI gate.
+
 ## Try invalid data
 
 The generator also creates a deliberately malformed point dataset. A validation exit status of

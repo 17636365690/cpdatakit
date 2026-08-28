@@ -121,6 +121,4 @@ def test_profile_schema_conventions_thaw_to_json_lists() -> None:
         conventions={"nested": {"labels": ["Cauchy stress"]}},
     )
 
-    assert schema_to_dict(schema)["conventions"] == {
-        "nested": {"labels": ["Cauchy stress"]}
-    }
+    assert schema_to_dict(schema)["conventions"] == {"nested": {"labels": ["Cauchy stress"]}}
