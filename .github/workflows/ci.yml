@@ -36,6 +36,7 @@ jobs:
         shell: bash
         run: echo "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
       - run: python -m pip install -e ".[dev]"
+      - run: pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
       - run: ruff check .
       - run: ruff format --check .
       - name: Verify current release metadata
@@ -66,6 +67,7 @@ jobs:
           wheel-env/bin/python -m pip install dist/*.whl
           wheel-env/bin/cpdatakit --version
           wheel-env/bin/python -c "import cpdatakit; print(cpdatakit.__version__)"
+          wheel-env/bin/python -c "from cpdatakit import load_hdf5, iter_hdf5_chunks; print('HDF5 APIs available')"
           wheel-env/bin/python -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('quickstart-smoke')"
           wheel-env/bin/cpdatakit validate quickstart-smoke/synthetic_curve.csv --schema curve --json-output validation.json
           wheel-env/bin/cpdatakit summary quickstart-smoke/synthetic_curve.csv --schema curve --json-output summary.json
