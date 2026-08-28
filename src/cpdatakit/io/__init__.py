@@ -13,7 +13,7 @@ import pandas as pd
 from ..exceptions import DataReadError, OutputExistsError
 from ..model import Dataset, ValidationResult
 from ..provenance import build_provenance
-from ..schema import ProfileSchema
+from ..schema import SUPPORTED_PROFILES, SUPPORTED_SCHEMA_VERSION, ProfileSchema
 
 _SUPPORTED = {".csv", ".json", ".h5", ".hdf5"}
 
@@ -31,11 +31,71 @@ def _ensure_readable(path: Path) -> None:
         )
 
 
+def _required_text_attr(handle: h5py.File, name: str, path: Path) -> str:
+    if name not in handle.attrs:
+        raise DataReadError(f"HDF5 metadata attribute {name!r} is required: {path}")
+    value = handle.attrs[name]
+    if isinstance(value, bytes):
+        try:
+            return value.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise DataReadError(
+                f"HDF5 metadata attribute {name!r} is not valid UTF-8: {path}"
+            ) from exc
+    if not isinstance(value, str):
+        raise DataReadError(f"HDF5 metadata attribute {name!r} must be text: {path}")
+    return value
+
+
+def _required_json_object(handle: h5py.File, name: str, path: Path) -> dict[str, Any]:
+    text = _required_text_attr(handle, name, path)
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise DataReadError(
+            f"Invalid HDF5 metadata JSON in attribute {name!r}: {path}: {exc.msg}"
+        ) from exc
+    if not isinstance(value, dict):
+        raise DataReadError(
+            f"HDF5 metadata attribute {name!r} must encode a JSON object: {path}"
+        )
+    return value
+
+
+def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
+    if _required_text_attr(handle, "format", path) != "CPDataKit":
+        raise DataReadError("HDF5 is not a CPDataKit file (missing format marker)")
+
+    format_version = _required_text_attr(handle, "format_version", path)
+    if format_version != "1.0":
+        raise DataReadError(f"Unsupported HDF5 metadata format_version {format_version!r}: {path}")
+
+    profile = _required_text_attr(handle, "profile", path)
+    if profile not in SUPPORTED_PROFILES:
+        raise DataReadError(f"Unsupported HDF5 metadata profile {profile!r}: {path}")
+
+    schema_version = _required_text_attr(handle, "schema_version", path)
+    if schema_version != SUPPORTED_SCHEMA_VERSION:
+        raise DataReadError(
+            f"Unsupported HDF5 metadata schema_version {schema_version!r}: {path}"
+        )
+
+    return {
+        "profile": profile,
+        "schema_version": schema_version,
+        "units": _required_json_object(handle, "units_json", path),
+        "field_mapping": _required_json_object(handle, "field_mapping_json", path),
+        "provenance": _required_json_object(handle, "provenance_json", path),
+        "validation_summary": _required_json_object(
+            handle, "validation_summary_json", path
+        ),
+    }
+
+
 def _read_hdf5(path: Path) -> Dataset:
     try:
         with h5py.File(path, "r") as handle:
-            if handle.attrs.get("format") != "CPDataKit":
-                raise DataReadError("HDF5 is not a CPDataKit file (missing format marker)")
+            metadata = _read_hdf5_metadata(handle, path)
             if "data" not in handle or not isinstance(handle["data"], h5py.Group):
                 raise DataReadError("CPDataKit HDF5 is missing the /data group")
             columns: dict[str, Any] = {}
@@ -59,16 +119,6 @@ def _read_hdf5(path: Path) -> Dataset:
                 raise DataReadError("CPDataKit HDF5 /data group contains no fields")
             if record_count == 0:
                 raise DataReadError("CPDataKit HDF5 contains no records")
-            metadata = {
-                "profile": str(handle.attrs.get("profile", "")),
-                "schema_version": str(handle.attrs.get("schema_version", "")),
-                "units": json.loads(str(handle.attrs.get("units_json", "{}"))),
-                "field_mapping": json.loads(str(handle.attrs.get("field_mapping_json", "{}"))),
-                "provenance": json.loads(str(handle.attrs.get("provenance_json", "{}"))),
-                "validation_summary": json.loads(
-                    str(handle.attrs.get("validation_summary_json", "{}"))
-                ),
-            }
             frame = pd.DataFrame(columns)
     except DataReadError:
         raise

@@ -15,6 +15,24 @@ from cpdatakit.schema import load_schema
 from cpdatakit.validation import validate_dataset
 
 
+def _write_minimal_cpdatakit_hdf5(path: Path, attrs: dict[str, object] | None = None) -> None:
+    defaults = {
+        "format": "CPDataKit",
+        "format_version": "1.0",
+        "profile": "curve",
+        "schema_version": "1.0",
+        "units_json": "{}",
+        "field_mapping_json": "{}",
+        "provenance_json": "{}",
+        "validation_summary_json": '{"valid": true, "error_count": 0, "warning_count": 0}',
+    }
+    defaults.update(attrs or {})
+    with h5py.File(path, "w") as handle:
+        for name, value in defaults.items():
+            handle.attrs[name] = value
+        handle.create_group("data").create_dataset("step", data=[0, 1])
+
+
 def test_csv_case_insensitive(curve_csv: Path) -> None:
     assert len(load_dataset(curve_csv).data) == 2
 
@@ -92,6 +110,45 @@ def test_malformed_cpdatakit_hdf5_raises_data_read_error(tmp_path: Path, case: s
             data.create_dataset("x", data=[0.0, 1.0])
             data.create_dataset("y", data=[0.0])
     with pytest.raises(DataReadError):
+        load_dataset(path)
+
+
+@pytest.mark.parametrize(
+    "attribute",
+    [
+        "format_version",
+        "profile",
+        "schema_version",
+        "units_json",
+        "field_mapping_json",
+        "provenance_json",
+        "validation_summary_json",
+    ],
+)
+def test_hdf5_requires_complete_metadata(tmp_path: Path, attribute: str) -> None:
+    path = tmp_path / f"missing-{attribute}.h5"
+    _write_minimal_cpdatakit_hdf5(path)
+    with h5py.File(path, "r+") as handle:
+        del handle.attrs[attribute]
+    with pytest.raises(DataReadError, match="HDF5 metadata"):
+        load_dataset(path)
+
+
+@pytest.mark.parametrize(
+    "attrs",
+    [
+        {"format_version": "2.0"},
+        {"schema_version": "2.0"},
+        {"profile": "unknown"},
+        {"units_json": "[]"},
+        {"field_mapping_json": "not-json"},
+        {"provenance_json": 7},
+    ],
+)
+def test_hdf5_rejects_invalid_metadata(tmp_path: Path, attrs: dict[str, object]) -> None:
+    path = tmp_path / "invalid.h5"
+    _write_minimal_cpdatakit_hdf5(path, attrs)
+    with pytest.raises(DataReadError, match="HDF5 metadata"):
         load_dataset(path)
 
 
