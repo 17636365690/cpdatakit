@@ -8,8 +8,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import cpdatakit
 from cpdatakit.exceptions import DataReadError, OutputExistsError
-from cpdatakit.io import load_dataset, write_hdf5
+from cpdatakit.io import iter_hdf5_chunks, load_dataset, load_hdf5, write_hdf5
 from cpdatakit.model import Dataset
 from cpdatakit.schema import load_schema
 from cpdatakit.validation import validate_dataset
@@ -31,6 +32,23 @@ def _write_minimal_cpdatakit_hdf5(path: Path, attrs: dict[str, object] | None = 
         for name, value in defaults.items():
             handle.attrs[name] = value
         handle.create_group("data").create_dataset("step", data=[0, 1])
+
+
+def _make_test_hdf5(tmp_path: Path, rows: int) -> Path:
+    schema = load_schema("curve")
+    dataset = Dataset(
+        pd.DataFrame(
+            {
+                "step": list(range(rows)),
+                "strain": [index / 100 for index in range(rows)],
+                "stress": [index * 10.0 for index in range(rows)],
+            }
+        ),
+        {"units": {"step": "1", "strain": "1", "stress": "MPa"}},
+    )
+    output = tmp_path / "read-fixture.h5"
+    write_hdf5(dataset, output, schema, validate_dataset(dataset, schema))
+    return output
 
 
 def test_csv_case_insensitive(curve_csv: Path) -> None:
@@ -150,6 +168,54 @@ def test_hdf5_rejects_invalid_metadata(tmp_path: Path, attrs: dict[str, object])
     _write_minimal_cpdatakit_hdf5(path, attrs)
     with pytest.raises(DataReadError, match="HDF5 metadata"):
         load_dataset(path)
+
+
+def test_load_hdf5_selects_fields_and_half_open_range(tmp_path: Path) -> None:
+    path = _make_test_hdf5(tmp_path, rows=5)
+    selected = load_hdf5(path, fields=["stress", "step"], start=1, stop=4)
+    assert list(selected.data.columns) == ["stress", "step"]
+    assert selected.data["step"].tolist() == [1, 2, 3]
+    assert selected.metadata["profile"] == "curve"
+
+
+def test_iter_hdf5_chunks_reads_each_chunk_with_metadata(tmp_path: Path) -> None:
+    path = _make_test_hdf5(tmp_path, rows=5)
+    chunks = list(iter_hdf5_chunks(path, fields=["step"], chunk_size=2))
+    assert [len(chunk.data) for chunk in chunks] == [2, 2, 1]
+    assert [chunk.data["step"].tolist() for chunk in chunks] == [[0, 1], [2, 3], [4]]
+    assert all(chunk.metadata["profile"] == "curve" for chunk in chunks)
+
+
+def test_hdf5_read_apis_are_exported() -> None:
+    assert cpdatakit.load_hdf5 is load_hdf5
+    assert cpdatakit.iter_hdf5_chunks is iter_hdf5_chunks
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"fields": []},
+        {"fields": "step"},
+        {"fields": ["missing"]},
+        {"start": -1},
+        {"start": True},
+        {"start": 1.5},
+        {"start": 4, "stop": 3},
+        {"stop": 6},
+        {"stop": False},
+    ],
+)
+def test_hdf5_read_rejects_invalid_selection(tmp_path: Path, kwargs: dict[str, object]) -> None:
+    path = _make_test_hdf5(tmp_path, rows=5)
+    with pytest.raises(DataReadError):
+        load_hdf5(path, **kwargs)
+
+
+@pytest.mark.parametrize("chunk_size", [0, -1, True, 1.5, "2"])
+def test_hdf5_chunk_size_must_be_positive_integer(tmp_path: Path, chunk_size: object) -> None:
+    path = _make_test_hdf5(tmp_path, rows=5)
+    with pytest.raises(DataReadError):
+        list(iter_hdf5_chunks(path, chunk_size=chunk_size))
 
 
 def test_path_styles_are_representable() -> None:

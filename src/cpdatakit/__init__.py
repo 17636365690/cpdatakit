@@ -1,7 +1,7 @@
 """CPDataKit public API."""
 
 from ._version import __version__
-from .io import load_dataset
+from .io import iter_hdf5_chunks, load_dataset, load_hdf5
 from .normalization import FieldMapping, load_mapping_file, normalize_dataset
 from .schema import (
     FieldSchema,
@@ -24,7 +24,9 @@ __all__ = [
     "ProfileSchema",
     "__version__",
     "describe_schema",
+    "iter_hdf5_chunks",
     "load_dataset",
+    "load_hdf5",
     "load_mapping_file",
     "load_schema",
     "make_field_schema",
