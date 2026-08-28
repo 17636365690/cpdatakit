@@ -6,6 +6,7 @@ import pytest
 
 from cpdatakit.exceptions import SchemaError
 from cpdatakit.model import Dataset
+from cpdatakit.schema import load_schema
 from cpdatakit.validation import validate_dataset
 
 
@@ -97,6 +98,15 @@ def test_numeric_custom_field_requires_unit(tmp_path) -> None:
     )
     with pytest.raises(SchemaError, match="must declare a unit"):
         validate_dataset(pd.DataFrame({"step": [0]}), schema)
+
+
+def test_unsupported_schema_version_is_rejected(tmp_path) -> None:
+    schema = tmp_path / "unsupported-version.json"
+    schema.write_text(
+        '{"profile":"curve","schema_version":"2.0","fields":[]}', encoding="utf-8"
+    )
+    with pytest.raises(SchemaError, match="Unsupported schema version"):
+        load_schema(schema)
 
 
 @pytest.mark.parametrize(
