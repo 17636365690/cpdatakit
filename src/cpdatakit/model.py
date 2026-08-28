@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -19,7 +20,7 @@ class Dataset:
 
     def copy(self) -> Dataset:
         """Return a deep-enough copy for safe normalization."""
-        return Dataset(self.data.copy(deep=True), dict(self.metadata), self.source)
+        return Dataset(self.data.copy(deep=True), deepcopy(self.metadata), self.source)
 
 
 @dataclass(frozen=True, slots=True)

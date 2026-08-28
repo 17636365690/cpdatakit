@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import math
 from collections.abc import Iterable, Mapping
+from copy import deepcopy
 from dataclasses import dataclass, field
 from importlib.resources import files
 from pathlib import Path
+from types import MappingProxyType
 from typing import Any, Literal
 
 from .exceptions import SchemaError
@@ -43,6 +45,24 @@ class FieldSchema:
                 object.__setattr__(self, name, tuple(value))
 
 
+def _freeze_convention(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: _freeze_convention(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_convention(item) for item in value)
+    if isinstance(value, (set, frozenset)):
+        return frozenset(_freeze_convention(item) for item in value)
+    return deepcopy(value)
+
+
+def _thaw_convention(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _thaw_convention(item) for key, item in value.items()}
+    if isinstance(value, (tuple, frozenset)):
+        return [_thaw_convention(item) for item in value]
+    return deepcopy(value)
+
+
 @dataclass(frozen=True, slots=True)
 class ProfileSchema:
     """A versioned CPDataKit dataset contract."""
@@ -50,8 +70,11 @@ class ProfileSchema:
     profile: str
     schema_version: str
     fields: tuple[FieldSchema, ...]
-    conventions: dict[str, Any] = field(default_factory=dict)
+    conventions: Mapping[str, Any] = field(default_factory=dict)
     extension_prefix: str = "user_"
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "conventions", _freeze_convention(self.conventions))
 
     def field_map(self) -> dict[str, FieldSchema]:
         """Map standard names to definitions."""
@@ -146,7 +169,7 @@ def _validate_profile(schema: ProfileSchema) -> ProfileSchema:
     aliases = [alias for item in schema.fields for alias in item.aliases]
     if len([*names, *aliases]) != len(set([*names, *aliases])):
         raise SchemaError("Schema field names and aliases must be globally unique")
-    if not isinstance(schema.conventions, dict):
+    if not isinstance(schema.conventions, Mapping):
         raise SchemaError("Schema 'conventions' must be an object")
     if not isinstance(schema.extension_prefix, str) or not schema.extension_prefix:
         raise SchemaError("Schema 'extension_prefix' must be a non-empty string")
@@ -260,7 +283,7 @@ def schema_to_dict(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> di
         "profile": contract.profile,
         "schema_version": contract.schema_version,
         "extension_prefix": contract.extension_prefix,
-        "conventions": dict(contract.conventions),
+        "conventions": _thaw_convention(contract.conventions),
         "fields": [
             {
                 "name": item.name,

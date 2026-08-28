@@ -95,3 +95,32 @@ def test_validate_schema_accepts_json_like_mapping() -> None:
         }
     )
     assert schema.profile == "point"
+
+
+def test_profile_schema_conventions_are_recursively_immutable() -> None:
+    source = {"nested": {"labels": ["Cauchy stress"]}}
+    schema = make_profile_schema(
+        "point",
+        [make_field_schema("point_id", "integer", required=True, unit="1")],
+        conventions=source,
+    )
+
+    source["nested"]["labels"].append("mutated outside")
+    assert schema.conventions["nested"]["labels"] == ("Cauchy stress",)
+
+    with pytest.raises(TypeError):
+        schema.conventions["new"] = "value"
+    with pytest.raises(TypeError):
+        schema.conventions["nested"]["labels"] += ("mutated inside",)
+
+
+def test_profile_schema_conventions_thaw_to_json_lists() -> None:
+    schema = make_profile_schema(
+        "point",
+        [make_field_schema("point_id", "integer", required=True, unit="1")],
+        conventions={"nested": {"labels": ["Cauchy stress"]}},
+    )
+
+    assert schema_to_dict(schema)["conventions"] == {
+        "nested": {"labels": ["Cauchy stress"]}
+    }
