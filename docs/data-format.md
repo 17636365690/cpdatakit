@@ -53,12 +53,28 @@ representation, and identifier semantics when relevant.
 
 ## HDF5 layout
 
-Root attributes: `format=CPDataKit`, `format_version=1.0`, `profile`, `schema_version`,
-`units_json`, `field_mapping_json`, `provenance_json`, and `validation_summary_json`.
+Every CPDataKit HDF5 file must contain all eight root attributes: `format=CPDataKit`,
+`format_version=1.0`, `profile`, `schema_version=1.0`, `units_json`, `field_mapping_json`,
+`provenance_json`, and `validation_summary_json`. The format and schema version markers must be
+present and exactly `1.0`; missing or unsupported markers are rejected. The profile must be
+supported, and each JSON attribute must decode to an object. Missing, wrong-type, malformed, or
+structurally inconsistent metadata raises `DataReadError` instead of being replaced with
+defaults.
+
 Normalized columns are non-scalar datasets under `/data`, all with the same non-zero record count.
 Provenance includes source description, basename, SHA-256 (never an absolute source path), UTC
 conversion timestamp, package/Python versions, and operation log. Readers reject missing
-markers/groups, empty or inconsistent tables, and corrupt files.
+markers/groups, empty or inconsistent tables, and corrupt files. HDF5 field and range reads use
+the first dataset axis as the record axis; shaped values retain their trailing dimensions.
+
+`write_hdf5()` refuses to write a failed validation result by default. To create an HDF5 file that
+records an invalid validation result, callers must explicitly pass `allow_invalid=True`. HDF5
+writes use a same-directory temporary file and replace the target only after serialization
+finishes, removing the temporary file if serialization fails.
+
+For larger files, `load_hdf5()` supports explicit field selection and half-open record ranges,
+while `iter_hdf5_chunks()` yields bounded reads. `load_dataset(path)` remains the stable full-read
+entry point for existing workflows.
 
 ## Validation meaning
 

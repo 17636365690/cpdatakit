@@ -72,6 +72,23 @@ At this point, the directory contains `validation.json`, `summary.json`, `curve.
 `stress-strain.png`. CPDataKit checks the data contract. Physical correctness remains outside
 the package's scope.
 
+## 6. Read a window or stream chunks
+
+Use the explicit HDF5 readers when a full materialized read is not the right fit:
+
+```python
+from cpdatakit.io import iter_hdf5_chunks, load_hdf5
+
+window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
+for chunk in iter_hdf5_chunks("curve.h5", fields=["step", "stress"], chunk_size=4096):
+    consume(chunk.data)
+```
+
+`start` is inclusive and `stop` is exclusive. Field order follows the requested order, and
+every chunk is a `Dataset` with the HDF5 metadata and source path preserved. Reads are sliced
+along the record axis, so vector and tensor values keep their per-record shapes. Use
+`load_dataset()` when the existing full-read workflow is sufficient.
+
 ## Try invalid data
 
 The generator also creates a deliberately malformed point dataset. A validation exit status of

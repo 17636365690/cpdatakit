@@ -102,3 +102,21 @@ def test_cli_rejects_unknown_mapping_keys(tmp_path: Path, capsys) -> None:
     )
     assert main(["validate", str(data), "--schema", "curve", "--mapping", str(mapping)]) == 2
     assert "unsupported keys" in capsys.readouterr().err
+
+
+def test_cli_returns_two_for_unit_conversion_failure(tmp_path: Path, capsys) -> None:
+    data, mapping = _write_input_and_mapping(tmp_path)
+    mapping.write_text(
+        '{"mappings":[{"source":"sigma_pa","target":"stress",'
+        '"input_unit":"meter","output_unit":"MPa"}]}',
+        encoding="utf-8",
+    )
+    assert main(["validate", str(data), "--schema", "curve", "--mapping", str(mapping)]) == 2
+    assert "Cannot convert" in capsys.readouterr().err
+
+
+def test_cli_returns_one_for_invalid_data(tmp_path: Path, capsys) -> None:
+    data = tmp_path / "invalid.csv"
+    data.write_text("step,strain,stress\n-1,0.0,0.0\n", encoding="utf-8")
+    assert main(["validate", str(data), "--schema", "curve"]) == 1
+    assert "below_minimum" in capsys.readouterr().out
