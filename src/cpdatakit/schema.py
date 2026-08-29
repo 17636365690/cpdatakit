@@ -45,7 +45,6 @@ class FieldSchema:
             if isinstance(value, list):
                 object.__setattr__(self, name, tuple(value))
 
-
 def _freeze_convention(value: Any) -> Any:
     if isinstance(value, Mapping):
         return MappingProxyType({key: _freeze_convention(item) for key, item in value.items()})
@@ -62,7 +61,6 @@ def _thaw_convention(value: Any) -> Any:
     if isinstance(value, (tuple, frozenset)):
         return [_thaw_convention(item) for item in value]
     return deepcopy(value)
-
 
 @dataclass(frozen=True, slots=True)
 class ProfileSchema:

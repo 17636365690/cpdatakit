@@ -97,7 +97,6 @@ finishes, removing the temporary file if serialization fails.
 For larger files, `load_hdf5()` supports explicit field selection and half-open record ranges,
 while `iter_hdf5_chunks()` yields bounded reads. `load_dataset(path)` remains the stable full-read
 entry point for existing workflows.
-
 Storage chunking is opt-in through `write_hdf5(..., hdf5_chunk_size=N)`, where `N` is a positive
 integer. The default `None` keeps the existing layout for small files and existing producers. When
 configured, `N` applies to the record axis: a field with values shaped `(record_count, *tail_shape)`

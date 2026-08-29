@@ -14,7 +14,7 @@
   adapters remain evidence-gated and require reproducible fixtures. Public Reference Case #1 is a
   hash-verified Surfalex HF (AA6016A) Workflow 7A conversion. It keeps the MatFlow extractor in
   the example and leaves the raw files upstream. Broader large-file optimization remains tracked
-  by Issue #4.
+ by Issue #4.
 - **v0.4.0:** schema migration tools, comparison/report bundles, and stronger compatibility tests.
 
 Further DADF5 and ODB coverage follows the documented evidence and license review process.
