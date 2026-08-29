@@ -20,6 +20,8 @@ v0.2.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV�
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。工具不会猜测应力/应变量、张量顺序、取向表达、单位或 ID 含义。已有的
 DAMASK DADF5 只读适配器也能在文件只有一个明确选择时完成检查和报告。
+当前开发版本写出的 HDF5 还会嵌入完整 canonical schema 及其 SHA-256；可选的 schema URI
+只作为来源记录，CPDataKit 不会自动下载。
 
 ## 安装与快速开始
 

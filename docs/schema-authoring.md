@@ -36,6 +36,22 @@ print(describe_schema(schema))
 mapping. `schema_to_dict` and `schema_to_json` provide canonical serialization for review and
 version control. `write_schema` refuses to overwrite an existing file unless `force=True`.
 
+## Canonical schema digest
+
+Use the compact canonical representation when a schema must be embedded in or checked against an
+auditable artifact:
+
+```python
+from cpdatakit import schema_sha256, schema_to_canonical_json
+
+canonical = schema_to_canonical_json(schema)
+print(schema_sha256(schema))
+```
+
+The canonical string uses sorted keys, compact separators, UTF-8, and no trailing newline. The
+digest is reproducible across runs and is the representation stored in the CPDataKit HDF5
+`schema_json` attribute. An optional `schema_uri` is provenance only; CPDataKit never downloads it.
+
 ## CLI mapping files
 
 All field renames and unit conversions must be explicit. Pass a JSON mapping file to `validate`,

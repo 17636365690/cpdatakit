@@ -86,6 +86,13 @@ conversion timestamp, package/Python versions, and operation log. Readers reject
 markers/groups, empty or inconsistent tables, and corrupt files. HDF5 field and range reads use
 the first dataset axis as the record axis; shaped values retain their trailing dimensions.
 
+Files produced by the current writer also embed `schema_json`, the compact canonical JSON
+representation of the complete validated schema, and `schema_sha256`, its lowercase SHA-256
+digest over UTF-8 bytes. An optional `schema_uri` records an external reference but is never
+fetched. Readers validate the embedded schema, its profile/version, and its digest. Legacy
+format-1.0 files without these additive attributes remain readable; partial snapshots are
+rejected.
+
 `write_hdf5()` refuses to write a failed validation result by default. To create an HDF5 file that
 records an invalid validation result, callers must explicitly pass `allow_invalid=True`. HDF5
 writes use a same-directory temporary file and replace the target only after serialization
