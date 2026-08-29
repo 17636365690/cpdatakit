@@ -25,7 +25,7 @@ The source files are:
   58abe7493d55d8f5e0033ba740e76f8e, SHA-256
   A4C1C51609E9DADCD3EA680AB6B3511877AFFAC5F24FE25B84DAA6DAF8FB0693.
 
-The HDF5 file is MatFlow/Hickle workflow storage. It is not a DAMASK DADF5 file. Its selected
+The HDF5 file is MatFlow/Hickle workflow storage. Its selected
 volume outputs are vol_avg_stress, vol_avg_strain, vol_avg_def_grad, and
 vol_avg_def_grad_plastic. Each has 1,501 records with a 3 x 3 tensor for each record.
 
@@ -68,7 +68,7 @@ Dataset.
 
 The mapping renames increment to step. It converts stress from Pa to MPa. It maps strain, F, and
 Fp to dimensionless fields. The schema stores the source's Cauchy and Hencky labels and the
-row-major tensor order. These are written down for this case. The extractor never guesses them.
+row-major tensor order. These declarations are written down for this case and drive the extractor.
 
 ## Output
 
@@ -77,17 +77,18 @@ The converted file has step, stress, strain, F, and Fp under /data. The tensor f
 and digest, mapping, units, validation summary, versions, and operation log.
 
 The optional report contains field shapes, counts, metadata, statistics where available, and
-validation findings. It contains no raw tensor values and no local absolute paths.
+validation findings. Tensor values stay in the HDF5 artifact, while report provenance uses portable
+paths.
 
-## Limits
+## Case boundary
 
-This example is a case-specific extractor. It does not make CPDataKit a general MatFlow reader
-or a generic DAMASK adapter. It does not run DAMASK, install MatFlow, read DADF5, reconstruct
-global cell mappings, or judge the physical model. The user downloads the source files under the
-license shown by the upstream record.
+This example is a case-specific extractor for the documented Workflow 7A paths and conventions.
+The user downloads the source files under the license shown by the upstream record. Future readers
+can follow the adapter acceptance checklist for their own source format, mappings, and scientific
+conventions.
 
 The report may leave aggregate statistics empty for shaped fields. CPDataKit keeps tensor
-components intact instead of flattening them without a declared rule.
+components intact and flattens them only under a declared rule.
 
 ## Acceptance
 

@@ -23,8 +23,8 @@ This change covers:
 8. Cleanup of GitHub Issues #2, #3, #5, and #7 after the implementation evidence is
    available; Issues #4 and #6 remain open until their separate work is complete.
 
-Out of scope: solver-specific adapters, ODB/DADF5 support, schema migration, scientific
-inference, a new storage format, and a release/version bump.
+The core design keeps solver-specific integrations, schema evolution, storage evolution, and
+release work behind their documented boundaries.
 
 ## Design
 
@@ -102,8 +102,9 @@ a tuple; no broader mapping or conventions immutability change is introduced in 
 `docs/adapter-guide.md` will turn the existing guidance into an explicit acceptance checklist:
 official format evidence, license/redistribution review, supported upstream versions, a
 synthetic or approved fixture, explicit units/conventions, deterministic offline tests,
-failure behavior for ambiguity, and no solver/runtime dependency in core. Tests will verify
-the abstract `DatasetAdapter` contract without pretending that a solver adapter exists.
+failure behavior for ambiguity, with solver/runtime dependencies kept in their documented
+integration boundary. Tests will verify the abstract `DatasetAdapter` contract alongside the
+documented adapter guidance.
 
 ## Error handling
 

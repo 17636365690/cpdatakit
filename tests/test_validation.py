@@ -18,6 +18,21 @@ def test_valid_curve(curve: Dataset) -> None:
     assert validate_dataset(curve, "curve").valid
 
 
+def test_validation_scope_note_describes_domain_workflow(curve: Dataset) -> None:
+    assert validate_dataset(curve, "curve").to_dict()["scope_note"] == (
+        "Validation reports declared format constraints; physical or scientific interpretation "
+        "remains part of the domain workflow."
+    )
+
+
+def test_duplicate_detection_supports_pandas_without_dataframe_map(
+    curve: Dataset, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delattr(pd.DataFrame, "map", raising=False)
+
+    assert validate_dataset(curve, "curve").valid
+
+
 def test_missing_field_and_units() -> None:
     result = validate_dataset(pd.DataFrame({"step": [0]}), "curve")
     assert "required_field_missing" in codes(result)
@@ -36,6 +51,15 @@ def test_duplicate_index_and_record(curve: Dataset) -> None:
     curve.data.loc[2] = curve.data.loc[1]
     result = validate_dataset(curve, "curve")
     assert {"duplicate_record", "duplicate_index"}.issubset(codes(result))
+
+
+def test_duplicate_index_finding_includes_actionable_suggestion(curve: Dataset) -> None:
+    curve.data.loc[2, "step"] = 0
+
+    result = validate_dataset(curve, "curve")
+
+    issue = next(item for item in result.errors if item.code == "duplicate_index")
+    assert issue.suggestion == "Review whether repeated index values are intentional."
 
 
 def test_units_compatible_and_incompatible(curve: Dataset) -> None:

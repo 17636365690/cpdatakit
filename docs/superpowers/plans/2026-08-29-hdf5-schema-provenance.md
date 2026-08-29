@@ -17,9 +17,9 @@
 - Legacy format-1.0 files without snapshot attributes remain readable.
 - schema_json is compact, sorted-key, UTF-8 canonical JSON with no trailing newline.
 - schema_sha256 is lowercase SHA-256 over the canonical schema JSON UTF-8 bytes.
-- schema_uri is optional, non-empty text, never fetched, and valid only with a complete snapshot.
+- schema_uri is optional, non-empty text, caller-managed, and valid only with a complete snapshot.
 - Snapshot validation failures raise DataReadError; invalid writer arguments fail before temporary output creation.
-- No schema inference, migration, solver adapter, dependency, or data-layout changes.
+- Keep the existing schema, adapter, dependency, and data-layout boundaries intact.
 
 ### Task 1: Add failing canonicalization and snapshot tests
 
@@ -189,7 +189,7 @@ This fails before implementation because inspection has no snapshot summary.
 - [ ] Step 5: Run the new tests and verify the expected red state
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_schema.py tests/test_io.py tests/test_inspection.py -q
+    python -m pytest tests/test_schema.py tests/test_io.py tests/test_inspection.py -q
 
 Expected: the canonical helper imports fail, write_hdf5 rejects schema_uri, and the inspection assertion has no snapshot key. Existing tests must remain collected and runnable.
 
@@ -244,7 +244,7 @@ Add schema_to_canonical_json and schema_sha256 to the schema import block and __
 - [ ] Step 3: Run canonical tests and the existing schema tests
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_schema.py -q
+    python -m pytest tests/test_schema.py -q
 
 Expected: the new deterministic/hash test and all existing schema tests pass.
 
@@ -348,14 +348,14 @@ Keep format_version set to "1.0", atomic replacement, validation protection, chu
 - [ ] Step 4: Run focused HDF5 tests and verify green
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_io.py -q
+    python -m pytest tests/test_io.py -q
 
 Expected: snapshot round-trip, tamper, partial metadata, URI validation, legacy HDF5, chunked reads, and existing write protections all pass.
 
 - [ ] Step 5: Run full regression before inspection changes
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest -q
+    python -m pytest -q
 
 Expected: all tests pass.
 
@@ -373,7 +373,7 @@ Files:
 Interfaces:
 - Adds hdf5.schema_snapshot.present to native CPDataKit HDF5 inspection.
 - Adds sha256 and optional uri only from the validated embedded snapshot.
-- Does not include full raw records or fetch an external URI.
+- Includes schema metadata while keeping raw records outside the snapshot and leaving external URI access caller-managed.
 
 - [ ] Step 1: Add the sanitized summary after native HDF5 result construction
 
@@ -394,7 +394,7 @@ The summary must be safe for JSON/report rendering, and legacy files must return
 - [ ] Step 2: Run inspection tests
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_inspection.py tests/test_reporting.py tests/test_cli_inspect_report.py -q
+    python -m pytest tests/test_inspection.py tests/test_reporting.py tests/test_cli_inspect_report.py -q
 
 Expected: the new snapshot summary and all existing inspection/report/CLI tests pass.
 
@@ -458,7 +458,7 @@ Files:
 - [ ] Step 1: Run the complete test and coverage gate
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
+    python -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
 
 Expected: zero failures and total coverage at least 85%.
 
@@ -467,14 +467,14 @@ Expected: zero failures and total coverage at least 85%.
     .\.venv\Scripts\ruff.exe check .
     .\.venv\Scripts\ruff.exe format --check .
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m build
+    python -m build
 
 Expected: Ruff, format, and the existing cpdatakit-0.2.0 build pass.
 
 - [ ] Step 3: Verify the public helpers and a real HDF5 snapshot
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -c "import tempfile; from pathlib import Path; import cpdatakit; from cpdatakit.io import write_hdf5; from cpdatakit.model import Dataset; import pandas as pd; schema=cpdatakit.load_schema('curve'); dataset=Dataset(pd.DataFrame({'step':[0], 'strain':[0.0], 'stress':[0.0]})); result=cpdatakit.validate_dataset(dataset, schema); path=Path(tempfile.mkdtemp())/'snapshot.h5'; write_hdf5(dataset, path, schema, result); loaded=cpdatakit.load_hdf5(path); print(loaded.metadata['schema_snapshot']['sha256']); print(cpdatakit.schema_sha256(schema))"
+    python -c "import tempfile; from pathlib import Path; import cpdatakit; from cpdatakit.io import write_hdf5; from cpdatakit.model import Dataset; import pandas as pd; schema=cpdatakit.load_schema('curve'); dataset=Dataset(pd.DataFrame({'step':[0], 'strain':[0.0], 'stress':[0.0]})); result=cpdatakit.validate_dataset(dataset, schema); path=Path(tempfile.mkdtemp())/'snapshot.h5'; write_hdf5(dataset, path, schema, result); loaded=cpdatakit.load_hdf5(path); print(loaded.metadata['schema_snapshot']['sha256']); print(cpdatakit.schema_sha256(schema))"
 
 Expected: the two printed digests are identical and load_hdf5() returns the embedded snapshot.
 

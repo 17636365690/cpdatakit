@@ -1,13 +1,15 @@
 # Maintenance
 
-The current stability work documents the v0.3.0 release path. Do not bump `pyproject.toml` or
-`CITATION.cff` in this branch. When a release is authorized, update the version metadata,
+The current stability work documents the v0.3.0 release path. Keep `pyproject.toml` and
+`CITATION.cff` at the current release values in this branch. When a release is authorized, update the version metadata,
 `CHANGELOG.md`, and `CITATION.cff` together and run every check below before publishing.
 
 ## Exact release checklist
 
 1. Run the full supported-Python test matrix: `ubuntu-latest` and `windows-latest`, each with
    Python 3.10, 3.11, 3.12, and 3.13, installing `.[dev]` and running `pytest`.
+   The separate `minimum-dependencies` CI job runs Python 3.10 with the lower-bound runtime
+   dependency ranges from `pyproject.toml` and the test dependencies needed by the suite.
 2. Run the Ubuntu quality gate with Python 3.12:
 
    ```bash
@@ -55,14 +57,15 @@ The current stability work documents the v0.3.0 release path. Do not bump `pypro
    ```
 
    Confirm valid JSON and exact record counts for full, selected-field, and chunked reads. Record
-   elapsed time and peak RSS for comparison; do not turn one-machine timing into a pass/fail
-   threshold.
+   elapsed time and peak RSS for comparison; treat one-machine timing as diagnostic evidence rather
+   than a pass/fail threshold.
 6. Complete the existing README commands, deterministic sample regeneration comparison,
-   secret/absolute-path scan, license review, and sdist/wheel content inspection. Publish only
-   after the version in `pyproject.toml`, the installed wheel, the Git tag/release, and PyPI
-   agree in a fresh environment.
+   secret/absolute-path scan, license review, and sdist/wheel content inspection. Publish after
+   the version in `pyproject.toml`, the installed wheel, the Git tag/release, and PyPI agree in a
+   fresh environment.
 
 Review schema changes as public API: backward-compatible additions may remain in 1.x; changed
 meaning, units, requiredness, or conventions require a new schema version. Security reports follow
-`SECURITY.md`. Maintainers must not accept real or restricted solver output as fixtures.
+`SECURITY.md`. Fixture contributions use synthetic, openly licensed, or redistribution-approved
+solver output.
 

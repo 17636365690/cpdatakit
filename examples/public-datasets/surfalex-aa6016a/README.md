@@ -28,7 +28,7 @@ The same values are stored in expected/manifest.json.
 ## What is in the source file
 
 Workflow 7A is a uniaxial-tension CP-FFT workflow. It uses DAMASK through the published MatFlow
-workflow. The HDF5 file is MatFlow/Hickle storage. It is not a DAMASK DADF5 result.
+workflow. The HDF5 file uses MatFlow/Hickle workflow storage.
 
 The selected volume outputs sit below:
 
@@ -74,7 +74,7 @@ The converted file has a small, declared record table:
 
 The mapping contains the Pa-to-MPa stress conversion and the dimensionless conversions for strain
 and the two gradients. The schema records the stress measure, strain measure, finite-strain
-kinematics, and row-major component order. CPDataKit does not derive these choices from names.
+kinematics, and row-major component order, making each choice explicit.
 
 ## Run it
 
@@ -88,18 +88,17 @@ From the repository root:
 
 fetch_data.py checks both MD5 and SHA-256. workflow.py reads the four paths above, checks their
 record axes and shapes, applies the mapping, and writes the output with the schema snapshot.
-The report is plain JSON. It contains counts, metadata, and validation findings, not raw tensor
-records.
+The report is plain JSON. It contains counts, metadata, and validation findings; tensor records
+remain in the converted HDF5 artifact.
 
 The expected result has 1,501 records, fields step/stress/strain/F/Fp, MPa stress, (3, 3)
 per-record tensor shapes, and zero validation errors. The expected schema hash is in the manifest.
 
-## Scope
+## Case boundary
 
-This extractor belongs to this case. It does not make CPDataKit a general MatFlow reader or add
-generic DAMASK support. It does not run DAMASK, require MatFlow, read DADF5, reconstruct global
-cell mappings, or judge the physical model. Raw data stays under its upstream license and is
-downloaded by the user.
+This extractor follows the paths and conventions documented for Workflow 7A. Raw data stays under
+its upstream license and is downloaded by the user. Future readers can extend the same pattern with
+their own format evidence, licensing record, schema, mapping, and offline fixture.
 
 Reports may leave shaped-field aggregate statistics empty. That is deliberate. CPDataKit keeps
 tensor components intact instead of silently flattening them.

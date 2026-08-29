@@ -17,7 +17,7 @@
 - Use the target schema's declared shape; never flatten or infer scientific meaning.
 - Raise NormalizationError for malformed values, wrong shapes, non-numeric values, and unit conversion failures.
 - Keep CPDataKit HDF5 format version 1.0 and all existing CLI/Python APIs compatible.
-- Do not add dependencies or solver-specific behavior.
+- Keep the dependency surface and behavior aligned with the existing solver-independent core.
 
 ### Task 1: Specify shaped conversion behavior with failing tests
 
@@ -130,7 +130,7 @@ Add tests whose messages require record context, declared shape, and regular-arr
 Run:
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_normalization_statistics.py -q
+    python -m pytest tests/test_normalization_statistics.py -q
 
 Expected: the new valid shaped conversion test fails with NormalizationError: Field 'measure' is not numeric. The malformed tests fail their message assertions because the current implementation does not report record positions or declared shapes.
 
@@ -147,7 +147,7 @@ Files:
 
 Interfaces:
 - Consumes: ProfileSchema.field_map() and FieldMapping values from Task 1.
-- Produces: a private conversion path used by normalize_dataset(); no new public symbol.
+- Produces: a private conversion path used by normalize_dataset(); the public symbol set remains unchanged.
 
 - [ ] Step 1: Add scalar-missing and numeric-array coercion helpers
 
@@ -238,14 +238,14 @@ Keep the existing unit-pair check, target/source collision checks, source-column
 - [ ] Step 4: Run focused tests and verify green
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_normalization_statistics.py -q
+    python -m pytest tests/test_normalization_statistics.py -q
 
 Expected: all normalization tests pass, including scalar, vector, matrix, rank-three tensor, malformed-value, and source-isolation cases.
 
 - [ ] Step 5: Run the full regression suite
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest -q
+    python -m pytest -q
 
 Expected: the existing suite and new normalization tests pass without unrelated behavior changes.
 
@@ -264,7 +264,7 @@ Files:
 
 Interfaces:
 - Documents the unchanged FieldMapping and normalize_dataset() APIs.
-- States that conversion is elementwise over declared shaped fields and does not infer conventions.
+- States that conversion is elementwise over declared shaped fields and uses explicit conventions.
 
 - [ ] Step 1: Update data-format.md
 
@@ -273,12 +273,13 @@ Extend the Unit and convention rules section with:
     When a mapping targets a declared vector, matrix, or tensor field, Pint converts each numeric
     element while preserving the complete per-record shape and trailing dimensions. Ragged arrays,
     wrong shapes, booleans, strings, complex values, and incompatible units are rejected. The mapping
-    still must explicitly declare both input and output units; CPDataKit does not infer stress/strain
-    measures, tensor component order, orientation representation, or identifier semantics.
+    still must explicitly declare both input and output units; stress/strain measures, tensor
+    component order, orientation representation, and identifier semantics come from the schema
+    and mapping.
 
 - [ ] Step 2: Update both README files
 
-Update the normalization workflow bullet in README.md and README.zh-CN.md to state that explicit mappings convert scalar and shaped numeric fields elementwise while retaining vector/tensor shapes. Keep the existing no-inference warning unchanged.
+Update the normalization workflow bullet in README.md and README.zh-CN.md to state that explicit mappings convert scalar and shaped numeric fields elementwise while retaining vector/tensor shapes. Keep the existing explicit-convention guidance consistent.
 
 - [ ] Step 3: Add the Unreleased changelog entry
 
@@ -305,8 +306,8 @@ Files:
 - [ ] Step 1: Run focused and full tests with coverage
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_normalization_statistics.py -q
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
+    python -m pytest tests/test_normalization_statistics.py -q
+    python -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
 
 Expected: focused and full suites pass, with total coverage at least 85%.
 
@@ -315,7 +316,7 @@ Expected: focused and full suites pass, with total coverage at least 85%.
     .\.venv\Scripts\ruff.exe check .
     .\.venv\Scripts\ruff.exe format --check .
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m build
+    python -m build
 
 Expected: Ruff reports no errors, format check passes, and Hatchling builds the existing cpdatakit-0.2.0 distributions.
 

@@ -28,6 +28,9 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ### Fixed
 
+- Preserve duplicate index and duplicate record findings when native HDF5 inspection crosses chunk
+  boundaries.
+- Keep duplicate normalization compatible with the pandas 2.0 dependency floor.
 - Require all eight CPDataKit HDF5 root attributes, exact supported version markers, and JSON
   metadata objects; reject missing, unsupported, malformed, or inconsistent envelopes.
 - Refuse invalid HDF5 validation results unless `allow_invalid=True` is explicit, and make writes
@@ -47,6 +50,9 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
   output.
 - Enforce an 85% project coverage gate in CI and smoke-test `load_hdf5` and `iter_hdf5_chunks` from
   a clean wheel installation.
+- Add a Python 3.10 CI job that exercises the lower bounds of the declared runtime dependencies.
+- Refresh project documentation with capability-first descriptions for core workflows, adapters,
+  reference cases, and release notes.
 - Expand regression coverage for HDF5 metadata, bounded reads, safe writes, schema immutability,
   nested fields, CLI failures, and the adapter abstraction.
 

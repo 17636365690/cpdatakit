@@ -1,6 +1,6 @@
 # Inspect and Shareable Validation Reports Design
 
-**Goal:** Add a machine-readable `inspect` command and offline `report` command that expose the existing CPDataKit validation and descriptive statistics without changing the existing dataset APIs or HDF5 format.
+**Goal:** Add machine-readable `inspect` and offline `report` commands that expose the existing CPDataKit validation and descriptive statistics while preserving the existing dataset APIs and HDF5 format.
 
 **Status:** Design approved in chat on 2026-08-29; implementation follows the repository's existing Python 3.10+, argparse, h5py, pandas, and dataclass conventions.
 
@@ -12,7 +12,8 @@ The feature adds two read-only presentation layers:
 - `reporting.py` builds a stable report payload and renders that payload as JSON, Markdown, or self-contained HTML.
 - `cli.py` remains orchestration-only: it parses arguments, selects the loader and renderer, protects output files, and maps existing error/validation conventions to exit statuses.
 
-The implementation does not run a solver, infer scientific meaning, infer units, migrate schemas, add a runtime dependency, or modify the CPDataKit HDF5 version-1.0 layout.
+The implementation uses the existing reader and schema boundaries, keeps scientific meaning and
+units explicit, and preserves the CPDataKit HDF5 version-1.0 layout.
 
 ## Public interfaces
 
@@ -32,7 +33,7 @@ render_report_markdown(report: Mapping[str, Any]) -> str
 render_report_html(report: Mapping[str, Any]) -> str
 ```
 
-The inspection functions return JSON-compatible dictionaries. They use stable field order from the input representation, stable list order for validation findings, and explicit string values such as `"not available"` when a quantity cannot be obtained without inventing information.
+The inspection functions return JSON-compatible dictionaries. They use stable field order from the input representation, stable list order for validation findings, and explicit string values such as `"not available"` when a quantity requires information beyond the inspected file.
 
 ## Inspection result
 
@@ -50,11 +51,11 @@ risks      missing-value and basic structural-risk findings
 schema     schema profile/version and validation result when --schema is supplied
 ```
 
-For CPDataKit HDF5, `inspect_hdf5_structure()` opens the file with `h5py`, reads root attrs, checks `/data`, and reads each dataset's `dtype`, `shape`, `chunks`, and bounded record slices. It never calls `load_dataset()` and never materializes the complete HDF5 table. Missing-value counts are accumulated over bounded slices. Record counts, scalar datasets, inconsistent first axes, absent units, and absent required metadata are reported as structural risks or `DataReadError` according to the existing strict-reader contract.
+For CPDataKit HDF5, `inspect_hdf5_structure()` opens the file with `h5py`, reads root attrs, checks `/data`, and reads each dataset's `dtype`, `shape`, `chunks`, and bounded record slices. Native inspection keeps reads bounded and accumulates missing-value counts over bounded slices. Record counts, scalar datasets, inconsistent first axes, absent units, and absent required metadata are reported as structural risks or `DataReadError` according to the existing strict-reader contract.
 
-For CSV and JSON, the existing `load_dataset()` path remains the source of truth. For a DAMASK DADF5 file, the root version markers are recognized before CPDataKit metadata parsing; the structure is described through h5py and analysis/reporting uses the existing `DamaskDADF5Adapter` with its explicit default selection rules. No DAMASK runtime is imported.
+For CSV and JSON, the existing `load_dataset()` path remains the source of truth. For a DAMASK DADF5 file, the root version markers are recognized before CPDataKit metadata parsing; the structure is described through h5py and analysis/reporting uses the existing `DamaskDADF5Adapter` with its explicit default selection rules and h5py dependency.
 
-When `schema` is provided, the result includes the validated profile and schema version plus the existing `ValidationResult.to_dict()` shape. Schema loading errors remain read/parameter errors, while data validation errors are findings and do not prevent a report from being rendered.
+When `schema` is provided, the result includes the validated profile and schema version plus the existing `ValidationResult.to_dict()` shape. Schema loading errors remain read/parameter errors, while data validation errors are findings and reports remain renderable.
 
 ## Report payload and renderers
 
@@ -65,13 +66,13 @@ file, schema, record_count, fields, validation, statistics,
 provenance, adapter, hdf5, scope_note
 ```
 
-`schema` contains the profile, version, field contract, conventions, and extension prefix using `schema_to_dict()`. `fields` combines structural inspection with schema descriptions and declared units. `validation` is the existing errors/warnings representation. `statistics` is the existing `summarize_dataset()` output. `scope_note` explicitly states that validation conformance does not establish physical or scientific correctness.
+`schema` contains the profile, version, field contract, conventions, and extension prefix using `schema_to_dict()`. `fields` combines structural inspection with schema descriptions and declared units. `validation` is the existing errors/warnings representation. `statistics` is the existing `summarize_dataset()` output. `scope_note` distinguishes validation conformance from physical or scientific interpretation.
 
 JSON uses `json.dumps(..., indent=2, sort_keys=True, allow_nan=False)` and ends with one newline. Markdown uses fixed headings, fixed table columns, input field order, and deterministic scalar formatting. HTML uses a static stylesheet only; it has no external resources, JavaScript, or network dependency and is suitable for browser printing.
 
 ## Safety and portability
 
-The report layer does not include raw record values. It only emits names, shapes, dtypes, units, counts, aggregate statistics, validation messages, descriptions, and declared metadata.
+The report layer emits names, shapes, dtypes, units, counts, aggregate statistics, validation messages, descriptions, and declared metadata; raw record values stay outside the report.
 
 All user-controlled strings are sanitized before they enter the canonical payload:
 
@@ -81,7 +82,7 @@ All user-controlled strings are sanitized before they enter the canonical payloa
 - arbitrary metadata is reduced to the allowlisted provenance and adapter fields;
 - HTML rendering applies `html.escape()` to every displayed string, including field names, descriptions, messages, and suggestions.
 
-Output paths are never included in report content. Existing output protection is preserved: an existing destination raises an output error unless `--force` is supplied. Parent directories are created only after the overwrite check.
+Report content carries sanitized provenance rather than output paths. Existing output protection is preserved: an existing destination raises an output error unless `--force` is supplied. Parent directories are created only after the overwrite check.
 
 ## CLI behavior
 
@@ -103,4 +104,3 @@ Tests are added in three layers:
 - `tests/test_cli_inspect_report.py` covers parser behavior, exit statuses `0/1/2`, empty/unknown/bad inputs, overwrite protection, `--force`, and DAMASK compatibility.
 
 Each production behavior is introduced by a failing test and then implemented minimally. The final gate is the requested full pytest coverage command, Ruff checks, and `python -m build`.
-

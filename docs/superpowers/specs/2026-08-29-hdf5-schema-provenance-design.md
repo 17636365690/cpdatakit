@@ -6,8 +6,8 @@
 ## Why the snapshot belongs in the file
 
 The existing HDF5 metadata records the profile, schema version, units, mapping, provenance, and
-validation summary. It does not record the actual field definitions. A later reader cannot recover
-custom fields, tensor shapes, component names, or conventions from those values alone.
+validation summary. It needs the actual field definitions so a later reader can recover custom
+fields, tensor shapes, component names, and conventions from the file.
 
 New files will carry the exact validated schema used to write them. Old format-1.0 files will keep
 working.
@@ -63,7 +63,7 @@ creating a temporary file, then writes:
 The reader accepts HDF5 strings and UTF-8 byte attributes. It parses and validates schema_json,
 checks that the embedded profile and schema_version match the root attributes, and recomputes the
 digest. It raises DataReadError for bad UTF-8, malformed JSON, an unsupported schema, a root
-mismatch, a bad digest, or a partial snapshot. It never follows schema_uri.
+mismatch, a bad digest, or a partial snapshot. The caller controls access to schema_uri.
 
 load_hdf5() returns the checked snapshot as:
 
@@ -78,15 +78,15 @@ A legacy file has no schema_snapshot key in its metadata.
 ## Inspection
 
 Native HDF5 inspection reports hdf5.schema_snapshot.present. It includes the digest and URI when
-they exist. The inspection code does not use the embedded schema to replace an explicit schema
-argument. The snapshot records provenance. It does not make a scientific choice for the caller.
+they exist. The explicit schema argument remains authoritative for inspection. The snapshot records
+provenance, while scientific choices come from the caller's selected contract.
 
 ## Compatibility and errors
 
 Existing positional and keyword arguments to write_hdf5() remain valid. schema_uri is optional and
 keyword-only. The eight existing metadata attributes keep their current meaning. The schema
-contract version remains 1.0. No schema migration, URI download, storage-layout change, adapter,
-or new dependency is part of this work.
+contract version remains 1.0. This work keeps the existing schema, URI, storage-layout, adapter,
+and dependency boundaries.
 
 Schema errors raised before writing use SchemaError. Bad snapshot metadata read from a file uses
 DataReadError. Atomic writes, overwrite protection, validation protection, chunking, and shaped
@@ -99,5 +99,4 @@ and version mismatches, partial attributes, bad digests, and legacy files. Inspe
 the snapshot status without materializing raw records.
 
 The data-format guide, schema-authoring guide, READMEs, and changelog will document the three
-attributes, the hash rule, the compatibility behavior, and the fact that URI values are never
-fetched.
+attributes, the hash rule, the compatibility behavior, and caller-managed URI access.

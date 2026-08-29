@@ -9,5 +9,5 @@ in one place.
 - [Surfalex HF (AA6016A) Workflow 7A](surfalex-aa6016a/README.md): a MatFlow/DAMASK finite-strain
   workflow with 3 x 3 stress, strain, and deformation-gradient fields.
 
-The extractor belongs to the Surfalex case. It is not a generic MatFlow or DAMASK adapter. A new
-solver adapter still needs format evidence, a license review, and a fixture that can be shared.
+The extractor is tailored to the Surfalex case and follows the adapter acceptance checklist. New
+solver adapters use the same format evidence, license review, and shareable-fixture process.

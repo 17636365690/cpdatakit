@@ -36,7 +36,8 @@ def _build_report_from_dataset(dataset: Dataset, schema: ProfileSchema) -> dict[
         "adapter": {},
         "hdf5": {},
         "scope_note": (
-            "Validation conformance does not establish physical or scientific correctness."
+            "Validation reports declared format constraints; physical or scientific interpretation "
+            "remains part of the domain workflow."
         ),
     }
 
@@ -59,7 +60,8 @@ def test_report_markdown_has_stable_sections_and_field_order(curve: Dataset) -> 
     assert rendered.index("## Fields") < rendered.index("## Validation")
     assert rendered.index("| step |") < rendered.index("| strain |")
     assert (
-        "Validation conformance does not establish physical or scientific correctness." in rendered
+        "Validation reports declared format constraints; physical or scientific interpretation "
+        "remains part of the domain workflow." in rendered
     )
 
 

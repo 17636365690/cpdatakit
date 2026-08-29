@@ -7,8 +7,8 @@
 
 Build the next maintenance iteration on top of PR #20: make copied datasets and schemas
 safe from hidden mutation, improve HDF5 storage for large sequential reads, enforce the current
-quality level in CI, and prepare the project for a v0.3.0 release without adding solver-specific
-runtime dependencies.
+quality level in CI, and prepare the project for a v0.3.0 release while keeping solver-specific
+runtime dependencies in their documented integration boundary.
 
 ## Current baseline
 
@@ -30,12 +30,8 @@ This iteration covers:
 4. A CI coverage gate and clean-wheel smoke coverage for the new public HDF5 APIs.
 5. Documentation, roadmap, and changelog updates.
 6. A stacked implementation branch/PR based on PR #20; PR #20 remains subject to its required review.
-7. Post-merge release preparation for v0.3.0, without bumping the version before the required
-   review and merge.
-
-Out of scope: solver-specific adapters, ODB/DADF5 support, automatic scientific inference,
-distributed processing, 3D interactive graphics, schema migration, and direct self-approval or
-self-merging of protected GitHub changes.
+7. Post-merge release preparation for v0.3.0, with the version update following the required review
+   and merge.
 
 ## Design
 
@@ -86,14 +82,13 @@ CodeQL, reproducible builds, Twine checks, and the supported-Python matrix remai
 
 ### Release and backlog handling
 
-No version file changes occur before PR #20 is reviewed and merged. After merge, the public
-HDF5 APIs and storage option should be released as v0.3.0, with pyproject.toml, CHANGELOG.md,
-CITATION.cff, GitHub Release, and PyPI contents updated together.
+Version files update after PR #20 is reviewed and merged. The public HDF5 APIs and storage option
+then move toward v0.3.0, with pyproject.toml, CHANGELOG.md, CITATION.cff, GitHub Release, and PyPI
+contents updated together.
 
 Issue #4 will be split or retitled so the implemented bounded/chunked API is distinct from
-remaining large-file performance and storage-layout work. Issue #6 will remain open for the
-first real optional adapter; the checklist itself is documented but is not an adapter
-implementation.
+remaining large-file performance and storage-layout work. Issue #6 uses the checklist as the
+acceptance path for the first real optional adapter.
 
 ## Error handling
 

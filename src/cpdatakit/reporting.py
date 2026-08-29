@@ -17,7 +17,10 @@ from .schema import ProfileSchema, load_schema, schema_to_dict
 from .statistics import summarize_dataset
 from .validation import validate_dataset
 
-SCOPE_NOTE = "Validation conformance does not establish physical or scientific correctness."
+SCOPE_NOTE = (
+    "Validation reports declared format constraints; physical or scientific interpretation "
+    "remains part of the domain workflow."
+)
 
 
 def _has_non_finite(value: object) -> bool:

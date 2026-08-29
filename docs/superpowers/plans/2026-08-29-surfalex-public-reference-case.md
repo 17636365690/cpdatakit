@@ -16,7 +16,7 @@
 - The associated publication is DOI 10.12688/materialsopenres.17516.1.
 - The selected files are 7A_simulate_uniaxial_tension.yml and 7A_workflow.hdf5.
 - Fetch verifies the published MD5 and the recorded SHA-256 for both files.
-- No source data, solver binary, network call, MatFlow package, or DAMASK runtime enters core dependencies.
+- Keep source data upstream and keep solver binaries, MatFlow, and DAMASK runtimes outside core dependencies.
 - All field names, units, Cauchy/Hencky measures, and row-major tensor ordering are explicit.
 - The case produces 1,501 records with stress, strain, F, and Fp per-record shape (3, 3).
 - Tests run offline using only synthetic MatFlow/Hickle-shaped HDF5 fixtures.
@@ -147,7 +147,7 @@ Add tests for missing output paths and inconsistent record axes:
 - [ ] Step 4: Run the new tests and verify the expected red state
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_surfalex_public_reference_case.py -q
+    python -m pytest tests/test_surfalex_public_reference_case.py -q
 
 Expected: tests fail because the case workflow.py and fetch_data.py do not exist yet. No network access should occur.
 
@@ -300,7 +300,7 @@ If report_path is provided, call build_report(output_path, schema) and write_rep
 Add argparse options --input, --output, --report, and --force. Run:
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_surfalex_public_reference_case.py -q
+    python -m pytest tests/test_surfalex_public_reference_case.py -q
 
 Expected: extraction, shape, explicit Pa-to-MPa conversion, schema snapshot, report, and malformed-fixture tests pass.
 
@@ -411,8 +411,8 @@ Files:
 - [ ] Step 1: Run case-focused and full tests
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest tests/test_surfalex_public_reference_case.py -q
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
+    python -m pytest tests/test_surfalex_public_reference_case.py -q
+    python -m pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85
 
 Expected: case tests and the full existing suite pass, with coverage at least 85%.
 
@@ -421,14 +421,14 @@ Expected: case tests and the full existing suite pass, with coverage at least 85
     .\.venv\Scripts\ruff.exe check .
     .\.venv\Scripts\ruff.exe format --check .
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -m build
+    python -m build
 
 Expected: no Ruff errors, all files formatted, and the existing cpdatakit-0.2.0 distributions build.
 
 - [ ] Step 3: Run the case using the local synthetic fixture path only
 
     $env:PYTHONPATH = "src;.venv\Lib\site-packages"
-    & 'C:\Users\LEGION\AppData\Roaming\uv\python\cpython-3.12.13-windows-x86_64-none\python.exe' -c "import json; from pathlib import Path; import tempfile; import importlib.util; p=Path('examples/public-datasets/surfalex-aa6016a/workflow.py'); s=importlib.util.spec_from_file_location('surfalex_case', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.SCHEMA_PATH.name, m.MAPPING_PATH.name)"
+    python -c "import json; from pathlib import Path; import tempfile; import importlib.util; p=Path('examples/public-datasets/surfalex-aa6016a/workflow.py'); s=importlib.util.spec_from_file_location('surfalex_case', p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.SCHEMA_PATH.name, m.MAPPING_PATH.name)"
 
 Expected: the example imports without network access and resolves its local contract files.
 
@@ -440,7 +440,7 @@ Expected: the example imports without network access and resolves its local cont
     rg --files examples/public-datasets/surfalex-aa6016a
     rg -n "7A_workflow|Dataset.zip|\\.hdf5|\\.zip|raw|CC BY|schema_json|schema_sha256|matflow|DADF5" examples/public-datasets README.md README.zh-CN.md docs
 
-Confirm no downloaded raw HDF5/ZIP file is tracked, no runtime dependency changed, the case does not claim generic MatFlow/DAMASK support, and the HDF5 schema snapshot/hash is present in the generated output.
+Confirm downloaded raw HDF5/ZIP files stay upstream, runtime dependencies remain unchanged, the case follows its documented MatFlow/DAMASK paths, and the HDF5 schema snapshot/hash is present in the generated output.
 
 - [ ] Step 5: Report only fresh evidence
 

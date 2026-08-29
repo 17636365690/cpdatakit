@@ -49,7 +49,8 @@ print(schema_sha256(schema))
 
 The string has sorted keys, compact separators, UTF-8 encoding, and no trailing newline. The same
 schema therefore produces the same hash on different runs. CPDataKit stores this string in the
-HDF5 `schema_json` attribute. An optional `schema_uri` is recorded as provenance and never fetched.
+HDF5 `schema_json` attribute. An optional `schema_uri` is recorded as provenance for caller-managed
+access.
 
 ## CLI mapping files
 
@@ -77,6 +78,6 @@ Example:
 cpdatakit convert input.csv --schema curve --mapping mapping.json --output curve.h5
 ```
 
-The mapping file never enables scientific inference. Targets must be declared by the schema,
+The mapping file applies declared field and unit choices. Targets must be declared by the schema,
 sources must exist in the input, duplicate targets are rejected, and existing output files still
 require `--force` before replacement.

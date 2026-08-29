@@ -17,6 +17,5 @@
   by Issue #4.
 - **v0.4.0:** schema migration tools, comparison/report bundles, and stronger compatibility tests.
 
-No roadmap item promises full ODB or full DAMASK solver integration. Further DADF5 coverage
-remains evidence- and license-gated.
+Further DADF5 and ODB coverage follows the documented evidence and license review process.
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterable, Mapping
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -16,10 +15,10 @@ import pandas as pd
 from .adapters import DamaskDADF5Adapter
 from .exceptions import AdapterError, CPDataKitError, DataReadError, OutputExistsError
 from .io import _ensure_readable, _read_hdf5_metadata, iter_hdf5_chunks, load_dataset
-from .model import Dataset, ValidationIssue, ValidationResult
+from .model import Dataset, ValidationResult
 from .provenance import sha256_file
 from .schema import ProfileSchema, load_schema, schema_to_dict
-from .validation import validate_dataset
+from .validation import _validate_dataset_chunks, validate_dataset
 
 _INSPECTION_CHUNK_SIZE = 10_000
 _SENSITIVE_KEY = re.compile(
@@ -340,30 +339,10 @@ def _attach_schema(
     return result
 
 
-def _merge_issue(result: ValidationResult, issue: ValidationIssue) -> None:
-    target = result.errors if issue.severity == "error" else result.warnings
-    for index, existing in enumerate(target):
-        if (
-            existing.code,
-            existing.field,
-            existing.message,
-            existing.suggestion,
-        ) == (issue.code, issue.field, issue.message, issue.suggestion):
-            target[index] = replace(
-                existing,
-                affected_records=existing.affected_records + issue.affected_records,
-            )
-            return
-    target.append(issue)
-
-
 def _validate_native_hdf5(path: Path, contract: ProfileSchema) -> ValidationResult:
-    result = ValidationResult()
-    for chunk in iter_hdf5_chunks(path, chunk_size=_INSPECTION_CHUNK_SIZE):
-        chunk_result = validate_dataset(chunk, contract)
-        for issue in [*chunk_result.errors, *chunk_result.warnings]:
-            _merge_issue(result, issue)
-    return result
+    return _validate_dataset_chunks(
+        iter_hdf5_chunks(path, chunk_size=_INSPECTION_CHUNK_SIZE), contract
+    )
 
 
 def _attribute_text(attributes: h5py.AttributeManager, name: str, path: Path) -> str:
@@ -630,7 +609,7 @@ def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
 
 
 def inspect_hdf5_structure(path: str | Path) -> dict[str, Any]:
-    """Inspect CPDataKit or DAMASK HDF5 structure without full table loading."""
+    """Inspect CPDataKit or DAMASK HDF5 structure through bounded table reads."""
 
     input_path = Path(path)
     _ensure_readable(input_path)

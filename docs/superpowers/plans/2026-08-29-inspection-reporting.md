@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (- [ ]) syntax for tracking.
 
-**Goal:** Add safe, deterministic inspect and offline report commands for CSV, JSON, CPDataKit HDF5, and the existing DAMASK DADF5 adapter without changing existing APIs, exit-code conventions, or the HDF5 1.0 layout.
+**Goal:** Add safe, deterministic inspect and offline report commands for CSV, JSON, CPDataKit HDF5, and the existing DAMASK DADF5 adapter while preserving existing APIs, exit-code conventions, and the HDF5 1.0 layout.
 
 **Architecture:** Keep inspection separate from rendering. inspection.py owns file-format detection, bounded HDF5 structure reads, portable metadata sanitization, and optional schema findings. reporting.py builds one canonical report mapping and renders it as JSON, Markdown, or static HTML. cli.py only parses arguments, selects a loader/renderer, protects output files, and maps expected failures.
 
-**Tech Stack:** Python 3.10+, argparse, h5py, NumPy, pandas, existing CPDataKit schema/validation/statistics APIs, and stdlib html/json/re. No new runtime dependency.
+**Tech Stack:** Python 3.10+, argparse, h5py, NumPy, pandas, existing CPDataKit schema/validation/statistics APIs, and stdlib html/json/re.
 
 **Spec:** docs/superpowers/specs/2026-08-29-inspection-and-reporting-design.md
 
@@ -14,17 +14,17 @@
 
 - Python >= 3.10 and argparse remain the supported runtime/CLI foundations.
 - Existing CSV, JSON, CPDataKit HDF5 readers, load_hdf5(), iter_hdf5_chunks(), validate_dataset(), and summarize_dataset() remain compatible.
-- HDF5 inspect uses h5py attrs, dataset shape, dtype, chunks, and bounded slices; it never calls load_dataset() to materialize the entire file.
-- CPDataKit HDF5 metadata remains strict and version 1.0; no HDF5 layout or version migration is added.
-- DAMASK DADF5 support remains read-only and uses the existing adapter; no solver runtime is imported.
-- No automatic scientific inference or automatic unit inference is added.
+- HDF5 inspect uses h5py attrs, dataset shape, dtype, chunks, and bounded slices throughout the file.
+- CPDataKit HDF5 metadata remains strict and uses the version 1.0 layout.
+- DAMASK DADF5 support remains read-only and uses the existing h5py-based adapter path.
+- Scientific meaning and unit conversions come from explicit schemas and mappings.
 - JSON output uses stable structures and sort_keys=True; report JSON disallows NaN and infinity.
 - New output files are protected from overwrite unless --force is passed.
 - New commands map success to 0, validation/data findings to 1, and parameter/read/output failures to 2.
 - HTML is fully escaped, offline, static, and free of external CDN, JavaScript, and network dependencies.
-- Reports contain no raw records, absolute paths, passwords, tokens, or other sensitive metadata.
+- Reports contain aggregate metadata while sanitizing paths, passwords, tokens, and other sensitive values.
 - Existing commands, public signatures, and their return-code behavior remain unchanged.
-- No GitHub issue, merge, release, or publication operation is part of this work.
+- This plan ends with local implementation and verification; release operations follow the maintenance workflow.
 
 ---
 
@@ -281,7 +281,8 @@ def test_report_markdown_has_stable_sections_and_field_order(curve: Dataset) -> 
     assert rendered.index("## Fields") < rendered.index("## Validation")
     assert rendered.index("| step |") < rendered.index("| strain |")
     assert (
-        "Validation conformance does not establish physical or scientific correctness." in rendered
+        "Validation reports declared format constraints; physical or scientific interpretation remains part of the domain workflow."
+        in rendered
     )
 ~~~
 
@@ -395,7 +396,7 @@ Keep the renderer pure. Run the JSON renderer test and make it pass before addin
 
 - [ ] Step 2: Implement canonical report assembly
 
-build_report() must load and validate the requested schema, use inspect_dataset(path, schema=contract) for file and structure details, load CSV/JSON through load_dataset(), load native HDF5 through its existing reader, and load DADF5 through DamaskDADF5Adapter(). It then runs validate_dataset(dataset, contract) and summarize_dataset(dataset, contract, validation=result). Put result.to_dict() under validation, schema_to_dict(contract) under schema, and the summary under statistics. Keep the exact scope note: Validation conformance does not establish physical or scientific correctness. Build the report even when validation is invalid.
+build_report() must load and validate the requested schema, use inspect_dataset(path, schema=contract) for file and structure details, load CSV/JSON through load_dataset(), load native HDF5 through its existing reader, and load DADF5 through DamaskDADF5Adapter(). It then runs validate_dataset(dataset, contract) and summarize_dataset(dataset, contract, validation=result). Put result.to_dict() under validation, schema_to_dict(contract) under schema, and the summary under statistics. Keep the exact scope note: validation conformance is reported separately from physical or scientific interpretation. Build the report even when validation is invalid.
 
 - [ ] Step 3: Run JSON payload tests and verify green
 
@@ -592,7 +593,7 @@ Explain inspect schema optionality, report format choices, --force, and statuses
 
 - [ ] Step 2: Extend quickstart
 
-Add a conversion-to-inspection/report flow, including that reports open without network access and validation conformance does not certify physical or scientific correctness.
+Add a conversion-to-inspection/report flow, including offline reports and a scope note that separates declared validation from physical or scientific interpretation.
 
 - [ ] Step 3: Document data-format and architecture boundaries
 
@@ -651,9 +652,8 @@ git diff HEAD~8..HEAD --stat
 rg -n "dependencies|DADF5|format_version|load_dataset|sort_keys|force|scientific correctness" src/cpdatakit README.md README.zh-CN.md docs CHANGELOG.md
 ~~~
 
-Confirm no runtime dependency was added, no solver/scientific/unit inference was introduced, HDF5 metadata/layout remains version 1.0, new outputs contain no absolute paths or sensitive values, and no GitHub/merge/release action occurred.
+Confirm the runtime dependency set remains stable, solver/scientific/unit choices stay explicit, HDF5 metadata/layout remains version 1.0, new outputs contain sanitized paths and sensitive values, and GitHub/merge/release actions remain in their dedicated workflow.
 
 - [ ] Step 5: Report only verified results
 
 List changed files, public API/CLI usage, exact test count and coverage from fresh commands, build result, and unresolved limitations. Do not claim a gate passed unless its command exited successfully.
-

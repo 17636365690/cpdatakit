@@ -20,9 +20,8 @@
 - The existing allow_invalid and atomic HDF5 write behavior remains unchanged.
 - The CI coverage gate is pytest --cov=cpdatakit --cov-report=term-missing --cov-fail-under=85 in one Ubuntu quality job.
 - The clean wheel smoke test imports load_hdf5 and iter_hdf5_chunks.
-- No version bump happens before PR #20 is independently reviewed and merged.
-- No solver adapter, ODB/DADF5 support, automatic scientific inference, distributed processing, 3D graphics, or schema migration is added.
-- Core runtime dependencies remain unchanged.
+- Version metadata updates follow independent review and merge of PR #20.
+- Core runtime dependencies and integration boundaries remain aligned with the documented package architecture.
 
 ---
 

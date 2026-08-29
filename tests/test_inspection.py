@@ -114,6 +114,56 @@ def test_inspect_cpdatakit_hdf5_reports_shape_dtype_units_and_chunks(
     assert "input_filename" in result["provenance"]
 
 
+def test_inspect_hdf5_catches_duplicate_index_across_chunks(
+    curve: Dataset, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cpdatakit.inspection import inspect_dataset
+
+    curve.data.loc[2, "step"] = 0
+    schema = load_schema("curve")
+    output = tmp_path / "duplicate-index-across-chunks.h5"
+    write_hdf5(
+        curve,
+        output,
+        schema,
+        validate_dataset(curve, schema),
+        allow_invalid=True,
+        hdf5_chunk_size=2,
+    )
+    monkeypatch.setattr("cpdatakit.inspection._INSPECTION_CHUNK_SIZE", 2)
+
+    result = inspect_dataset(output, schema="curve")["schema"]["validation"]
+
+    issue = next(item for item in result["errors"] if item["code"] == "duplicate_index")
+    assert result["valid"] is False
+    assert issue["field"] == "step"
+    assert issue["affected_records"] == 2
+
+
+def test_inspect_hdf5_catches_duplicate_record_across_chunks(
+    curve: Dataset, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cpdatakit.inspection import inspect_dataset
+
+    curve.data.loc[2] = curve.data.loc[0]
+    schema = load_schema("curve")
+    output = tmp_path / "duplicate-record-across-chunks.h5"
+    write_hdf5(
+        curve,
+        output,
+        schema,
+        validate_dataset(curve, schema),
+        allow_invalid=True,
+        hdf5_chunk_size=2,
+    )
+    monkeypatch.setattr("cpdatakit.inspection._INSPECTION_CHUNK_SIZE", 2)
+
+    result = inspect_dataset(output, schema="curve")["schema"]["validation"]
+
+    issue = next(item for item in result["warnings"] if item["code"] == "duplicate_record")
+    assert issue["affected_records"] == 2
+
+
 def test_inspect_text_includes_hdf5_provenance_and_adapter(curve: Dataset, tmp_path: Path) -> None:
     from cpdatakit.inspection import inspect_dataset, render_inspection_text
 

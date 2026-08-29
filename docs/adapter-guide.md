@@ -2,8 +2,9 @@
 
 An adapter translates one documented external representation into `Dataset`. Subclass
 `cpdatakit.adapters.DatasetAdapter`, accept `pathlib.Path`, and return data plus explicit units and
-conventions. Keep the integration in an optional package/extra; never add DAMASK, Abaqus, or a
-commercial runtime to core dependencies.
+conventions. A pure-Python reader with a narrow, documented scope may live in the core package.
+Readers that depend on solver runtimes or heavy format-specific libraries use an optional
+package/extra. The current DAMASK reader follows the narrow core-reader boundary and uses h5py.
 
 ## Acceptance checklist
 
@@ -14,23 +15,24 @@ An adapter proposal should satisfy every item before contribution:
 - [ ] License and redistribution review confirms that the adapter and every fixture can be
       distributed under the project's terms.
 - [ ] Upstream version coverage lists the tested source versions and documents unsupported ones.
-- [ ] Synthetic or redistribution-approved fixtures cover the supported representation without
-      requiring private or commercial data.
+- [ ] Synthetic or redistribution-approved fixtures cover the supported representation with a
+      reproducible local test input.
 - [ ] Units and scientific conventions are explicit, including identifiers, tensor component
       order, orientation representations, and stress/strain measures when relevant.
-- [ ] Tests are deterministic and run offline without network access, solver runtimes, GPUs, or
-      personal filesystem paths.
-- [ ] Ambiguous or unsupported conventions fail clearly instead of being inferred silently.
-- [ ] Solver runtimes and other format-specific heavy dependencies stay out of CPDataKit core
-      dependencies by using an optional package or extra.
+- [ ] Tests are deterministic and run offline with local fixtures, standard Python dependencies,
+      and portable paths.
+- [ ] Ambiguous or unsupported conventions return a clear error, and supported conventions are
+      explicit in the adapter contract.
+- [ ] Solver runtimes and other format-specific heavy dependencies are supplied through an
+      optional package or extra.
 
-Do not label a generic HDF5 reader as a DADF5 reader and do not claim ODB support without a
-legitimately testable Abaqus environment.
+Use the DADF5 label only for the documented DAMASK hierarchy. ODB adapters require a legitimately
+testable Abaqus environment and a matching acceptance record.
 
 ## DAMASK DADF5 reader
 
 CPDataKit includes a narrow, read-only reader for documented DAMASK DADF5 result selections.
-The implementation uses h5py directly and does not require the DAMASK runtime. It supports
+The implementation uses h5py directly and stays independent of the DAMASK runtime. It supports
 DADF5 version 0.14 and 1.x, one explicit `increment`, `phase` or `homogenization` branch, one
 explicit label, one field group, and selected direct datasets such as `F`, `P`, or `O`.
 
@@ -50,12 +52,12 @@ dataset = adapter.load("result.hdf5")
 The result is a CPDataKit `point` dataset. It adds a local `point_id` and places external values
 under `user_dadf5_...` column names, preserving each dataset's `unit`, `description`, source
 path, selected increment, and DADF5 version in metadata. A point ID is the row order within the
-selected DADF5 group; the reader does not claim a global cell mapping or perform scientific
-unit/tensor inference. Missing metadata, ambiguous labels, unsupported versions, and
-inconsistent record counts fail with `AdapterError`.
+selected DADF5 group. Global cell mapping and scientific unit/tensor conventions are supplied by
+the caller through the documented selection and schema. Missing metadata, ambiguous labels,
+unsupported versions, and inconsistent record counts fail with `AdapterError`.
 
 The format and hierarchy are based on the [official DAMASK DADF5 documentation](https://www.damask-mpie.de/documentation/reference/processing_tools/post-processing.html)
 and [official license notice](https://damask-multiphysics.org/development/license.html). CPDataKit
-does not redistribute DAMASK source code, solver output, or restricted fixtures. DAMASK is an
-AGPLv3 project and its names remain the property of their respective owners.
+keeps DAMASK source code, solver output, and restricted fixtures upstream under their original
+terms. DAMASK is an AGPLv3 project and its names remain the property of their respective owners.
 
