@@ -449,7 +449,7 @@ def test_hdf5_rejects_partial_schema_snapshot(tmp_path: Path) -> None:
         {"schema_json": schema_to_canonical_json(load_schema("curve"))},
     )
 
-    with pytest.raises(DataReadError, match="schema_json.*schema_sha256"):
+    with pytest.raises(DataReadError, match=r"schema_json.*schema_sha256"):
         load_hdf5(path)
 
 
@@ -457,7 +457,7 @@ def test_hdf5_rejects_uri_without_embedded_snapshot(tmp_path: Path) -> None:
     path = tmp_path / "uri-only.h5"
     _write_minimal_cpdatakit_hdf5(path, {"schema_uri": "https://example.org/schema.json"})
 
-    with pytest.raises(DataReadError, match="schema_json.*schema_sha256"):
+    with pytest.raises(DataReadError, match=r"schema_json.*schema_sha256"):
         load_hdf5(path)
 
 

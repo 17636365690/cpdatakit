@@ -14,10 +14,18 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from ..exceptions import DataReadError, DataValidationError, OutputExistsError
+from ..exceptions import DataReadError, DataValidationError, OutputExistsError, SchemaError
 from ..model import Dataset, ValidationResult
 from ..provenance import build_provenance
-from ..schema import SUPPORTED_PROFILES, SUPPORTED_SCHEMA_VERSION, ProfileSchema
+from ..schema import (
+    SUPPORTED_PROFILES,
+    SUPPORTED_SCHEMA_VERSION,
+    ProfileSchema,
+    schema_sha256,
+    schema_to_canonical_json,
+    schema_to_dict,
+    validate_schema,
+)
 
 _SUPPORTED = {".csv", ".json", ".h5", ".hdf5"}
 
@@ -64,6 +72,47 @@ def _required_json_object(handle: h5py.File, name: str, path: Path) -> dict[str,
     return value
 
 
+def _read_schema_snapshot(
+    handle: h5py.File, path: Path, profile: str, schema_version: str
+) -> dict[str, Any] | None:
+    core_names = ("schema_json", "schema_sha256")
+    present = {name: name in handle.attrs for name in (*core_names, "schema_uri")}
+    if not any(present.values()):
+        return None
+    if not all(present[name] for name in core_names):
+        raise DataReadError(f"HDF5 schema_json and schema_sha256 must be present together: {path}")
+    schema_text = _required_text_attr(handle, "schema_json", path)
+    try:
+        payload = json.loads(schema_text)
+    except json.JSONDecodeError as exc:
+        raise DataReadError(f"Invalid HDF5 schema_json metadata: {path}: {exc.msg}") from exc
+    if not isinstance(payload, dict):
+        raise DataReadError(f"HDF5 schema_json must encode a JSON object: {path}")
+    try:
+        embedded = validate_schema(payload)
+    except SchemaError as exc:
+        raise DataReadError(f"Invalid embedded HDF5 schema_json: {path}: {exc}") from exc
+    if embedded.profile != profile or embedded.schema_version != schema_version:
+        raise DataReadError(
+            f"Embedded HDF5 schema profile/schema_version does not match root metadata: {path}"
+        )
+    stored_hash = _required_text_attr(handle, "schema_sha256", path)
+    if len(stored_hash) != 64 or any(
+        character not in "0123456789abcdefABCDEF" for character in stored_hash
+    ):
+        raise DataReadError(f"Invalid HDF5 schema_sha256 digest: {path}")
+    expected_hash = schema_sha256(embedded)
+    if stored_hash.lower() != expected_hash:
+        raise DataReadError(f"HDF5 schema_sha256 does not match schema_json: {path}")
+    snapshot: dict[str, Any] = {
+        "schema": schema_to_dict(embedded),
+        "sha256": expected_hash,
+    }
+    if present["schema_uri"]:
+        snapshot["uri"] = _required_text_attr(handle, "schema_uri", path)
+    return snapshot
+
+
 def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
     if _required_text_attr(handle, "format", path) != "CPDataKit":
         raise DataReadError("HDF5 is not a CPDataKit file (missing format marker)")
@@ -80,7 +129,7 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
     if schema_version != SUPPORTED_SCHEMA_VERSION:
         raise DataReadError(f"Unsupported HDF5 metadata schema_version {schema_version!r}: {path}")
 
-    return {
+    metadata: dict[str, Any] = {
         "profile": profile,
         "schema_version": schema_version,
         "units": _required_json_object(handle, "units_json", path),
@@ -88,6 +137,10 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
         "provenance": _required_json_object(handle, "provenance_json", path),
         "validation_summary": _required_json_object(handle, "validation_summary_json", path),
     }
+    snapshot = _read_schema_snapshot(handle, path, profile, schema_version)
+    if snapshot is not None:
+        metadata["schema_snapshot"] = snapshot
+    return metadata
 
 
 def _normalize_hdf5_fields(group: h5py.Group, fields: Iterable[str] | None) -> list[str]:
@@ -303,9 +356,14 @@ def write_hdf5(
     force: bool = False,
     allow_invalid: bool = False,
     hdf5_chunk_size: int | None = None,
+    schema_uri: str | None = None,
 ) -> Path:
     """Write the documented CPDataKit HDF5 interchange format."""
     resolved_chunk_size = _resolve_hdf5_storage_chunk_size(hdf5_chunk_size)
+    if schema_uri is not None and (not isinstance(schema_uri, str) or not schema_uri.strip()):
+        raise ValueError("schema_uri must be a non-empty string or None")
+    schema_json = schema_to_canonical_json(schema)
+    schema_digest = schema_sha256(schema)
     target = Path(output)
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass force=True to replace it")
@@ -334,6 +392,10 @@ def write_hdf5(
             handle.attrs["format_version"] = "1.0"
             handle.attrs["profile"] = schema.profile
             handle.attrs["schema_version"] = schema.schema_version
+            handle.attrs["schema_json"] = schema_json
+            handle.attrs["schema_sha256"] = schema_digest
+            if schema_uri is not None:
+                handle.attrs["schema_uri"] = schema_uri
             handle.attrs["units_json"] = json.dumps(units, sort_keys=True)
             handle.attrs["field_mapping_json"] = json.dumps(stored_mapping, sort_keys=True)
             handle.attrs["provenance_json"] = json.dumps(provenance, sort_keys=True)

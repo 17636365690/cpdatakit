@@ -63,6 +63,13 @@ def _safe_text(value: object, *, key: str | None = None) -> str:
     return text
 
 
+def _safe_uri(value: object) -> str:
+    if not isinstance(value, str):
+        return _safe_text(value)
+    marker = "__CPDATAKIT_URI_SCHEME__"
+    return _safe_text(value.replace("://", marker)).replace(marker, "://")
+
+
 def _safe_metadata(value: object, *, key: str | None = None) -> object:
     if key is not None and _SENSITIVE_KEY.search(key):
         return "[redacted]"
@@ -469,6 +476,13 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
             "datasets": dataset_details,
         },
     )
+    snapshot = metadata.get("schema_snapshot")
+    snapshot_summary: dict[str, Any] = {"present": isinstance(snapshot, Mapping)}
+    if isinstance(snapshot, Mapping):
+        snapshot_summary["sha256"] = _safe_text(snapshot.get("sha256"))
+        if "uri" in snapshot:
+            snapshot_summary["uri"] = _safe_uri(snapshot["uri"])
+    result["hdf5"]["schema_snapshot"] = snapshot_summary
     result["record_count"] = record_count
     for field in fields:
         if field["unit"] == "not available":
