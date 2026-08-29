@@ -63,6 +63,7 @@ def _thaw_convention(value: Any) -> Any:
         return [_thaw_convention(item) for item in value]
     return deepcopy(value)
 
+
 @dataclass(frozen=True, slots=True)
 class ProfileSchema:
     """A versioned CPDataKit dataset contract."""
