@@ -28,9 +28,12 @@ def _write_dadf5(path: Path) -> None:
             cell_to.create_group(kind).create_dataset(
                 "label", data=np.asarray(["label0", "label0"], dtype="S")
             )
-        mechanical = handle.create_group("increment_0").create_group("homogenization").create_group(
-            "Taylor"
-        ).create_group("mechanical")
+        mechanical = (
+            handle.create_group("increment_0")
+            .create_group("homogenization")
+            .create_group("Taylor")
+            .create_group("mechanical")
+        )
         field = mechanical.create_dataset("F", data=np.arange(18, dtype=float).reshape(2, 3, 3))
         field.attrs["unit"] = "1"
         field.attrs["description"] = "Synthetic deformation gradient"
@@ -60,7 +63,9 @@ def test_cli_inspect_json_writes_stable_output(tmp_path: Path) -> None:
     assert payload["schema"]["validation"]["valid"] is True
 
 
-def test_cli_inspect_defaults_to_text_stdout(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_inspect_defaults_to_text_stdout(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     data = tmp_path / "curve.csv"
     data.write_text("step,strain,stress\n0,0.0,0.0\n", encoding="utf-8")
 
@@ -182,18 +187,48 @@ def test_cli_returns_two_for_unknown_schema_and_empty_input(tmp_path: Path) -> N
     data.write_text("step,strain,stress\n", encoding="utf-8")
 
     assert main(["inspect", str(data), "--schema", "unknown"]) == 2
-    assert main(["report", str(data), "--schema", "curve", "--output", str(tmp_path / "x.html")]) == 2
+    assert (
+        main(["report", str(data), "--schema", "curve", "--output", str(tmp_path / "x.html")]) == 2
+    )
 
 
 def test_cli_output_overwrite_requires_force(tmp_path: Path) -> None:
     data = tmp_path / "curve.csv"
     data.write_text("step,strain,stress\n0,0.0,0.0\n", encoding="utf-8")
     output = tmp_path / "report.md"
-    assert main(["report", str(data), "--schema", "curve", "--format", "markdown", "--output", str(output)]) == 0
+    assert (
+        main(
+            [
+                "report",
+                str(data),
+                "--schema",
+                "curve",
+                "--format",
+                "markdown",
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
     original = output.read_text(encoding="utf-8")
     output.write_text("sentinel", encoding="utf-8")
 
-    assert main(["report", str(data), "--schema", "curve", "--format", "markdown", "--output", str(output)]) == 2
+    assert (
+        main(
+            [
+                "report",
+                str(data),
+                "--schema",
+                "curve",
+                "--format",
+                "markdown",
+                "--output",
+                str(output),
+            ]
+        )
+        == 2
+    )
     assert output.read_text(encoding="utf-8") == "sentinel"
     assert (
         main(

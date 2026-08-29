@@ -48,9 +48,12 @@ def _write_dadf5(path: Path) -> None:
         cell_to.create_group("phase").create_dataset(
             "label", data=np.asarray(["label0", "label0"], dtype="S")
         )
-        mechanical = handle.create_group("increment_0").create_group("homogenization").create_group(
-            "Taylor"
-        ).create_group("mechanical")
+        mechanical = (
+            handle.create_group("increment_0")
+            .create_group("homogenization")
+            .create_group("Taylor")
+            .create_group("mechanical")
+        )
         field = mechanical.create_dataset("F", data=np.arange(18, dtype=float).reshape(2, 3, 3))
         field.attrs["unit"] = "1"
         field.attrs["description"] = "Synthetic deformation gradient"
@@ -103,6 +106,21 @@ def test_inspect_cpdatakit_hdf5_reports_shape_dtype_units_and_chunks(
     assert result["fields"][2]["unit"] == "MPa"
     assert result["hdf5"]["chunks"]["step"] == [2]
     assert "input_filename" in result["provenance"]
+
+
+def test_inspect_text_includes_hdf5_provenance_and_adapter(curve: Dataset, tmp_path: Path) -> None:
+    from cpdatakit.inspection import inspect_dataset, render_inspection_text
+
+    output = tmp_path / "curve.h5"
+    schema = load_schema("curve")
+    write_hdf5(curve, output, schema, validate_dataset(curve, schema), hdf5_chunk_size=2)
+
+    rendered = render_inspection_text(inspect_dataset(output))
+
+    assert "HDF5" in rendered
+    assert "Provenance:" in rendered
+    assert "Adapter:" in rendered
+    assert "chunks" in rendered
 
 
 def test_inspect_hdf5_reads_bounded_slices_without_load_dataset(
@@ -195,5 +213,15 @@ def test_inspect_identifies_damask_dadf5(tmp_path: Path) -> None:
     assert result["file"]["format"] == "DAMASK DADF5"
     assert result["adapter"]["name"] == "DamaskDADF5Adapter"
     assert result["adapter"]["label"] == "Taylor"
-    assert result["fields"][0]["name"].startswith("user_dadf5_")
-    assert result["fields"][0]["shape"] == [2, 3, 3]
+    assert result["fields"][0]["name"] == "point_id"
+    field = next(field for field in result["fields"] if field["name"].startswith("user_dadf5_"))
+    assert field["shape"] == [2, 3, 3]
+
+
+def test_inspection_and_reporting_apis_are_exported() -> None:
+    import cpdatakit
+    from cpdatakit.inspection import inspect_dataset
+    from cpdatakit.reporting import render_report_html
+
+    assert cpdatakit.inspect_dataset is inspect_dataset
+    assert cpdatakit.render_report_html is render_report_html

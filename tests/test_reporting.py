@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 from cpdatakit.exceptions import OutputExistsError
@@ -36,7 +34,9 @@ def _build_report_from_dataset(dataset: Dataset, schema: ProfileSchema) -> dict[
         "provenance": {"input_filename": "curve.csv"},
         "adapter": {},
         "hdf5": {},
-        "scope_note": "Validation conformance does not establish physical or scientific correctness.",
+        "scope_note": (
+            "Validation conformance does not establish physical or scientific correctness."
+        ),
     }
 
 
@@ -57,7 +57,9 @@ def test_report_markdown_has_stable_sections_and_field_order(curve: Dataset) -> 
 
     assert rendered.index("## Fields") < rendered.index("## Validation")
     assert rendered.index("| step |") < rendered.index("| strain |")
-    assert "Validation conformance does not establish physical or scientific correctness." in rendered
+    assert (
+        "Validation conformance does not establish physical or scientific correctness." in rendered
+    )
 
 
 def test_report_html_escapes_user_strings() -> None:
@@ -88,7 +90,10 @@ def test_report_contains_errors_warnings_statistics_and_metadata(
     from cpdatakit.reporting import build_report
 
     path = tmp_path / "curve.csv"
-    path.write_text("step,strain,stress\n0,0.0,1.0\n0,0.1,\n", encoding="utf-8")
+    path.write_text(
+        "step,strain,stress\n0,0.0,1.0\n0,0.0,1.0\n1,0.1,\n",
+        encoding="utf-8",
+    )
 
     report = build_report(path, "curve")
 
@@ -147,9 +152,7 @@ def test_write_report_protects_existing_output(curve: Dataset, tmp_path: Path) -
     assert target.read_text(encoding="utf-8").startswith("# CPDataKit Validation Report")
 
 
-def test_build_report_from_hdf5_includes_hdf5_chunk_info(
-    curve: Dataset, tmp_path: Path
-) -> None:
+def test_build_report_from_hdf5_includes_hdf5_chunk_info(curve: Dataset, tmp_path: Path) -> None:
     from cpdatakit.io import write_hdf5
     from cpdatakit.reporting import build_report
 
