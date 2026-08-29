@@ -45,6 +45,7 @@ class FieldSchema:
             if isinstance(value, list):
                 object.__setattr__(self, name, tuple(value))
 
+
 def _freeze_convention(value: Any) -> Any:
     if isinstance(value, Mapping):
         return MappingProxyType({key: _freeze_convention(item) for key, item in value.items()})

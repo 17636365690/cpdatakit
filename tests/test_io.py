@@ -347,6 +347,7 @@ def test_write_hdf5_rejects_invalid_storage_chunk_size(
     assert not output.exists()
     assert list(tmp_path.glob(f".{output.name}.*")) == []
 
+
 def test_write_hdf5_removes_temp_file_after_serialization_failure(tmp_path: Path) -> None:
     schema = load_schema("point")
     dataset = Dataset(pd.DataFrame({"point_id": [0, 1], "vector": [[1.0, 2.0], [3.0]]}))

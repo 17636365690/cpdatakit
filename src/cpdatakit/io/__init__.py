@@ -112,6 +112,7 @@ def _read_schema_snapshot(
         snapshot["uri"] = _required_text_attr(handle, "schema_uri", path)
     return snapshot
 
+
 def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
     if _required_text_attr(handle, "format", path) != "CPDataKit":
         raise DataReadError("HDF5 is not a CPDataKit file (missing format marker)")
