@@ -280,7 +280,9 @@ def test_report_markdown_has_stable_sections_and_field_order(curve: Dataset) -> 
 
     assert rendered.index("## Fields") < rendered.index("## Validation")
     assert rendered.index("| step |") < rendered.index("| strain |")
-    assert "Validation conformance does not establish physical or scientific correctness." in rendered
+    assert (
+        "Validation conformance does not establish physical or scientific correctness." in rendered
+    )
 ~~~
 
 The test helper build_report_from_dataset() is test-only and should assemble the same canonical sections expected from build_report().
@@ -446,10 +448,18 @@ Interfaces:
 def test_cli_inspect_json_writes_stable_output(curve_csv: Path, tmp_path: Path) -> None:
     output = tmp_path / "inspect.json"
 
-    status = main([
-        "inspect", str(curve_csv), "--schema", "curve", "--format", "json",
-        "--output", str(output),
-    ])
+    status = main(
+        [
+            "inspect",
+            str(curve_csv),
+            "--schema",
+            "curve",
+            "--format",
+            "json",
+            "--output",
+            str(output),
+        ]
+    )
 
     assert status == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
@@ -464,10 +474,21 @@ def test_cli_report_html_and_markdown_write_offline_artifacts(
     markdown = tmp_path / "report.md"
 
     assert main(["report", str(curve_csv), "--schema", "curve", "--output", str(html)]) == 0
-    assert main([
-        "report", str(curve_csv), "--schema", "curve", "--format", "markdown",
-        "--output", str(markdown),
-    ]) == 0
+    assert (
+        main(
+            [
+                "report",
+                str(curve_csv),
+                "--schema",
+                "curve",
+                "--format",
+                "markdown",
+                "--output",
+                str(markdown),
+            ]
+        )
+        == 0
+    )
     assert "<html" in html.read_text(encoding="utf-8")
     assert markdown.read_text(encoding="utf-8").startswith("# CPDataKit Validation Report")
 ~~~
@@ -507,7 +528,9 @@ Interfaces:
 Implement these parser arguments:
 
 ~~~python
-inspect = commands.add_parser("inspect", help="Inspect file structure and optional schema conformance")
+inspect = commands.add_parser(
+    "inspect", help="Inspect file structure and optional schema conformance"
+)
 inspect.add_argument("data", type=Path)
 inspect.add_argument("--schema")
 inspect.add_argument("--format", choices=["text", "json"], default="text")
