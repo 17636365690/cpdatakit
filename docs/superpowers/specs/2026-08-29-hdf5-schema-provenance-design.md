@@ -1,42 +1,29 @@
-# HDF5 Schema Provenance Design
+# HDF5 Schema Provenance
 
 **Date:** 2026-08-29  
-**Status:** Approved in chat; implementation in progress
+**Status:** Approved in chat. Implementation in progress.
 
-## Goal
+## Why the snapshot belongs in the file
 
-Make newly written CPDataKit HDF5 files self-describing and auditable by embedding the exact
-validated schema used for the conversion, while keeping existing format-1.0 files readable.
+The existing HDF5 metadata records the profile, schema version, units, mapping, provenance, and
+validation summary. It does not record the actual field definitions. A later reader cannot recover
+custom fields, tensor shapes, component names, or conventions from those values alone.
 
-## Scope
+New files will carry the exact validated schema used to write them. Old format-1.0 files will keep
+working.
 
-This change covers:
+## Format version
 
-1. Canonical schema JSON serialization and SHA-256 helpers.
-2. HDF5 root attributes schema_json, schema_sha256, and optional schema_uri.
-3. Writer-side embedding of the complete validated schema and reader-side hash verification.
-4. Recovery of the embedded schema through load_hdf5() metadata.
-5. Inspection/report metadata showing whether a snapshot is present and its digest.
-6. Backward-compatible tests for legacy HDF5 files without a snapshot.
-7. Data-format, API, README, and changelog documentation.
+The root format_version remains "1.0". The snapshot is an additive part of that format. A new
+writer always stores schema_json and schema_sha256. A legacy file may have neither. If one of the
+two appears without the other, the file is invalid. schema_uri is accepted only with both.
 
-Out of scope: schema migration, external URI fetching, automatic schema selection, changes to
-the schema contract version, solver adapters, and a new HDF5 storage layout.
+This keeps current readers able to open older files. A v0.2.0 reader ignores the extra attributes
+when it opens a new file. A future incompatible envelope can use format version 1.1.
 
-## Format-version decision
+## Canonical schema JSON
 
-The HDF5 envelope remains format_version == "1.0". The snapshot is an additive capability inside
-the existing envelope: a newly written file always contains schema_json and schema_sha256, while
-a legacy 1.0 file may contain neither. A file containing only part of the snapshot is malformed.
-schema_uri is allowed only when the complete embedded snapshot is present.
-
-This decision keeps new CPDataKit readers compatible with v0.2.0 files and lets v0.2.0 readers
-ignore the additional attributes on newly written files. A future incompatible envelope change can
-use HDF5 format version 1.1; this feature does not require that break.
-
-## Canonical schema representation
-
-The public helpers are:
+The schema module exposes two helpers:
 
     def schema_to_canonical_json(
         schema: str | Path | ProfileSchema | Mapping[str, Any],
@@ -46,8 +33,8 @@ The public helpers are:
         schema: str | Path | ProfileSchema | Mapping[str, Any],
     ) -> str
 
-schema_to_canonical_json() validates the schema, obtains schema_to_dict(), and serializes it with
-UTF-8, sorted keys, compact separators, allow_nan=False, and no trailing newline:
+The first helper validates the schema, converts it with schema_to_dict(), and serializes it as
+UTF-8 JSON with sorted keys, compact separators, allow_nan=False, and no trailing newline:
 
     json.dumps(
         schema_to_dict(schema),
@@ -57,29 +44,28 @@ UTF-8, sorted keys, compact separators, allow_nan=False, and no trailing newline
         allow_nan=False,
     )
 
-schema_sha256() hashes those exact UTF-8 bytes and returns lowercase hexadecimal SHA-256. Schema
-JSON stored in HDF5 is this canonical string. Readers parse and validate the JSON, then recompute
-the digest from the validated schema representation instead of trusting the raw attribute.
+The second helper hashes those UTF-8 bytes and returns lowercase hexadecimal SHA-256. The HDF5
+writer stores the same canonical string in schema_json.
 
-## HDF5 metadata contract
+## HDF5 writer and reader
 
-write_hdf5() gains one optional keyword:
+write_hdf5() gains the keyword-only argument:
 
     schema_uri: str | None = None
 
-Every file produced by the writer stores:
+The writer checks that the URI is non-empty text, computes the canonical schema and digest before
+creating a temporary file, then writes:
 
-- schema_json: canonical complete schema JSON;
-- schema_sha256: digest of canonical schema JSON;
-- schema_uri: an optional non-empty producer-supplied reference, never fetched by CPDataKit.
+- schema_json
+- schema_sha256
+- schema_uri, when supplied
 
-Readers require schema_json and schema_sha256 together when either is present. They validate that
-the embedded schema is a JSON object, is accepted by the current schema parser, matches the root
-profile and schema_version, and has the declared SHA-256. Invalid UTF-8, malformed JSON,
-unsupported schemas, profile/version mismatches, invalid digests, and partial attributes raise
-DataReadError.
+The reader accepts HDF5 strings and UTF-8 byte attributes. It parses and validates schema_json,
+checks that the embedded profile and schema_version match the root attributes, and recomputes the
+digest. It raises DataReadError for bad UTF-8, malformed JSON, an unsupported schema, a root
+mismatch, a bad digest, or a partial snapshot. It never follows schema_uri.
 
-load_hdf5() exposes a valid snapshot under:
+load_hdf5() returns the checked snapshot as:
 
     dataset.metadata["schema_snapshot"] == {
         "schema": schema_to_dict(embedded_schema),
@@ -87,47 +73,31 @@ load_hdf5() exposes a valid snapshot under:
         # "uri": "...", when supplied
     }
 
-Legacy files without snapshot attributes remain readable and simply do not contain the
-schema_snapshot metadata key.
+A legacy file has no schema_snapshot key in its metadata.
 
-## Inspection and reporting
+## Inspection
 
-Native CPDataKit HDF5 inspection adds an hdf5.schema_snapshot summary containing present, sha256
-when present, and uri when present. It does not fetch an external URI or replace an explicit schema
-argument. Reports continue to validate against the caller-selected schema; the embedded snapshot
-is provenance, not an implicit scientific inference.
+Native HDF5 inspection reports hdf5.schema_snapshot.present. It includes the digest and URI when
+they exist. The inspection code does not use the embedded schema to replace an explicit schema
+argument. The snapshot records provenance. It does not make a scientific choice for the caller.
 
-## Error handling
+## Compatibility and errors
 
-- Invalid schema objects fail through the existing SchemaError boundary before writing.
-- Invalid schema_uri values fail before a temporary HDF5 file is created.
-- Snapshot parse, schema-validation, digest, and root-consistency failures raise DataReadError.
-- Legacy format-1.0 files with no snapshot remain valid inputs.
-- Atomic write, output-overwrite, validation, unit, and shaped-field semantics remain unchanged.
+Existing positional and keyword arguments to write_hdf5() remain valid. schema_uri is optional and
+keyword-only. The eight existing metadata attributes keep their current meaning. The schema
+contract version remains 1.0. No schema migration, URI download, storage-layout change, adapter,
+or new dependency is part of this work.
 
-## Compatibility
+Schema errors raised before writing use SchemaError. Bad snapshot metadata read from a file uses
+DataReadError. Atomic writes, overwrite protection, validation protection, chunking, and shaped
+field handling stay as they are.
 
-The existing write_hdf5() positional and keyword arguments remain valid; schema_uri is keyword-only
-and optional. The HDF5 root marker remains format_version="1.0", the eight existing metadata
-attributes remain required, and no existing attribute changes meaning. CPDataKit v0.2.0 readers
-ignore unknown snapshot attributes; current readers accept both legacy and snapshot-bearing 1.0
-files.
+## Tests and docs
 
-## Test strategy
+Tests cover deterministic canonical JSON, the hash, a round trip with an URI, tampering, profile
+and version mismatches, partial attributes, bad digests, and legacy files. Inspection must show
+the snapshot status without materializing raw records.
 
-Tests will follow red-green-refactor:
-
-- canonical schema JSON is deterministic and hashable;
-- round-tripped HDF5 contains the exact canonical JSON and matching SHA-256;
-- embedded schema metadata is recovered with profile/version and optional URI;
-- tampered JSON, digest, profile, version, UTF-8, partial attributes, and URI placement fail;
-- legacy complete format-1.0 files without snapshot attributes remain readable;
-- inspection exposes snapshot presence/digest without materializing records;
-- existing HDF5 read/write, atomicity, chunking, and CLI tests remain green.
-
-## Documentation and acceptance criteria
-
-docs/data-format.md, docs/schema-authoring.md, both READMEs, and CHANGELOG.md will document the
-attributes, canonicalization, compatibility rule, and URI non-fetch behavior. Acceptance requires
-the full test suite, coverage gate, Ruff, format check, build, and diff audit to pass, with no
-dependency or solver-specific changes.
+The data-format guide, schema-authoring guide, READMEs, and changelog will document the three
+attributes, the hash rule, the compatibility behavior, and the fact that URI values are never
+fetched.

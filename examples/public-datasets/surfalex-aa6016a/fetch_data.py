@@ -69,7 +69,7 @@ def _download(spec: Mapping[str, str], directory: Path, *, force: bool) -> Path:
         except ValueError as exc:
             if not force:
                 raise ValueError(
-                    f"Existing source file is different: {target}; pass --force to replace it"
+                    f"Existing source file is different: {target}. Use --force to replace it"
                 ) from exc
         else:
             return target

@@ -1,58 +1,53 @@
-# Surfalex Public Reference Case Design
+# Surfalex Public Reference Case
 
 **Date:** 2026-08-29  
-**Status:** Approved in chat; implementation in progress
+**Status:** Approved in chat. Implementation in progress.
 
-## Goal
+## What this case is for
 
-Add CPDataKit Public Reference Case #1 using the openly licensed Surfalex HF (AA6016A)
-Workflow 7A dataset, demonstrating an auditable conversion from a real MatFlow/DAMASK
-workflow artifact to a validated CPDataKit HDF5 dataset.
+Public Reference Case 1 uses the Surfalex HF (AA6016A) Workflow 7A data. It gives CPDataKit a
+real file to work on and shows the steps between a solver workflow and a checked CPDataKit HDF5
+artifact.
 
-## Evidence basis
+The source record is Zenodo DOI 10.5281/zenodo.7307639, titled "Surfalex HF formability study -
+Workflow 7 - Lankford coefficient". Adam J. Plowman is the listed creator. The record and the
+Workflow 7A specification use CC BY 4.0. The accompanying 2023 paper is "A novel integrated
+framework for reproducible formability predictions using virtual materials testing", DOI
+10.12688/materialsopenres.17516.1. The analysis repository is
+LightForm-group/surfalex_data_explorer, licensed under MIT.
 
-The source case is the Zenodo record 10.5281/zenodo.7307639, “Surfalex HF formability study -
-Workflow 7 - Lankford coefficient”, published by Adam J. Plowman and released under CC BY 4.0.
-The associated 2023 paper is “A novel integrated framework for reproducible formability
-predictions using virtual materials testing”, DOI 10.12688/materialsopenres.17516.1. The
-upstream analysis repository is LightForm-group/surfalex_data_explorer under MIT.
+The source files are:
 
-The selected 7A files are:
-
-- 7A_simulate_uniaxial_tension.yml, 2,864 bytes, upstream MD5
-  3500212694d54f8a974af4c8a9af9b84, local SHA-256
+- 7A_simulate_uniaxial_tension.yml, 2,864 bytes, MD5
+  3500212694d54f8a974af4c8a9af9b84, SHA-256
   D548C12DFD7FABF01B3DCE4233C00FAF5C4BB13E04D5A5BB8E1D7EA77A393ABB.
-- 7A_workflow.hdf5, 7,623,248 bytes, upstream MD5
-  58abe7493d55d8f5e0033ba740e76f8e, local SHA-256
+- 7A_workflow.hdf5, 7,623,248 bytes, MD5
+  58abe7493d55d8f5e0033ba740e76f8e, SHA-256
   A4C1C51609E9DADCD3EA680AB6B3511877AFFAC5F24FE25B84DAA6DAF8FB0693.
 
-The HDF5 file is MatFlow/Hickle workflow storage, not DAMASK DADF5. Its documented volume
-outputs include vol_avg_stress, vol_avg_strain, vol_avg_def_grad, and
-vol_avg_def_grad_plastic, each with 1,501 records and a 3 x 3 trailing tensor shape.
+The HDF5 file is MatFlow/Hickle workflow storage. It is not a DAMASK DADF5 file. Its selected
+volume outputs are vol_avg_stress, vol_avg_strain, vol_avg_def_grad, and
+vol_avg_def_grad_plastic. Each has 1,501 records with a 3 x 3 tensor for each record.
 
-## Scope
+## Files in this example
 
-This case adds:
+The case directory contains:
 
-1. A no-network test fixture matching the relevant nested MatFlow/Hickle paths.
-2. A local schema declaring a finite-strain curve with explicit stress/strain conventions and
-   row-major 3 x 3 tensor components.
-3. A local mapping declaring source names and units explicitly.
-4. A fetch script that downloads only the two selected files on explicit user request and checks
-   both upstream MD5 and expected SHA-256.
-5. A workflow script that extracts selected arrays with h5py, normalizes them through CPDataKit,
-   writes a provenance-rich HDF5 file, and optionally writes an offline report.
-6. A README with source citation, license, exact hashes, before/after structure, commands, and
-   limitations.
-7. A manifest with expected record count, fields, shapes, units, and schema hash.
+1. A small synthetic HDF5 fixture in the test suite that uses the same nested names as the source.
+2. A local finite-strain schema with explicit Cauchy stress, Hencky strain, finite-strain, and
+   row-major tensor declarations.
+3. A local mapping for the four source outputs and their units.
+4. fetch_data.py, which downloads the YAML and HDF5 files only when the user asks for them and
+   checks both published MD5 and expected SHA-256.
+5. workflow.py, which reads the selected nodes, runs CPDataKit normalization and validation, and
+   writes the output HDF5 plus an optional offline report.
+6. A manifest with source and expected-output metadata.
 
-Out of scope: a general MatFlow adapter, a DAMASK solver dependency, redistribution of raw files,
-automatic unit or convention inference, solver execution, scientific correctness claims, and a
-second 316L case.
+Raw source data is not committed.
 
-## Case workflow
+## Workflow
 
-The user explicitly runs:
+The user runs:
 
     python examples/public-datasets/surfalex-aa6016a/fetch_data.py --output data
     python examples/public-datasets/surfalex-aa6016a/workflow.py \
@@ -60,44 +55,43 @@ The user explicitly runs:
       --output artifacts/surfalex-7a.h5 \
       --report artifacts/surfalex-7a-report.json
 
-fetch_data.py uses stdlib urllib, creates the selected output directory, refuses to silently
-replace an existing file with different content, and validates MD5 plus SHA-256. It does not run
-during import or tests.
-
-workflow.py reads only these explicit paths:
+The extractor reads these exact paths:
 
     /element_data/0022_volume_element_response/data/'volume_data'/data/'vol_avg_stress'
     /element_data/0022_volume_element_response/data/'volume_data'/data/'vol_avg_strain'
     /element_data/0022_volume_element_response/data/'volume_data'/data/'vol_avg_def_grad'
     /element_data/0022_volume_element_response/data/'volume_data'/data/'vol_avg_def_grad_plastic'
 
-The extractor obtains each array from the nested data/data node and obtains the record axis from
-the stress output metadata increments array. It checks that all selected arrays have shape
-(1501, 3, 3) and matching increments before constructing a Dataset with source path and raw
-units metadata.
+It takes the record axis from the stress output's increments metadata. It checks that every
+selected output has shape (1501, 3, 3) and that the increment arrays agree before building a
+Dataset.
 
-The case mapping explicitly renames increment to step, vol_avg_stress to stress with Pa-to-MPa
-conversion, vol_avg_strain to strain, vol_avg_def_grad to F, and
-vol_avg_def_grad_plastic to Fp. The schema declares Cauchy stress, Hencky strain, and
-row-major tensor component order; these declarations are case metadata, not inferred by the
-extractor.
+The mapping renames increment to step. It converts stress from Pa to MPa. It maps strain, F, and
+Fp to dimensionless fields. The schema stores the source's Cauchy and Hencky labels and the
+row-major tensor order. These are written down for this case. The extractor never guesses them.
 
-## Output contract
+## Output
 
-The normalized output is a CPDataKit HDF5 file with fields step, stress, strain, F, and Fp.
-All tensor fields retain per-record shape (3, 3), stress is stored in MPa, and dimensionless
-fields retain dimensionless units. The HDF5 writer embeds the local schema JSON and SHA-256,
-the raw input basename and digest, explicit mapping, conversion time, CPDataKit/Python versions,
-validation summary, and operation log.
+The converted file has step, stress, strain, F, and Fp under /data. The tensor fields retain their
+(3, 3) per-record shape. The writer also records the canonical schema, its SHA-256, source name
+and digest, mapping, units, validation summary, versions, and operation log.
 
-The report is optional, offline, and contains aggregate structure/statistics/validation metadata
-only. It must not include raw tensor records or absolute local paths.
+The optional report contains field shapes, counts, metadata, statistics where available, and
+validation findings. It contains no raw tensor values and no local absolute paths.
 
-## Testing and acceptance
+## Limits
 
-Tests run entirely offline against a tiny synthetic HDF5 fixture with the same path conventions.
-They verify extraction, shape/count checks, explicit mapping, HDF5 schema snapshot recovery,
-report generation, and failure for missing selected paths or inconsistent record counts.
+This example is a case-specific extractor. It does not make CPDataKit a general MatFlow reader
+or a generic DAMASK adapter. It does not run DAMASK, install MatFlow, read DADF5, reconstruct
+global cell mappings, or judge the physical model. The user downloads the source files under the
+license shown by the upstream record.
 
-Acceptance requires the example tests, full project tests, coverage gate, Ruff, format check,
-package build, and diff audit to pass. No raw third-party data may appear in Git history.
+The report may leave aggregate statistics empty for shaped fields. CPDataKit keeps tensor
+components intact instead of flattening them without a declared rule.
+
+## Acceptance
+
+The case tests run offline. They cover extraction, shapes, record counts, the Pa-to-MPa mapping,
+schema snapshot recovery, report generation, and malformed source structure. The project checks
+also cover the full test suite, coverage threshold, Ruff, formatting, build, and distribution
+contents.

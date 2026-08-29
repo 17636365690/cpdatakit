@@ -35,9 +35,9 @@ The built-in CPDataKit schema v1.0 has three profiles:
 Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
 take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
 summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
-operation log. Files written by the current development code also embed the complete canonical
-schema and its SHA-256 digest; an optional schema URI is recorded but never fetched. The read-only
-DAMASK DADF5 adapter can inspect or report a selection when the file
+operation log. The current HDF5 writer also puts the canonical schema and its SHA-256 digest in
+the file. If you provide a schema URI, CPDataKit records it and leaves it alone. The read-only DAMASK
+DADF5 adapter can inspect or report a selection when the file
 has one clear choice. CPDataKit HDF5 remains a separate format from DAMASK DADF5 and Abaqus ODB.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
@@ -97,14 +97,14 @@ python examples/generate_sample_data.py --output sample_data
 The examples and tests cover these paths:
 
 - validate exported curve, point, or two-dimensional field records against an explicit contract.
-- normalize exporter-specific column names and units with a reviewable JSON mapping file, including
-  elementwise conversion for declared shaped numeric fields without flattening their dimensions.
+- normalize exporter-specific column names and units with a reviewable JSON mapping file. An
+  explicit mapping converts each element of a declared shaped field and leaves its dimensions intact.
 - preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
 - inspect files and produce reports that can be shared without including raw records.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
-- reproduce a public Surfalex HF (AA6016A) Workflow 7A conversion with explicit tensor mappings,
-  source hashes, and schema provenance; raw third-party files are fetched on demand.
+- run the Surfalex HF (AA6016A) Workflow 7A example with explicit tensor mappings, source hashes,
+  and schema provenance. Raw third-party files are downloaded only when requested.
 
 ## Useful links
 

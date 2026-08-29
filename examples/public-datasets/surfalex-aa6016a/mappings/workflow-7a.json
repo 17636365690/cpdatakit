@@ -3,14 +3,14 @@
     {
       "source": "increment",
       "target": "step",
-      "source_note": "Workflow 7A volume-output increment metadata; mapped explicitly to the CPDataKit record index."
+      "source_note": "Workflow 7A volume-output increment metadata. The case maps it to the CPDataKit record index."
     },
     {
       "source": "vol_avg_stress",
       "target": "stress",
       "input_unit": "Pa",
       "output_unit": "MPa",
-      "source_note": "Workflow 7A output is documented as volume-averaged Cauchy stress; Pa input is an explicit case declaration."
+      "source_note": "Workflow 7A documents this output as volume-averaged Cauchy stress. This case declares the input as Pa."
     },
     {
       "source": "vol_avg_strain",

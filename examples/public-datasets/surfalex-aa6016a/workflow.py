@@ -117,8 +117,8 @@ def extract_dataset(path: str | Path) -> Dataset:
                 array = values[name]
                 if array.ndim != 3 or tuple(array.shape[1:]) != (3, 3):
                     raise DataReadError(
-                        f"MatFlow output {name!r} has shape {array.shape}; "
-                        f"expected ({record_count}, 3, 3)"
+                        f"MatFlow output {name!r} has shape {array.shape}. "
+                        f"Expected ({record_count}, 3, 3)"
                     )
                 if array.shape[0] != record_count:
                     raise DataReadError(
@@ -174,7 +174,7 @@ def run(
         schema,
         validation,
         schema_uri=SCHEMA_URI,
-        source_description="Surfalex HF Workflow 7A; Zenodo 10.5281/zenodo.7307639",
+        source_description="Surfalex HF Workflow 7A. Zenodo 10.5281/zenodo.7307639",
         operation_log=[
             "source:zenodo:10.5281/zenodo.7307639",
             "extract:matflow:volume_data",

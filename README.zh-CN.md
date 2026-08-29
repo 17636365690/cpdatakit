@@ -20,8 +20,8 @@ v0.2.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV�
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。工具不会猜测应力/应变量、张量顺序、取向表达、单位或 ID 含义。已有的
 DAMASK DADF5 只读适配器也能在文件只有一个明确选择时完成检查和报告。
-当前开发版本写出的 HDF5 还会嵌入完整 canonical schema 及其 SHA-256；可选的 schema URI
-只作为来源记录，CPDataKit 不会自动下载。
+当前 writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
+CPDataKit 只记录它，不会自动访问。
 
 ## 安装与快速开始
 
@@ -45,13 +45,13 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 示例和测试覆盖以下路径：
 
 - 在分析或交换前，按显式 schema 验证 curve、point 和二维 field 数据；
-- 使用 JSON mapping 文件处理不同导出器的字段名和单位；对于声明过的向量、矩阵和张量字段，
-  单位转换按元素进行并保持原有 shape，不会自动展平；
+- 使用 JSON mapping 文件处理不同导出器的字段名和单位。声明过的向量、矩阵和张量字段会
+  按元素转换单位，并保持原有 shape；
 - 以声明的 shape 和 component order 保存向量/张量数据；
 - 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
-- 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，展示显式张量 mapping、来源 hash
-  和 schema provenance；第三方原始文件只在用户请求时下载。
+- 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，查看显式张量 mapping、来源 hash
+  和 schema provenance。第三方原始文件只在用户请求时下载。
 
 ## 项目与集成链接
 

@@ -23,8 +23,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 - Added offline `report` output in HTML, Markdown, and canonical JSON. Reports include the schema,
   validation errors and warnings, descriptive statistics, sanitized provenance, and overwrite
   protection. The CPDataKit HDF5 1.0 format and existing CLI commands stay unchanged.
-- Added canonical schema JSON and SHA-256 helpers, and embedded the complete schema snapshot in
-  newly written HDF5 files with an optional non-fetching `schema_uri`.
+- Added helpers for canonical schema JSON and SHA-256 hashes. New HDF5 files now carry the schema
+  snapshot, with an optional `schema_uri` that is recorded but never fetched.
 
 ### Fixed
 
@@ -32,10 +32,10 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
   metadata objects; reject missing, unsupported, malformed, or inconsistent envelopes.
 - Refuse invalid HDF5 validation results unless `allow_invalid=True` is explicit, and make writes
   atomic with temporary-file cleanup after serialization failures.
-- Apply explicit Pint unit conversions to declared vector, matrix, and tensor fields without
-  flattening their per-record shapes; malformed shaped values now fail with record context.
-- Validate embedded HDF5 schema JSON, profile/version consistency, and schema hashes while keeping
-  legacy format-1.0 files without snapshots readable.
+- Fixed unit conversion for declared vector, matrix, and tensor fields. Values keep their
+  per-record shape, and malformed shaped values report the record that failed.
+- Check embedded HDF5 schema JSON, profile/version matches, and hashes while keeping legacy
+  format-1.0 files without snapshots readable.
 
 ### Changed
 
