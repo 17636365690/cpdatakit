@@ -152,3 +152,34 @@ def test_fetch_manifest_contains_published_hashes() -> None:
     }
     assert all(len(item["md5"]) == 32 for item in fetch.SOURCE_FILES)
     assert all(len(item["sha256"]) == 64 for item in fetch.SOURCE_FILES)
+
+
+def test_fetch_verifier_checks_md5_and_sha256(tmp_path: Path) -> None:
+    fetch = _load_case_module("fetch_data")
+    path = tmp_path / "payload.bin"
+    path.write_bytes(b"hello world")
+
+    fetch.verify_file(
+        path,
+        {
+            "name": "payload.bin",
+            "md5": "5eb63bbbe01eeed093cb22bb8f5acdc3",
+            "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+        },
+    )
+
+
+def test_fetch_verifier_rejects_wrong_digest(tmp_path: Path) -> None:
+    fetch = _load_case_module("fetch_data")
+    path = tmp_path / "payload.bin"
+    path.write_bytes(b"hello world")
+
+    with pytest.raises(ValueError, match="MD5 mismatch"):
+        fetch.verify_file(
+            path,
+            {
+                "name": "payload.bin",
+                "md5": "0" * 32,
+                "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+            },
+        )
