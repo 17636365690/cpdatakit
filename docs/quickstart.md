@@ -62,7 +62,23 @@ cpdatakit convert cpdatakit-demo/synthetic_curve.csv --schema curve --output cur
 The CPDataKit HDF5 file embeds the schema/profile, units, source filename and SHA-256, conversion
 time, software versions, validation summary, and operation log.
 
-## 5. Plot the declared curve
+## 5. Inspect and share the result
+
+Inspect the file structure as stable JSON and write a self-contained validation report:
+
+```bash
+cpdatakit inspect curve.h5 --format json --output inspect.json
+cpdatakit report curve.h5 --schema curve --output report.html
+```
+
+The inspection includes format/version detection, ordered fields, dtype, shape, units, missing
+values, HDF5 chunks, provenance, adapter metadata, and structural risks. The report adds schema
+profile/version, validation errors and warnings, descriptive statistics, and a scope note. Open
+`report.html` directly in a browser without network access; it contains no JavaScript or CDN assets.
+Output files are not overwritten unless `--force` is supplied. A passing validation result does not
+mean that the data are physically or scientifically correct.
+
+## 6. Plot the declared curve
 
 ```bash
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
@@ -72,7 +88,7 @@ At this point, the directory contains `validation.json`, `summary.json`, `curve.
 `stress-strain.png`. CPDataKit checks the data contract. Physical correctness remains outside
 the package's scope.
 
-## 6. Read a window or stream chunks
+## 7. Read a window or stream chunks
 
 Use the explicit HDF5 readers when a full materialized read is not the right fit:
 
@@ -89,7 +105,7 @@ every chunk is a `Dataset` with the HDF5 metadata and source path preserved. Rea
 along the record axis, so vector and tensor values keep their per-record shapes. Use
 `load_dataset()` when the existing full-read workflow is sufficient.
 
-## 7. Opt into record-axis HDF5 storage chunks
+## 8. Opt into record-axis HDF5 storage chunks
 
 For a larger sequential-read workload, choose the HDF5 storage layout explicitly while keeping
 the same read APIs:
@@ -119,7 +135,7 @@ vector and tensor trailing dimensions remain intact. It is separate from the rea
 `iter_hdf5_chunks(..., chunk_size=...)` batch size. Use `load_hdf5()` for a selected window,
 `iter_hdf5_chunks()` for bounded iteration, and `load_dataset()` for the existing full-read path.
 
-## 8. Measure read scaling
+## 9. Measure read scaling
 
 From a repository checkout with the development environment active, run both diagnostic sizes:
 

@@ -98,6 +98,34 @@ are therefore retained rather than flattened. `hdf5_chunk_size` controls the HDF
 the `chunk_size` argument to `iter_hdf5_chunks()` controls the number of records returned per
 reader iteration. Full, field-selected, and bounded/chunked reads preserve the same logical values.
 
+## Inspection and validation reports
+
+`inspect_dataset()` returns a JSON-compatible structure with `file`, ordered `fields`,
+`record_count`, `hdf5`, `provenance`, `adapter`, and `risks`. Each field reports its name, dtype,
+full shape, per-record shape, declared unit, missing-value count, optional description, and HDF5
+chunks when applicable. `inspect_hdf5_structure()` reads native HDF5 attrs and dataset metadata with
+h5py and counts missing values through bounded slices; it does not call `load_dataset()` to load the
+whole HDF5 table. DAMASK DADF5 detection remains read-only and follows the explicit adapter
+selection rules.
+
+`build_report()` adds the selected schema profile/version, `validation.errors`,
+`validation.warnings`, descriptive statistics, provenance, adapter information, HDF5 chunk details,
+and the statement that validation conformance does not establish physical or scientific
+correctness. JSON is canonical with sorted keys; Markdown has fixed headings and field order; HTML
+is static, escaped, self-contained, and suitable for offline printing. Reports include aggregate
+metadata only and never raw records. Provenance is portable: it contains a basename and may contain
+a digest, but not an absolute path. Credential-like metadata is redacted.
+
+The CLI forms are:
+
+```text
+cpdatakit inspect INPUT [--schema SCHEMA] [--format text|json] [--output PATH] [--force]
+cpdatakit report INPUT --schema SCHEMA --output PATH [--format html|markdown|json] [--force]
+```
+
+Existing outputs are protected by default. Exit status `0` means no validation errors, `1` means
+data findings, and `2` means a parameter, schema, input, metadata, or output failure.
+
 ## Validation meaning
 
 A report contains `valid`, `errors`, `warnings`, codes, field names, messages, affected counts,

@@ -35,7 +35,8 @@ The built-in CPDataKit schema v1.0 has three profiles:
 Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
 take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
 summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
-operation log. CPDataKit HDF5 is not DAMASK DADF5 or Abaqus ODB.
+operation log. The read-only DAMASK DADF5 adapter can also be inspected or reported when its
+explicit selection is unambiguous; CPDataKit HDF5 is not DAMASK DADF5 or Abaqus ODB.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
 missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
@@ -97,6 +98,7 @@ The examples and tests cover these paths:
 - normalize exporter-specific column names and units with a reviewable JSON mapping file.
 - preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
+- inspect file structure and write portable validation reports without exposing raw records.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
 
 ## Useful links
@@ -134,16 +136,35 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 for the JSON format and no-inference rules.
 
+Inspect a file and create a shareable offline report:
+
+```bash
+cpdatakit inspect curve.h5 --format json --output inspect.json
+cpdatakit report curve.h5 --schema curve --output report.html
+cpdatakit report curve.h5 --schema curve --format markdown --output report.md
+```
+
+`inspect` accepts an optional schema and reports the detected format, fields, dtype, shape, units,
+missing values, HDF5 chunks, provenance, adapter, and structural risks. `report` requires a schema
+and writes HTML by default; `--format markdown` and `--format json` are also available. The HTML
+report is self-contained and can be opened or printed offline. Reports contain aggregate statistics
+and validation findings, not raw records. Existing output files are protected unless `--force` is
+passed.
+
 Use `--force` to replace an output. Expected errors are concise and have no traceback. Put the
 global `--debug` option before the subcommand when an unexpected failure needs more detail. A
-validation or summary command returns `0` for conforming data and `1` for findings. Usage, read,
-and output failures return `2`. Run `cpdatakit --help` or `cpdatakit <command> --help` for details.
+validation, summary, inspect, or report command returns `0` when no validation errors are found and
+`1` when data findings are present. Usage, read, schema, and output failures return `2`. A passing
+validation report does not prove physical or scientific correctness. Run `cpdatakit --help` or
+`cpdatakit <command> --help` for details.
 
 ## Python API
 
 ```python
 from cpdatakit import (
     FieldMapping,
+    build_report,
+    inspect_dataset,
     load_hdf5,
     load_dataset,
     normalize_dataset,
@@ -165,6 +186,9 @@ normalized = normalize_dataset(
 report = validate_dataset(normalized, "curve")
 summary = summarize_dataset(normalized, "curve", validation=report)
 print(report.valid, summary["record_count"])
+inspection = inspect_dataset("curve.h5", schema="curve")
+offline_report = build_report("curve.h5", "curve")
+print(inspection["record_count"], offline_report["validation"]["valid"])
 
 dadf5 = DamaskDADF5Adapter(
     kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
@@ -204,7 +228,8 @@ the field rules it should follow. That gives the next change something concrete 
 
 Version 0.2.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
 It does not run solvers or constitutive integration, and it has no 3D interactive graphics,
-automatic scientific inference, streaming, or distributed processing. The bundled DAMASK DADF5
+automatic scientific inference, or distributed processing. Native HDF5 inspection uses bounded
+reads, while report analysis uses the existing validation/statistics APIs. The bundled DAMASK DADF5
 reader is a narrow, read-only selection adapter; it does not provide full solver integration or
 global cell remapping. Further DAMASK/Abaqus work requires format evidence, license review, and
 reproducible test data. See the

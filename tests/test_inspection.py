@@ -87,6 +87,12 @@ def test_inspect_json_preserves_input_field_order(tmp_path: Path) -> None:
     assert result["record_count"] == 1
 
 
+def test_inspection_json_renderer_is_sorted_and_newline_terminated() -> None:
+    from cpdatakit.inspection import render_inspection_json
+
+    assert render_inspection_json({"z": 1, "a": 2}) == '{\n  "a": 2,\n  "z": 1\n}\n'
+
+
 def test_inspect_cpdatakit_hdf5_reports_shape_dtype_units_and_chunks(
     curve: Dataset, tmp_path: Path
 ) -> None:

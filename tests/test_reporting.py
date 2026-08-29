@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -87,7 +88,7 @@ def test_report_html_escapes_user_strings() -> None:
 def test_report_contains_errors_warnings_statistics_and_metadata(
     tmp_path: Path,
 ) -> None:
-    from cpdatakit.reporting import build_report
+    from cpdatakit.reporting import build_report, render_report_html, render_report_markdown
 
     path = tmp_path / "curve.csv"
     path.write_text(
@@ -102,6 +103,11 @@ def test_report_contains_errors_warnings_statistics_and_metadata(
     assert "numeric_fields" in report["statistics"]
     assert report["provenance"]["input_filename"] == "curve.csv"
     assert "scope_note" in report
+    markdown = render_report_markdown(report)
+    html = render_report_html(report)
+    assert "missing_value" in markdown and "duplicate_record" in markdown
+    assert "missing_value" in html and "duplicate_record" in html
+    assert str(path) not in json.dumps(report)
 
 
 def test_report_redacts_paths_and_credentials() -> None:
