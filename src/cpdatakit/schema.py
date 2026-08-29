@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 from collections.abc import Iterable, Mapping
@@ -304,6 +305,26 @@ def schema_to_dict(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> di
             for item in contract.fields
         ],
     }
+
+
+def schema_to_canonical_json(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> str:
+    """Return compact deterministic JSON for schema hashing and snapshots."""
+    contract = validate_schema(schema)
+    try:
+        return json.dumps(
+            schema_to_dict(contract),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+    except (TypeError, ValueError) as exc:
+        raise SchemaError(f"Schema is not JSON serializable: {exc}") from exc
+
+
+def schema_sha256(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> str:
+    """Return SHA-256 of the canonical schema JSON UTF-8 bytes."""
+    return hashlib.sha256(schema_to_canonical_json(schema).encode("utf-8")).hexdigest()
 
 
 def schema_to_json(
