@@ -1,0 +1,38 @@
+{
+  "mappings": [
+    {
+      "source": "increment",
+      "target": "step",
+      "source_note": "Workflow 7A volume-output increment metadata; mapped explicitly to the CPDataKit record index."
+    },
+    {
+      "source": "vol_avg_stress",
+      "target": "stress",
+      "input_unit": "Pa",
+      "output_unit": "MPa",
+      "source_note": "Workflow 7A output is documented as volume-averaged Cauchy stress; Pa input is an explicit case declaration."
+    },
+    {
+      "source": "vol_avg_strain",
+      "target": "strain",
+      "input_unit": "1",
+      "output_unit": "dimensionless",
+      "source_note": "Workflow 7A output is documented as volume-averaged Hencky strain."
+    },
+    {
+      "source": "vol_avg_def_grad",
+      "target": "F",
+      "input_unit": "1",
+      "output_unit": "dimensionless",
+      "source_note": "Workflow 7A output field is the volume-averaged total deformation gradient F."
+    },
+    {
+      "source": "vol_avg_def_grad_plastic",
+      "target": "Fp",
+      "input_unit": "1",
+      "output_unit": "dimensionless",
+      "source_note": "Workflow 7A output field is the volume-averaged plastic deformation gradient Fp."
+    }
+  ],
+  "drop_unmapped": true
+}
