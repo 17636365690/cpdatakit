@@ -17,12 +17,12 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
   conventions, offline tests, ambiguity handling, and dependency boundaries.
 - A read-only DAMASK DADF5 adapter for explicit increment/branch/dataset selections, with source
   metadata and no DAMASK runtime dependency.
-- `inspect` structure checks for CSV, JSON, CPDataKit HDF5, and unambiguous DAMASK DADF5 selections,
-  including bounded HDF5 metadata/missing-value reads, chunks, provenance, adapter details, and
-  optional schema validation.
-- Offline `report` artifacts in HTML, Markdown, or canonical JSON with schema profiles, validation
-  errors/warnings, descriptive statistics, sanitized provenance, and overwrite protection. The
-  CPDataKit HDF5 1.0 format and existing CLI commands remain unchanged.
+- Added `inspect` for CSV, JSON, CPDataKit HDF5, and clear DAMASK DADF5 selections. It reads HDF5
+  metadata and missing values in bounded slices, then shows chunks, provenance, adapter details, and
+  optional schema findings.
+- Added offline `report` output in HTML, Markdown, and canonical JSON. Reports include the schema,
+  validation errors and warnings, descriptive statistics, sanitized provenance, and overwrite
+  protection. The CPDataKit HDF5 1.0 format and existing CLI commands stay unchanged.
 
 ### Fixed
 

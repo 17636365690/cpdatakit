@@ -101,20 +101,20 @@ reader iteration. Full, field-selected, and bounded/chunked reads preserve the s
 ## Inspection and validation reports
 
 `inspect_dataset()` returns a JSON-compatible structure with `file`, ordered `fields`,
-`record_count`, `hdf5`, `provenance`, `adapter`, and `risks`. Each field reports its name, dtype,
+`record_count`, `hdf5`, `provenance`, `adapter`, and `risks`. A field record carries its name, dtype,
 full shape, per-record shape, declared unit, missing-value count, optional description, and HDF5
-chunks when applicable. `inspect_hdf5_structure()` reads native HDF5 attrs and dataset metadata with
-h5py and counts missing values through bounded slices; it does not call `load_dataset()` to load the
-whole HDF5 table. DAMASK DADF5 detection remains read-only and follows the explicit adapter
+chunks when they exist. `inspect_hdf5_structure()` reads native HDF5 attrs and dataset metadata with
+h5py, then counts missing values from bounded slices. It never calls `load_dataset()` to materialize
+the whole HDF5 table. DAMASK DADF5 detection stays read-only and follows the adapter's explicit
 selection rules.
 
 `build_report()` adds the selected schema profile/version, `validation.errors`,
 `validation.warnings`, descriptive statistics, provenance, adapter information, HDF5 chunk details,
-and the statement that validation conformance does not establish physical or scientific
-correctness. JSON is canonical with sorted keys; Markdown has fixed headings and field order; HTML
-is static, escaped, self-contained, and suitable for offline printing. Reports include aggregate
-metadata only and never raw records. Provenance is portable: it contains a basename and may contain
-a digest, but not an absolute path. Credential-like metadata is redacted.
+and a scope note saying that validation conformance does not establish physical or scientific
+correctness. JSON uses sorted keys. Markdown keeps fixed headings and field order. HTML is static,
+escaped, and ready for offline printing. Reports contain aggregate metadata and no raw records.
+Provenance keeps a basename and may include a digest, never an absolute path. Credential-like values
+are redacted.
 
 The CLI forms are:
 

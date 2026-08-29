@@ -1,4 +1,4 @@
-"""Portable dataset inspection and bounded HDF5 structure discovery."""
+"""Inspect datasets and read native HDF5 structure in bounded slices."""
 
 from __future__ import annotations
 

@@ -64,19 +64,18 @@ time, software versions, validation summary, and operation log.
 
 ## 5. Inspect and share the result
 
-Inspect the file structure as stable JSON and write a self-contained validation report:
+Start with the structure, then create a report you can share:
 
 ```bash
 cpdatakit inspect curve.h5 --format json --output inspect.json
 cpdatakit report curve.h5 --schema curve --output report.html
 ```
 
-The inspection includes format/version detection, ordered fields, dtype, shape, units, missing
-values, HDF5 chunks, provenance, adapter metadata, and structural risks. The report adds schema
-profile/version, validation errors and warnings, descriptive statistics, and a scope note. Open
-`report.html` directly in a browser without network access; it contains no JavaScript or CDN assets.
-Output files are not overwritten unless `--force` is supplied. A passing validation result does not
-mean that the data are physically or scientifically correct.
+检查结果会列出格式和版本、字段顺序、dtype、shape、单位、缺失值、HDF5 chunk、provenance、
+adapter 信息以及结构风险。报告还会带上 schema profile/version、validation errors 和 warnings、
+描述性统计与范围说明。`report.html` 可以直接用浏览器打开，也可以在没有网络的环境中打印。
+文件不会自动覆盖，确实要替换时再加 `--force`。验证通过只说明声明的检查没有报错，不能代替
+物理或科学正确性判断。
 
 ## 6. Plot the declared curve
 

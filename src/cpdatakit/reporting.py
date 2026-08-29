@@ -1,4 +1,4 @@
-"""Stable validation-report payloads and offline renderers."""
+"""Build validation reports for terminal and offline use."""
 
 from __future__ import annotations
 

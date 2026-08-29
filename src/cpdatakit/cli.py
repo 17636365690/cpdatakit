@@ -77,9 +77,7 @@ def _parser() -> argparse.ArgumentParser:
     plot.add_argument("--field", help="Declared numeric field for histogram")
     plot.add_argument("--output", required=True, type=Path)
     plot.add_argument("--force", action="store_true")
-    inspect = commands.add_parser(
-        "inspect", help="Inspect file structure and optional schema conformance"
-    )
+    inspect = commands.add_parser("inspect", help="Inspect a file and optionally check a schema")
     inspect.add_argument("data", type=Path, help="Input CSV, JSON records, or HDF5")
     inspect.add_argument("--schema", help="Optional built-in profile or JSON schema path")
     inspect.add_argument("--format", choices=["text", "json"], default="text")

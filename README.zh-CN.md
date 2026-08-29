@@ -19,7 +19,7 @@ Dassault Systèmes 没有官方隶属关系。
 v0.2.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。工具不会猜测应力/应变量、张量顺序、取向表达、单位或 ID 含义。已有的
-DAMASK DADF5 只读适配器也支持在选择无歧义时进行检查和报告。
+DAMASK DADF5 只读适配器也能在文件只有一个明确选择时完成检查和报告。
 
 ## 安装与快速开始
 
@@ -81,12 +81,12 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 
 详见[schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)。
 
-`inspect` 的 schema 参数可选，报告文件类型、格式版本、字段 dtype/shape/单位、缺失值、
-HDF5 chunk、provenance、adapter 和结构风险；`report` 要求显式 schema，默认生成完全离线的
-HTML，也支持 `--format markdown` 和 `--format json`。报告只包含统计和验证结果，不包含原始
-记录。输出已存在时默认拒绝覆盖；显式传入 `--force` 才会替换。验证/检查发现数据问题时
-退出码为 `1`，参数、schema、读取和输出错误为 `2`；验证通过不代表物理或科学正确。使用
-`cpdatakit --help` 查看完整帮助。
+`inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
+HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
+HTML，也支持 `--format markdown` 和 `--format json`。报告只保留统计和验证结果，不放入原始
+记录。输出已存在时要显式传入 `--force` 才会替换。验证或检查发现数据问题时退出码为 `1`，
+参数、schema、读取和输出错误为 `2`。验证通过不代表物理或科学正确。使用 `cpdatakit --help`
+查看完整帮助。
 
 ## Python API
 
