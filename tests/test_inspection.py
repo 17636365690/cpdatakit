@@ -11,7 +11,7 @@ import pytest
 from cpdatakit.exceptions import DataReadError
 from cpdatakit.io import write_hdf5
 from cpdatakit.model import Dataset
-from cpdatakit.schema import load_schema
+from cpdatakit.schema import load_schema, schema_sha256
 from cpdatakit.validation import validate_dataset
 
 
@@ -231,3 +231,25 @@ def test_inspection_and_reporting_apis_are_exported() -> None:
 
     assert cpdatakit.inspect_dataset is inspect_dataset
     assert cpdatakit.render_report_html is render_report_html
+
+
+def test_inspect_hdf5_reports_schema_snapshot(curve: Dataset, tmp_path: Path) -> None:
+    schema = load_schema("curve")
+    path = tmp_path / "inspect-snapshot.h5"
+    write_hdf5(
+        curve,
+        path,
+        schema,
+        validate_dataset(curve, schema),
+        schema_uri="https://example.org/schema.json",
+    )
+
+    from cpdatakit.inspection import inspect_hdf5_structure
+
+    result = inspect_hdf5_structure(path)
+
+    assert result["hdf5"]["schema_snapshot"] == {
+        "present": True,
+        "sha256": schema_sha256(schema),
+        "uri": "https://example.org/schema.json",
+    }

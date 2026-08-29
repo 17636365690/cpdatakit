@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 
 import pytest
 
@@ -11,6 +12,8 @@ from cpdatakit.schema import (
     load_schema,
     make_field_schema,
     make_profile_schema,
+    schema_sha256,
+    schema_to_canonical_json,
     schema_to_dict,
     schema_to_json,
     validate_schema,
@@ -95,6 +98,21 @@ def test_validate_schema_accepts_json_like_mapping() -> None:
         }
     )
     assert schema.profile == "point"
+
+
+def test_schema_canonical_json_and_hash_are_stable() -> None:
+    schema = make_profile_schema(
+        "point",
+        [make_field_schema("value", "float", required=True, unit="MPa")],
+        conventions={"z": ["last", "value"], "a": {"measure": "explicit"}},
+    )
+    canonical = schema_to_canonical_json(schema)
+
+    assert canonical == schema_to_canonical_json(schema_to_dict(schema))
+    assert canonical.startswith('{"conventions":')
+    assert "\n" not in canonical
+    assert canonical.endswith("}")
+    assert schema_sha256(schema) == hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def test_profile_schema_conventions_are_recursively_immutable() -> None:
