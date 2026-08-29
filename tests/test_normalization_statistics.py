@@ -130,9 +130,7 @@ def test_normalize_unit_conversion_preserves_shaped_values(
 def test_normalize_rejects_wrong_shaped_record_with_position() -> None:
     source = Dataset(pd.DataFrame({"measure": [[[1.0, 2.0]]]}))
 
-    with pytest.raises(
-        NormalizationError, match=r"measure.*record 0.*expected shape \(2, 2\)"
-    ):
+    with pytest.raises(NormalizationError, match=r"measure.*record 0.*expected shape \(2, 2\)"):
         normalize_dataset(
             source,
             _shaped_schema((2, 2)),
@@ -143,9 +141,7 @@ def test_normalize_rejects_wrong_shaped_record_with_position() -> None:
 def test_normalize_rejects_ragged_shaped_record_with_position() -> None:
     source = Dataset(pd.DataFrame({"measure": [[[1.0, 2.0], [3.0]]]}))
 
-    with pytest.raises(
-        NormalizationError, match=r"measure.*record 0.*regular numeric array"
-    ):
+    with pytest.raises(NormalizationError, match=r"measure.*record 0.*regular numeric array"):
         normalize_dataset(
             source,
             _shaped_schema((2, 2)),
