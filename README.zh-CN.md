@@ -84,12 +84,24 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 ## Python API
 
 ```python
-from cpdatakit import load_dataset, validate_dataset, normalize_dataset, summarize_dataset
+from cpdatakit import (
+    load_dataset,
+    load_hdf5,
+    validate_dataset,
+    normalize_dataset,
+    summarize_dataset,
+)
+from cpdatakit.adapters import DamaskDADF5Adapter
 
 dataset = load_dataset("sample_data/synthetic_curve.csv")
 result = validate_dataset(dataset, "curve")
 summary = summarize_dataset(dataset, "curve", validation=result)
 print(result.valid, summary)
+
+dadf5 = DamaskDADF5Adapter(
+    kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
+).load("result.hdf5")
+window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
 ```
 
 字段映射与单位转换必须通过 `FieldMapping` 显式提供；未参与标准化的原始字段默认保留。
@@ -99,8 +111,9 @@ print(result.valid, summary)
 
 详细格式见[数据格式文档](https://github.com/17636365690/cpdatakit/blob/main/docs/data-format.md)，
 架构、适配器、维护和路线图见仓库 `docs/`。
-首版不实现求解器、本构积分、ODB/DADF5 直接读取、科学正确性认证、GUI、3D 交互或分布式
-处理。贡献前请阅读
+CPDataKit 不运行求解器或本构积分，也不提供 ODB 读取、科学正确性认证、GUI、3D 交互或分布式
+处理。当前提供一个范围受限的 DAMASK DADF5 只读选择适配器，不等同于完整求解器集成或
+全局 cell 映射。贡献前请阅读
 [CONTRIBUTING.md](https://github.com/17636365690/cpdatakit/blob/main/CONTRIBUTING.md)。项目采用
 Apache-2.0，依赖许可核查见
 [NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE)，引用信息见

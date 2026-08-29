@@ -144,11 +144,13 @@ and output failures return `2`. Run `cpdatakit --help` or `cpdatakit <command> -
 ```python
 from cpdatakit import (
     FieldMapping,
+    load_hdf5,
     load_dataset,
     normalize_dataset,
     summarize_dataset,
     validate_dataset,
 )
+from cpdatakit.adapters import DamaskDADF5Adapter
 
 raw = load_dataset("raw.csv")
 normalized = normalize_dataset(
@@ -163,6 +165,11 @@ normalized = normalize_dataset(
 report = validate_dataset(normalized, "curve")
 summary = summarize_dataset(normalized, "curve", validation=report)
 print(report.valid, summary["record_count"])
+
+dadf5 = DamaskDADF5Adapter(
+    kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
+).load("result.hdf5")
+window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
 ```
 
 Mapping conflicts, unknown fields, and incompatible units raise documented subclasses of
@@ -196,9 +203,11 @@ the field rules it should follow. That gives the next change something concrete 
 ## Known limitations and roadmap
 
 Version 0.2.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
-It has no solver adapters, constitutive integration, 3D interactive graphics, automatic scientific
-inference, streaming, or distributed processing. DAMASK and Abaqus remain reserved adapter
-boundaries. Adding either requires format evidence, license review, and reproducible test data. See the
+It does not run solvers or constitutive integration, and it has no 3D interactive graphics,
+automatic scientific inference, streaming, or distributed processing. The bundled DAMASK DADF5
+reader is a narrow, read-only selection adapter; it does not provide full solver integration or
+global cell remapping. Further DAMASK/Abaqus work requires format evidence, license review, and
+reproducible test data. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 

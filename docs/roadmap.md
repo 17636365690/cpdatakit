@@ -10,9 +10,11 @@
   and recursively immutable `ProfileSchema.conventions`, with JSON object/list serialization
   preserved; opt-in record-axis HDF5 storage chunking; 100k/1M-record scaling evidence; and an
   85% CI coverage gate with clean-wheel HDF5 API smoke checks. The first optional adapter remains
-  a separate evidence-gated item requiring an official format, license review, and reproducible
-  fixtures. Broader large-file optimization remains tracked by Issue #4.
+  a read-only DAMASK DADF5 selection reader with official format and license references; further
+  adapters remain evidence-gated and require reproducible fixtures. Broader large-file optimization
+  remains tracked by Issue #4.
 - **v0.4.0:** schema migration tools, comparison/report bundles, and stronger compatibility tests.
 
-No roadmap item promises direct ODB/DADF5 support. Such work remains evidence- and license-gated.
+No roadmap item promises full ODB or full DAMASK solver integration. Further DADF5 coverage
+remains evidence- and license-gated.
 

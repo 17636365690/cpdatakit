@@ -15,6 +15,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
   elapsed time, and peak RSS where available.
 - An adapter contribution acceptance checklist covering format evidence, licensing, fixtures,
   conventions, offline tests, ambiguity handling, and dependency boundaries.
+- A read-only DAMASK DADF5 adapter for explicit increment/branch/dataset selections, with source
+  metadata and no DAMASK runtime dependency.
 
 ### Fixed
 

@@ -16,3 +16,8 @@ release. See each installed distribution and upstream repository for complete li
 DAMASK, Abaqus, and Dassault Systèmes names may be trademarks of their respective owners. Their
 software and data are not distributed with CPDataKit, and they are not core dependencies.
 
+CPDataKit includes a read-only parser for a documented subset of the DAMASK DADF5 file layout.
+It does not copy DAMASK source code or simulation data and does not require the DAMASK runtime.
+DAMASK is distributed under AGPLv3; see https://damask-multiphysics.org/development/license.html.
+This notice is informational and is not legal advice.
+
