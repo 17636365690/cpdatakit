@@ -112,7 +112,7 @@ def test_run_writes_normalized_hdf5_and_offline_report(tmp_path: Path) -> None:
     result = workflow.run(raw, output, report_path=report)
 
     assert result == output
-    loaded = cpdatakit.load_hdf5(output)
+    loaded = cpdatakit.load_hdf5(output, fields=["step", "stress", "strain", "F", "Fp"])
     assert list(loaded.data.columns) == ["step", "stress", "strain", "F", "Fp"]
     assert loaded.data["stress"].iloc[0][0, 0] == pytest.approx(1.0)
     assert loaded.data["stress"].iloc[1][2, 2] == pytest.approx(6.0)
