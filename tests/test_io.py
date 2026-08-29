@@ -17,7 +17,14 @@ from cpdatakit.exceptions import (
 )
 from cpdatakit.io import iter_hdf5_chunks, load_dataset, load_hdf5, write_hdf5
 from cpdatakit.model import Dataset
-from cpdatakit.schema import load_schema
+from cpdatakit.schema import (
+    load_schema,
+    make_field_schema,
+    make_profile_schema,
+    schema_sha256,
+    schema_to_canonical_json,
+    schema_to_dict,
+)
 from cpdatakit.validation import validate_dataset
 
 
@@ -257,6 +264,90 @@ def test_write_hdf5_allows_explicit_invalid_output(curve_csv: Path, tmp_path: Pa
     assert load_dataset(output).metadata["validation_summary"]["valid"] is False
 
 
+def test_write_hdf5_preserves_default_layout_when_chunk_size_is_none(
+    curve: Dataset, tmp_path: Path
+) -> None:
+    schema = load_schema("curve")
+    result = validate_dataset(curve, schema)
+    output = tmp_path / "default-layout.h5"
+
+    write_hdf5(curve, output, schema, result, hdf5_chunk_size=None)
+
+    with h5py.File(output, "r") as handle:
+        assert handle["data"]["step"].chunks is None
+        assert handle["data"]["stress"].chunks is None
+
+
+def test_write_hdf5_can_store_record_axis_chunks(curve: Dataset, tmp_path: Path) -> None:
+    schema = load_schema("curve")
+    result = validate_dataset(curve, schema)
+    output = tmp_path / "chunked.h5"
+
+    write_hdf5(curve, output, schema, result, hdf5_chunk_size=2)
+
+    with h5py.File(output, "r") as handle:
+        assert handle["data"]["step"].chunks == (2,)
+        assert handle["data"]["stress"].chunks == (2,)
+
+
+def test_write_hdf5_preserves_vector_and_tensor_dimensions_in_chunks(
+    tmp_path: Path,
+) -> None:
+    schema = make_profile_schema(
+        "point",
+        [
+            make_field_schema(
+                "point_id", "integer", required=True, index=True, unique=True, unit="1"
+            ),
+            make_field_schema("vector", "float", required=True, shape=[2], unit="MPa"),
+            make_field_schema("tensor", "float", required=True, shape=[2, 2], unit="MPa"),
+        ],
+    )
+    dataset = Dataset(
+        pd.DataFrame(
+            {
+                "point_id": [0, 1, 2],
+                "vector": [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]],
+                "tensor": [
+                    [[1.0, 2.0], [3.0, 4.0]],
+                    [[5.0, 6.0], [7.0, 8.0]],
+                    [[9.0, 10.0], [11.0, 12.0]],
+                ],
+            }
+        ),
+        {"units": {"point_id": "1", "vector": "MPa", "tensor": "MPa"}},
+    )
+    result = validate_dataset(dataset, schema)
+    assert result.valid
+    output = tmp_path / "vector-tensor-chunked.h5"
+
+    write_hdf5(dataset, output, schema, result, hdf5_chunk_size=99)
+
+    with h5py.File(output, "r") as handle:
+        assert handle["data"]["point_id"].chunks == (3,)
+        assert handle["data"]["vector"].chunks == (3, 2)
+        assert handle["data"]["tensor"].chunks == (3, 2, 2)
+
+
+@pytest.mark.parametrize("chunk_size", [0, -1, True, 1.5, "2"])
+def test_write_hdf5_rejects_invalid_storage_chunk_size(
+    curve: Dataset, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, chunk_size: object
+) -> None:
+    schema = load_schema("curve")
+    result = validate_dataset(curve, schema)
+    output = tmp_path / "invalid-chunk-size.h5"
+
+    def fail_if_temp_created(*args: object, **kwargs: object) -> None:
+        raise AssertionError("temporary output must not be created for invalid chunk size")
+
+    monkeypatch.setattr("cpdatakit.io.tempfile.mkstemp", fail_if_temp_created)
+    with pytest.raises(ValueError, match="hdf5_chunk_size"):
+        write_hdf5(curve, output, schema, result, hdf5_chunk_size=chunk_size)
+
+    assert not output.exists()
+    assert list(tmp_path.glob(f".{output.name}.*")) == []
+
+
 def test_write_hdf5_removes_temp_file_after_serialization_failure(tmp_path: Path) -> None:
     schema = load_schema("point")
     dataset = Dataset(pd.DataFrame({"point_id": [0, 1], "vector": [[1.0, 2.0], [3.0]]}))
@@ -294,3 +385,95 @@ def test_vector_hdf5_roundtrip(tmp_path: Path) -> None:
     output = tmp_path / "vector.h5"
     write_hdf5(dataset, output, schema, result)
     assert np.allclose(load_dataset(output).data["vector"].iloc[1], [4.0, 5.0, 6.0])
+
+
+def test_hdf5_roundtrip_embeds_and_recovers_schema_snapshot(curve: Dataset, tmp_path: Path) -> None:
+    schema = load_schema("curve")
+    output = tmp_path / "snapshot.h5"
+    uri = "https://example.org/cpdatakit/schema/curve-1.0.json"
+
+    write_hdf5(
+        curve,
+        output,
+        schema,
+        validate_dataset(curve, schema),
+        schema_uri=uri,
+    )
+
+    with h5py.File(output, "r") as handle:
+        assert handle.attrs["format_version"] == "1.0"
+        assert handle.attrs["schema_json"] == schema_to_canonical_json(schema)
+        assert handle.attrs["schema_sha256"] == schema_sha256(schema)
+        assert handle.attrs["schema_uri"] == uri
+
+    loaded = load_hdf5(output)
+    assert loaded.metadata["schema_snapshot"] == {
+        "schema": schema_to_dict(schema),
+        "sha256": schema_sha256(schema),
+        "uri": uri,
+    }
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        ("json", "schema_json"),
+        ("hash", "schema_sha256"),
+        ("profile", "profile"),
+    ],
+)
+def test_hdf5_rejects_tampered_schema_snapshot(
+    curve: Dataset, tmp_path: Path, mutation: str, message: str
+) -> None:
+    schema = load_schema("curve")
+    output = tmp_path / f"tampered-{mutation}.h5"
+    write_hdf5(curve, output, schema, validate_dataset(curve, schema))
+
+    with h5py.File(output, "r+") as handle:
+        if mutation == "json":
+            handle.attrs["schema_json"] = '{"profile":"curve","schema_version":"1.0","fields":[]}'
+        elif mutation == "hash":
+            handle.attrs["schema_sha256"] = "0" * 64
+        else:
+            handle.attrs["schema_json"] = schema_to_canonical_json(load_schema("point"))
+            handle.attrs["schema_sha256"] = schema_sha256(load_schema("point"))
+
+    with pytest.raises(DataReadError, match=message):
+        load_hdf5(output)
+
+
+def test_hdf5_rejects_partial_schema_snapshot(tmp_path: Path) -> None:
+    path = tmp_path / "partial-snapshot.h5"
+    _write_minimal_cpdatakit_hdf5(
+        path,
+        {"schema_json": schema_to_canonical_json(load_schema("curve"))},
+    )
+
+    with pytest.raises(DataReadError, match=r"schema_json.*schema_sha256"):
+        load_hdf5(path)
+
+
+def test_hdf5_rejects_uri_without_embedded_snapshot(tmp_path: Path) -> None:
+    path = tmp_path / "uri-only.h5"
+    _write_minimal_cpdatakit_hdf5(path, {"schema_uri": "https://example.org/schema.json"})
+
+    with pytest.raises(DataReadError, match=r"schema_json.*schema_sha256"):
+        load_hdf5(path)
+
+
+@pytest.mark.parametrize("schema_uri", ["", 7, True])
+def test_hdf5_rejects_invalid_schema_uri_before_temp_output(
+    curve: Dataset, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, schema_uri: object
+) -> None:
+    schema = load_schema("curve")
+    result = validate_dataset(curve, schema)
+    output = tmp_path / "invalid-uri.h5"
+
+    def fail_if_temp_created(*args: object, **kwargs: object) -> None:
+        raise AssertionError("temporary output must not be created for invalid schema_uri")
+
+    monkeypatch.setattr("cpdatakit.io.tempfile.mkstemp", fail_if_temp_created)
+    with pytest.raises(ValueError, match="schema_uri"):
+        write_hdf5(curve, output, schema, result, schema_uri=schema_uri)
+
+    assert not output.exists()

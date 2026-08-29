@@ -13,6 +13,10 @@ class DataValidationError(CPDataKitError):
     """Raised when invalid data is passed to a protected output operation."""
 
 
+class AdapterError(CPDataKitError):
+    """Raised when an external-format adapter cannot safely load input."""
+
+
 class SchemaError(CPDataKitError):
     """Raised when a schema is missing, malformed, or unsupported."""
 

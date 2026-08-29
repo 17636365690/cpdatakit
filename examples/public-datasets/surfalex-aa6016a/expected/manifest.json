@@ -1,0 +1,41 @@
+{
+  "case": "surfalex-aa6016a-workflow-7a",
+  "source": {
+    "record_doi": "10.5281/zenodo.7307639",
+    "publication_doi": "10.12688/materialsopenres.17516.1",
+    "data_license": "CC BY 4.0",
+    "analysis_repository": "https://github.com/LightForm-group/surfalex_data_explorer",
+    "analysis_repository_license": "MIT",
+    "files": [
+      {
+        "name": "7A_simulate_uniaxial_tension.yml",
+        "bytes": 2864,
+        "md5": "3500212694d54f8a974af4c8a9af9b84",
+        "sha256": "d548c12dfd7fabf01b3dce4233c00faf5c4bb13e04d5a5bb8e1d7ea77a393abb"
+      },
+      {
+        "name": "7A_workflow.hdf5",
+        "bytes": 7623248,
+        "md5": "58abe7493d55d8f5e0033ba740e76f8e",
+        "sha256": "a4c1c51609e9dadcd3ea680ab6b3511877affac5f24fe25b84daa6daf8fb0693"
+      }
+    ]
+  },
+  "expected_output": {
+    "record_count": 1501,
+    "fields": ["step", "stress", "strain", "F", "Fp"],
+    "tensor_shape": [1501, 3, 3],
+    "units": {
+      "step": "dimensionless",
+      "stress": "MPa",
+      "strain": "dimensionless",
+      "F": "dimensionless",
+      "Fp": "dimensionless"
+    },
+    "validation": {
+      "valid": true,
+      "error_count": 0
+    },
+    "schema_sha256": "efc987c79df0778be676e4ca31165d6e3f20a8bbdc681a71dc2f7134e6e157af"
+  }
+}

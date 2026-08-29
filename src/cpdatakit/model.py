@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -19,7 +20,7 @@ class Dataset:
 
     def copy(self) -> Dataset:
         """Return a deep-enough copy for safe normalization."""
-        return Dataset(self.data.copy(deep=True), dict(self.metadata), self.source)
+        return Dataset(self.data.copy(deep=True), deepcopy(self.metadata), self.source)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +54,7 @@ class ValidationResult:
             "errors": [asdict(item) for item in self.errors],
             "warnings": [asdict(item) for item in self.warnings],
             "scope_note": (
-                "Validation checks declared format constraints; it does not certify "
-                "physical or scientific correctness."
+                "Validation reports declared format constraints; physical or scientific "
+                "interpretation remains part of the domain workflow."
             ),
         }

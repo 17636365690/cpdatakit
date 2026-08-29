@@ -41,7 +41,7 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 python -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('cpdatakit-demo')"
 ```
 
-The generator uses a fixed seed. It creates no experimental or commercial-solver data.
+The generator uses a fixed seed and produces reproducible synthetic data for the walkthrough.
 
 ## 3. Validate and summarize
 
@@ -62,7 +62,22 @@ cpdatakit convert cpdatakit-demo/synthetic_curve.csv --schema curve --output cur
 The CPDataKit HDF5 file embeds the schema/profile, units, source filename and SHA-256, conversion
 time, software versions, validation summary, and operation log.
 
-## 5. Plot the declared curve
+## 5. Inspect and share the result
+
+Start with the structure, then create a report you can share:
+
+```bash
+cpdatakit inspect curve.h5 --format json --output inspect.json
+cpdatakit report curve.h5 --schema curve --output report.html
+```
+
+检查结果会列出格式和版本、字段顺序、dtype、shape、单位、缺失值、HDF5 chunk、provenance、
+adapter 信息以及结构风险。报告还会带上 schema profile/version、validation errors 和 warnings、
+描述性统计与范围说明。`report.html` 可以直接用浏览器打开，也可以在没有网络的环境中打印。
+输出文件默认保留，替换时加 `--force`。验证结果描述声明的结构检查，物理或科学
+判断结合领域方法完成。
+
+## 6. Plot the declared curve
 
 ```bash
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
@@ -72,7 +87,7 @@ At this point, the directory contains `validation.json`, `summary.json`, `curve.
 `stress-strain.png`. CPDataKit checks the data contract. Physical correctness remains outside
 the package's scope.
 
-## 6. Read a window or stream chunks
+## 7. Read a window or stream chunks
 
 Use the explicit HDF5 readers when a full materialized read is not the right fit:
 
@@ -88,6 +103,49 @@ for chunk in iter_hdf5_chunks("curve.h5", fields=["step", "stress"], chunk_size=
 every chunk is a `Dataset` with the HDF5 metadata and source path preserved. Reads are sliced
 along the record axis, so vector and tensor values keep their per-record shapes. Use
 `load_dataset()` when the existing full-read workflow is sufficient.
+
+## 8. Opt into record-axis HDF5 storage chunks
+
+For a larger sequential-read workload, choose the HDF5 storage layout explicitly while keeping
+the same read APIs:
+
+```python
+from cpdatakit.io import load_dataset, load_hdf5, write_hdf5
+from cpdatakit.schema import load_schema
+from cpdatakit.validation import validate_dataset
+
+dataset = load_dataset("cpdatakit-demo/synthetic_curve.csv")
+schema = load_schema("curve")
+validation = validate_dataset(dataset, schema)
+write_hdf5(
+    dataset,
+    "curve-chunked.h5",
+    schema,
+    validation,
+    force=True,
+    hdf5_chunk_size=4096,
+)
+window = load_hdf5("curve-chunked.h5", fields=["step", "stress"], start=10, stop=20)
+```
+
+`hdf5_chunk_size` is an opt-in positive record count for the HDF5 storage chunks. Omitting it, or
+passing `None`, keeps the default layout. The value applies only to the first record axis, so
+vector and tensor trailing dimensions remain intact. It is separate from the reader-side
+`iter_hdf5_chunks(..., chunk_size=...)` batch size. Use `load_hdf5()` for a selected window,
+`iter_hdf5_chunks()` for bounded iteration, and `load_dataset()` for the existing full-read path.
+
+## 9. Measure read scaling
+
+From a repository checkout with the development environment active, run both diagnostic sizes:
+
+```bash
+python scripts/benchmark_hdf5_read.py --records 100000 --chunk-size 4096 --hdf5-chunk-size 4096
+python scripts/benchmark_hdf5_read.py --records 1000000 --chunk-size 4096 --hdf5-chunk-size 4096
+```
+
+Each command prints JSON for full, selected-field, and chunked reads, including record counts,
+elapsed time, peak RSS where available, and the configured storage chunk size. Compare runs on the
+same machine and treat the benchmark as scaling evidence rather than a timing-based CI gate.
 
 ## Try invalid data
 

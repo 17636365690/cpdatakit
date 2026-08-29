@@ -1,6 +1,6 @@
 # CPDataKit data format 1.0
 
-CPDataKit defines its own solver-neutral contract. It is not DAMASK DADF5 or Abaqus ODB.
+CPDataKit defines an independent, solver-neutral contract alongside DAMASK DADF5 and Abaqus ODB.
 
 ## Profiles
 
@@ -14,8 +14,8 @@ entry contains `name`, `aliases`, `required`, `dtype`, per-record `shape`, `role
 `allow_missing`, range/index constraints, and a description. A profile also carries conventions
 and an extension prefix. Schema version other than `1.0` is rejected.
 
-Aliases are documentation, not automatic guesses. An alias is only applied through an explicit
-`FieldMapping`. Custom fields must be fully declared in a custom schema or begin with `user_`.
+Aliases document accepted source names and take effect through an explicit `FieldMapping`. Custom
+fields are fully declared in a custom schema or begin with `user_`.
 
 ## Tensor-valued tabular encoding
 
@@ -35,21 +35,37 @@ component names are explicit and stable. For example:
 ```
 
 The JSON representation is a nested array such as `[[1.0, 0.0], [0.0, 1.0]]`; the HDF5
-representation is a dataset with shape `(record_count, 2, 2)`. CPDataKit never infers component
-order from field names. CSV inputs should use scalar columns or be converted to JSON/HDF5 by an
-explicit producer because CSV has no portable nested-array representation.
+representation is a dataset with shape `(record_count, 2, 2)`. Component order comes from the
+schema declaration. CSV inputs should use scalar columns or be converted to JSON/HDF5 by an
+explicit producer because CSV supports scalar columns while JSON and HDF5 carry nested arrays.
 
 Schema version `1.0` accepts the optional `components` declaration for migration-safe contracts.
-A future schema version may make tensor roles and component vocabularies normative; readers reject
-unsupported versions instead of guessing a migration.
+A future schema version may make tensor roles and component vocabularies normative; callers migrate
+unsupported versions through an explicit schema update.
 
 ## Unit and convention rules
 
 CSV and JSON take units from the selected schema. A `Dataset` or CPDataKit HDF5 may carry explicit
 per-field units, which must be dimensionally compatible with schema units. Pint performs only
 declared conversions, including both scale and offset for affine units such as degrees Celsius.
-Producers must declare stress measure, strain measure, tensor component order, orientation
-representation, and identifier semantics when relevant.
+For a declared vector, matrix, or tensor, an explicit mapping applies Pint to each numeric element
+and keeps the per-record shape and trailing dimensions. Ragged arrays, wrong shapes, booleans,
+strings, complex values, and incompatible units are rejected. The mapping still declares both
+input and output units. Producers declare stress/strain measures, tensor component order,
+orientation representation, and identifier semantics through the schema and mapping when relevant.
+
+## In-memory stability
+
+`Dataset.copy()` deep-copies the DataFrame and the complete nested `metadata` mapping while
+preserving the optional source path. Mutating a nested mapping or list through a copied dataset
+therefore cannot change the original dataset. This isolation is part of the safe normalization
+boundary; callers should use `copy()` when a transformation needs an independent working value.
+
+`ProfileSchema.conventions` is recursively immutable in memory. Nested mappings are read-only,
+sequences are represented as tuples, sets as frozensets, and other values are defensively copied.
+This prevents a caller from changing a schema through a nested value after construction. The
+serialization boundary remains JSON-friendly: `schema_to_dict()` and `schema_to_json()` thaw
+conventions back to JSON objects and lists before writing the on-disk schema representation.
 
 ## HDF5 layout
 
@@ -62,10 +78,16 @@ structurally inconsistent metadata raises `DataReadError` instead of being repla
 defaults.
 
 Normalized columns are non-scalar datasets under `/data`, all with the same non-zero record count.
-Provenance includes source description, basename, SHA-256 (never an absolute source path), UTC
+Provenance includes source description, basename, SHA-256, UTC
 conversion timestamp, package/Python versions, and operation log. Readers reject missing
 markers/groups, empty or inconsistent tables, and corrupt files. HDF5 field and range reads use
 the first dataset axis as the record axis; shaped values retain their trailing dimensions.
+
+Files produced by the current writer also carry `schema_json`, the compact canonical JSON for the
+validated schema, and `schema_sha256`, its lowercase SHA-256 digest over UTF-8 bytes. An optional
+`schema_uri` records an external reference for caller-managed access. Readers check the embedded
+schema, its profile/version, and its digest. Legacy format-1.0 files that lack these additive
+attributes remain readable. Partial snapshots are rejected.
 
 `write_hdf5()` refuses to write a failed validation result by default. To create an HDF5 file that
 records an invalid validation result, callers must explicitly pass `allow_invalid=True`. HDF5
@@ -75,6 +97,41 @@ finishes, removing the temporary file if serialization fails.
 For larger files, `load_hdf5()` supports explicit field selection and half-open record ranges,
 while `iter_hdf5_chunks()` yields bounded reads. `load_dataset(path)` remains the stable full-read
 entry point for existing workflows.
+Storage chunking is opt-in through `write_hdf5(..., hdf5_chunk_size=N)`, where `N` is a positive
+integer. The default `None` keeps the existing layout for small files and existing producers. When
+configured, `N` applies to the record axis: a field with values shaped `(record_count, *tail_shape)`
+is stored with chunks `(min(N, record_count), *tail_shape)`. Vector and tensor trailing dimensions
+are therefore retained rather than flattened. `hdf5_chunk_size` controls the HDF5 storage layout;
+the `chunk_size` argument to `iter_hdf5_chunks()` controls the number of records returned per
+reader iteration. Full, field-selected, and bounded/chunked reads preserve the same logical values.
+
+## Inspection and validation reports
+
+`inspect_dataset()` returns a JSON-compatible structure with `file`, ordered `fields`,
+`record_count`, `hdf5`, `provenance`, `adapter`, and `risks`. A field record carries its name, dtype,
+full shape, per-record shape, declared unit, missing-value count, optional description, and HDF5
+chunks when they exist. `inspect_hdf5_structure()` reads native HDF5 attrs and dataset metadata with
+h5py, then counts missing values from bounded slices. Native HDF5 inspection keeps reads bounded
+throughout the process. DAMASK DADF5 detection stays read-only and follows the adapter's explicit
+selection rules.
+
+`build_report()` adds the selected schema profile/version, `validation.errors`,
+`validation.warnings`, descriptive statistics, provenance, adapter information, HDF5 chunk details,
+and a scope note describing declared conformance separately from physical or scientific
+interpretation. JSON uses sorted keys. Markdown keeps fixed headings and field order. HTML is
+static, escaped, and ready for offline printing. Reports contain aggregate metadata while raw
+records stay in the source dataset. Provenance keeps a basename and may include a digest.
+Credential-like values are redacted.
+
+The CLI forms are:
+
+```text
+cpdatakit inspect INPUT [--schema SCHEMA] [--format text|json] [--output PATH] [--force]
+cpdatakit report INPUT --schema SCHEMA --output PATH [--format html|markdown|json] [--force]
+```
+
+Existing outputs are protected by default. Exit status `0` means zero validation errors, `1` means
+data findings, and `2` means a parameter, schema, input, metadata, or output failure.
 
 ## Validation meaning
 

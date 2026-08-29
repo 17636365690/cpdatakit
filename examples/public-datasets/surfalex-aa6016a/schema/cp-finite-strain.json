@@ -1,0 +1,139 @@
+{
+  "profile": "curve",
+  "schema_version": "1.0",
+  "extension_prefix": "user_",
+  "conventions": {
+    "finite_strain_kinematics": "F = Fe Fp",
+    "orientation_representation": "not used in this case",
+    "source_workflow": "Surfalex HF Workflow 7A uniaxial tension",
+    "strain_measure": "Hencky strain (logarithmic strain)",
+    "stress_measure": "Cauchy stress",
+    "tensor_component_order": [
+      "xx",
+      "xy",
+      "xz",
+      "yx",
+      "yy",
+      "yz",
+      "zx",
+      "zy",
+      "zz"
+    ]
+  },
+  "fields": [
+    {
+      "name": "step",
+      "aliases": [],
+      "required": true,
+      "dtype": "integer",
+      "shape": [],
+      "role": "index",
+      "unit": "dimensionless",
+      "allow_missing": false,
+      "minimum": 0,
+      "index": true,
+      "unique": true,
+      "description": "DAMASK increment index from the Workflow 7A output metadata."
+    },
+    {
+      "name": "stress",
+      "aliases": [],
+      "required": true,
+      "dtype": "float",
+      "shape": [
+        3,
+        3
+      ],
+      "components": [
+        "xx",
+        "xy",
+        "xz",
+        "yx",
+        "yy",
+        "yz",
+        "zx",
+        "zy",
+        "zz"
+      ],
+      "role": "stress",
+      "unit": "MPa",
+      "allow_missing": false,
+      "description": "Volume-averaged Cauchy stress tensor."
+    },
+    {
+      "name": "strain",
+      "aliases": [],
+      "required": true,
+      "dtype": "float",
+      "shape": [
+        3,
+        3
+      ],
+      "components": [
+        "xx",
+        "xy",
+        "xz",
+        "yx",
+        "yy",
+        "yz",
+        "zx",
+        "zy",
+        "zz"
+      ],
+      "role": "strain",
+      "unit": "dimensionless",
+      "allow_missing": false,
+      "description": "Volume-averaged Hencky strain tensor."
+    },
+    {
+      "name": "F",
+      "aliases": [],
+      "required": true,
+      "dtype": "float",
+      "shape": [
+        3,
+        3
+      ],
+      "components": [
+        "xx",
+        "xy",
+        "xz",
+        "yx",
+        "yy",
+        "yz",
+        "zx",
+        "zy",
+        "zz"
+      ],
+      "role": "deformation_gradient",
+      "unit": "dimensionless",
+      "allow_missing": false,
+      "description": "Volume-averaged total deformation gradient."
+    },
+    {
+      "name": "Fp",
+      "aliases": [],
+      "required": true,
+      "dtype": "float",
+      "shape": [
+        3,
+        3
+      ],
+      "components": [
+        "xx",
+        "xy",
+        "xz",
+        "yx",
+        "yy",
+        "yz",
+        "zx",
+        "zy",
+        "zz"
+      ],
+      "role": "plastic_deformation_gradient",
+      "unit": "dimensionless",
+      "allow_missing": false,
+      "description": "Volume-averaged plastic deformation gradient."
+    }
+  ]
+}

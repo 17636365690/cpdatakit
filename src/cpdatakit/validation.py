@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Iterable
+from dataclasses import replace
 from numbers import Real
 
 import numpy as np
@@ -12,6 +15,7 @@ from .model import Dataset, ValidationIssue, ValidationResult
 from .schema import FieldSchema, ProfileSchema, load_schema
 
 _UREG = UnitRegistry()
+_MISSING_VALUE = object()
 
 
 def _issue(
@@ -46,6 +50,10 @@ def _array_dtype_matches(value: object, dtype: str) -> bool:
 
 
 def _make_hashable(value: object) -> object:
+    if value is None or value is pd.NA or value is pd.NaT:
+        return _MISSING_VALUE
+    if isinstance(value, (float, np.floating)) and np.isnan(value):
+        return _MISSING_VALUE
     if isinstance(value, np.ndarray):
         return _make_hashable(value.tolist())
     if isinstance(value, dict):
@@ -284,50 +292,12 @@ def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResu
             )
 
 
-def validate_dataset(
-    dataset: Dataset | pd.DataFrame,
-    schema: str | ProfileSchema,
-    *,
-    units: dict[str, str] | None = None,
-) -> ValidationResult:
-    """Validate declared structure; this never certifies physical correctness."""
-    value = dataset if isinstance(dataset, Dataset) else Dataset(dataset)
-    contract = load_schema(schema)
-    if units is not None:
-        value = value.copy()
-        value.metadata["units"] = dict(units)
-    result = ValidationResult()
+def _validate_frame(value: Dataset, contract: ProfileSchema, result: ValidationResult) -> None:
     expected = contract.field_map()
     for spec in contract.fields:
         _check_field(value.data, spec, result)
     _check_units(value, contract, result)
-    comparable = value.data.map(_make_hashable)
-    duplicates = comparable.duplicated(keep=False)
-    if duplicates.any():
-        result.warnings.append(
-            _issue(
-                "duplicate_record",
-                None,
-                "Duplicate records were found.",
-                duplicates.sum(),
-                "Review whether repeated rows are intentional.",
-                severity="warning",
-            )
-        )
-    for spec in contract.fields:
-        if spec.index and spec.unique and spec.name in value.data:
-            duplicated_index = value.data[spec.name].notna() & value.data[spec.name].duplicated(
-                keep=False
-            )
-            if duplicated_index.any():
-                result.errors.append(
-                    _issue(
-                        "duplicate_index",
-                        spec.name,
-                        "Index values must be unique.",
-                        duplicated_index.sum(),
-                    )
-                )
+
     allowed = set(expected)
     for column in value.data.columns:
         is_extension = isinstance(column, str) and column.startswith(contract.extension_prefix)
@@ -342,4 +312,125 @@ def validate_dataset(
                     "Rename the field or add a complete schema declaration.",
                 )
             )
+
+
+def _map_frame_values(frame: pd.DataFrame) -> pd.DataFrame:
+    """Apply a scalar mapper across a DataFrame on all supported pandas versions."""
+    return frame.apply(lambda column: column.map(_make_hashable))
+
+
+def _duplicate_record_issue(affected: int) -> ValidationIssue:
+    return _issue(
+        "duplicate_record",
+        None,
+        "Duplicate records were found.",
+        affected,
+        "Review whether repeated rows are intentional.",
+        severity="warning",
+    )
+
+
+def _duplicate_index_issue(field: str, affected: int) -> ValidationIssue:
+    return _issue(
+        "duplicate_index",
+        field,
+        "Index values must be unique.",
+        affected,
+        "Review whether repeated index values are intentional.",
+    )
+
+
+def _append_duplicate_issues(
+    frame: pd.DataFrame, contract: ProfileSchema, result: ValidationResult
+) -> None:
+    comparable = _map_frame_values(frame)
+    duplicates = comparable.duplicated(keep=False)
+    if duplicates.any():
+        result.warnings.append(_duplicate_record_issue(duplicates.sum()))
+    for spec in contract.fields:
+        if spec.index and spec.unique and spec.name in frame:
+            duplicated_index = frame[spec.name].notna() & frame[spec.name].duplicated(keep=False)
+            if duplicated_index.any():
+                result.errors.append(_duplicate_index_issue(spec.name, duplicated_index.sum()))
+
+
+class _DuplicateTracker:
+    """Accumulate duplicate findings without retaining the source rows."""
+
+    def __init__(self, schema: ProfileSchema) -> None:
+        self._record_counts: Counter[object] = Counter()
+        self._index_counts: dict[str, Counter[object]] = {
+            spec.name: Counter() for spec in schema.fields if spec.index and spec.unique
+        }
+
+    def observe(self, frame: pd.DataFrame) -> None:
+        for row in frame.itertuples(index=False, name=None):
+            key = tuple(_make_hashable(value) for value in row)
+            self._record_counts[key] += 1
+        for field_name, counts in self._index_counts.items():
+            if field_name not in frame:
+                continue
+            values = frame[field_name]
+            for value in values[values.notna()]:
+                counts[_make_hashable(value)] += 1
+
+    def append_issues(self, result: ValidationResult) -> None:
+        duplicate_records = sum(count for count in self._record_counts.values() if count > 1)
+        if duplicate_records:
+            result.warnings.append(_duplicate_record_issue(duplicate_records))
+        for field_name, counts in self._index_counts.items():
+            duplicate_values = sum(count for count in counts.values() if count > 1)
+            if duplicate_values:
+                result.errors.append(_duplicate_index_issue(field_name, duplicate_values))
+
+
+def _merge_issue(result: ValidationResult, issue: ValidationIssue) -> None:
+    target = result.errors if issue.severity == "error" else result.warnings
+    for index, existing in enumerate(target):
+        if (
+            existing.code,
+            existing.field,
+            existing.message,
+            existing.suggestion,
+        ) == (issue.code, issue.field, issue.message, issue.suggestion):
+            target[index] = replace(
+                existing,
+                affected_records=existing.affected_records + issue.affected_records,
+            )
+            return
+    target.append(issue)
+
+
+def _validate_dataset_chunks(
+    chunks: Iterable[Dataset], schema: str | ProfileSchema
+) -> ValidationResult:
+    """Validate a dataset stream while preserving duplicate state across chunks."""
+    contract = load_schema(schema)
+    result = ValidationResult()
+    duplicates = _DuplicateTracker(contract)
+    for chunk in chunks:
+        chunk_result = ValidationResult()
+        _validate_frame(chunk, contract, chunk_result)
+        for issue in [*chunk_result.errors, *chunk_result.warnings]:
+            _merge_issue(result, issue)
+        duplicates.observe(chunk.data)
+    duplicates.append_issues(result)
+    return result
+
+
+def validate_dataset(
+    dataset: Dataset | pd.DataFrame,
+    schema: str | ProfileSchema,
+    *,
+    units: dict[str, str] | None = None,
+) -> ValidationResult:
+    """Validate declared structure; this never certifies physical correctness."""
+    value = dataset if isinstance(dataset, Dataset) else Dataset(dataset)
+    contract = load_schema(schema)
+    if units is not None:
+        value = value.copy()
+        value.metadata["units"] = dict(units)
+    result = ValidationResult()
+    _validate_frame(value, contract, result)
+    _append_duplicate_issues(value.data, contract, result)
     return result

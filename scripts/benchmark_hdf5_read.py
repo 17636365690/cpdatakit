@@ -75,6 +75,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--records", type=_positive_int, default=100_000)
     parser.add_argument("--chunk-size", type=_positive_int, default=10_000)
+    parser.add_argument("--hdf5-chunk-size", type=_positive_int, default=None)
     parser.add_argument("--output-dir", type=Path)
     return parser
 
@@ -96,10 +97,18 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         path = directory / "benchmark.h5"
-        write_hdf5(dataset, path, schema, validation, force=True)
+        write_hdf5(
+            dataset,
+            path,
+            schema,
+            validation,
+            force=True,
+            hdf5_chunk_size=args.hdf5_chunk_size,
+        )
         report = {
             "records": args.records,
             "chunk_size": args.chunk_size,
+            "hdf5_chunk_size": args.hdf5_chunk_size,
             "full": _measure(lambda: load_hdf5(path)),
             "selected_fields": _measure(lambda: load_hdf5(path, fields=["step", "stress"])),
             "chunked": _measure(

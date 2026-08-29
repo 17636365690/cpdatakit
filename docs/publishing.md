@@ -1,6 +1,6 @@
 # Publishing to PyPI
 
-CPDataKit uses PyPI Trusted Publishing so no long-lived PyPI token is stored in GitHub.
+CPDataKit uses PyPI Trusted Publishing with short-lived OIDC credentials managed by GitHub.
 
 ## Reproducible distributions
 
@@ -29,10 +29,11 @@ inconsistent version metadata; builds both distributions from the exact tag; run
 and exchanges GitHub's short-lived OIDC identity for a temporary PyPI credential. Review and
 approve the queued `pypi` deployment only after confirming the tag and build job. After the
 workflow succeeds, verify a clean `pip install cpdatakit==<version>`, then publish the matching GitHub
-Release and attach the already-verified distributions. Publishing a GitHub Release does not
-trigger PyPI, which avoids duplicate uploads of immutable files.
+Release and attach the already-verified distributions. Run the PyPI workflow and GitHub Release
+publication as two explicit steps; this keeps immutable distribution uploads under one controlled
+path.
 
-Do not rerun a successful version: PyPI distributions are immutable. For later versions, update
+Each successful version runs once because PyPI distributions are immutable. For later versions, update
 `pyproject.toml`, `src/cpdatakit/_version.py`, `CITATION.cff`, and `CHANGELOG.md` together, merge a
 green release PR, tag the release commit, manually publish and verify PyPI, and only then publish
 the matching GitHub Release.

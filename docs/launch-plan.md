@@ -13,7 +13,7 @@ Suggested topics: `crystal-plasticity`, `materials-science`, `scientific-python`
 1. Add schema authoring and validation helpers for external JSON contracts.
 2. Define a documented tensor-valued tabular encoding and component-order examples.
 3. Add chunk-aware CPDataKit HDF5 reads and memory benchmarks with synthetic data.
-4. Add JSON mapping-file support to the CLI without introducing scientific inference.
+4. Add JSON mapping-file support to the CLI with explicit scientific conventions.
 5. Establish an adapter acceptance checklist with official-format and license evidence.
 6. Expand property-based tests for malformed nested fields and boundary numeric values.
 
@@ -21,6 +21,6 @@ Suggested topics: `crystal-plasticity`, `materials-science`, `scientific-python`
 
 Create the GitHub repository, set the description/topics, enable private vulnerability reporting
 and branch protection, push only after reviewing `git status`/`git diff --stat`, let CI pass on
-every matrix job, create issues, then tag and publish the release using the release notes. Do not upload
-to PyPI until package ownership, name availability, two-factor authentication, and trusted
-publishing are configured.
+every matrix job, create issues, then tag and publish the release using the release notes. PyPI
+publication follows package ownership, name availability, two-factor authentication, and trusted
+publishing setup.

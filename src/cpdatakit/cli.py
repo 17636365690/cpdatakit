@@ -12,6 +12,13 @@ import matplotlib.pyplot as plt
 
 from . import __version__
 from .exceptions import CPDataKitError
+from .inspection import (
+    inspect_dataset,
+    render_inspection_json,
+    render_inspection_text,
+    sanitize_error_message,
+    write_inspection,
+)
 from .io import load_dataset, write_hdf5
 from .normalization import load_mapping_file, normalize_dataset
 from .plotting import (
@@ -21,6 +28,7 @@ from .plotting import (
     plot_stress_strain,
     save_figure,
 )
+from .reporting import build_report, write_report
 from .schema import load_schema
 from .statistics import summarize_dataset
 from .validation import validate_dataset
@@ -69,6 +77,18 @@ def _parser() -> argparse.ArgumentParser:
     plot.add_argument("--field", help="Declared numeric field for histogram")
     plot.add_argument("--output", required=True, type=Path)
     plot.add_argument("--force", action="store_true")
+    inspect = commands.add_parser("inspect", help="Inspect a file and optionally check a schema")
+    inspect.add_argument("data", type=Path, help="Input CSV, JSON records, or HDF5")
+    inspect.add_argument("--schema", help="Optional built-in profile or JSON schema path")
+    inspect.add_argument("--format", choices=["text", "json"], default="text")
+    inspect.add_argument("--output", type=Path, help="Write the inspection result to a file")
+    inspect.add_argument("--force", action="store_true", help="Replace an existing output")
+    report = commands.add_parser("report", help="Write an offline validation report")
+    report.add_argument("data", type=Path, help="Input CSV, JSON records, or HDF5")
+    report.add_argument("--schema", required=True, help="Built-in profile or JSON schema path")
+    report.add_argument("--format", choices=["html", "markdown", "json"], default="html")
+    report.add_argument("--output", required=True, type=Path)
+    report.add_argument("--force", action="store_true", help="Replace an existing output")
     return parser
 
 
@@ -83,7 +103,44 @@ def _write_json(payload: dict[str, Any], target: Path | None, force: bool) -> No
     target.write_text(rendered + "\n", encoding="utf-8")
 
 
+def _inspection_status(result: dict[str, Any]) -> int:
+    schema = result.get("schema", {})
+    validation = schema.get("validation", {}) if isinstance(schema, dict) else {}
+    risks = result.get("risks", {})
+    has_validation_errors = isinstance(validation, dict) and bool(validation.get("errors"))
+    has_risks = isinstance(risks, dict) and bool(
+        risks.get("missing_values") or risks.get("structural")
+    )
+    return 1 if has_validation_errors or has_risks else 0
+
+
+def _run_inspect(args: argparse.Namespace) -> int:
+    result = inspect_dataset(args.data, schema=args.schema)
+    if args.output is None:
+        rendered = (
+            render_inspection_json(result)
+            if args.format == "json"
+            else render_inspection_text(result)
+        )
+        print(rendered, end="")
+    else:
+        write_inspection(result, args.output, format=args.format, force=args.force)
+        print(args.output.name)
+    return _inspection_status(result)
+
+
+def _run_report(args: argparse.Namespace) -> int:
+    report = build_report(args.data, args.schema)
+    write_report(report, args.output, format=args.format, force=args.force)
+    print(args.output.name)
+    return 0 if report["validation"]["valid"] else 1
+
+
 def _run(args: argparse.Namespace) -> int:
+    if args.command == "inspect":
+        return _run_inspect(args)
+    if args.command == "report":
+        return _run_report(args)
     schema = load_schema(args.schema)
     dataset = load_dataset(args.data)
     if args.mapping is not None:
@@ -151,7 +208,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.debug:
             raise
         parser.print_usage(sys.stderr)
-        print(f"{parser.prog}: error: {exc}", file=sys.stderr)
+        message = sanitize_error_message(exc) if args.command in {"inspect", "report"} else str(exc)
+        print(f"{parser.prog}: error: {message}", file=sys.stderr)
         return 2
 
 

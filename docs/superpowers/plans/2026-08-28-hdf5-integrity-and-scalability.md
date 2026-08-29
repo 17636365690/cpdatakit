@@ -19,7 +19,7 @@
 - New partial reads use load_hdf5() and iter_hdf5_chunks(); CSV and JSON do not receive ambiguous partial-read arguments.
 - FieldSchema.shape, components, and aliases are tuples in memory and lists in serialized JSON.
 - HDF5 writes are atomic and clean their temporary file on every serialization failure.
-- No solver-specific adapter, ODB/DADF5 support, schema migration, scientific inference, new storage format, or release/version bump is introduced.
+- Keep the core dependency and storage boundaries focused on the documented HDF5 and schema work.
 - Core dependencies remain unchanged.
 
 ---
@@ -417,7 +417,7 @@ git commit -m "fix: make field schema collections immutable"
 - Modify: tests/test_nested_properties.py
 
 **Interfaces:**
-- Tests only; no new production adapter is introduced.
+- Tests cover the adapter contract; production adapter contributions follow the documented acceptance checklist.
 
 - [ ] **Step 1: Add adapter abstraction tests**
 
@@ -544,7 +544,7 @@ load_hdf5(path, fields=["step", "stress"])
 list(iter_hdf5_chunks(path, fields=["step", "stress"], chunk_size=args.chunk_size))
 ~~~
 
-Print JSON with records, chunk_size, and one result object per mode. If resource is unavailable on Windows, print peak_rss_mib: null. Do not add a runtime dependency or run the script from normal pytest.
+Print JSON with records, chunk_size, and one result object per mode. If resource is unavailable on Windows, print peak_rss_mib: null. Use the existing runtime dependencies and run the script as a diagnostic outside normal pytest.
 
 - [ ] **Step 3: Run the smoke benchmark**
 

@@ -8,10 +8,9 @@
 CPDataKit is a solver-independent Python toolkit for checking, normalizing, summarizing, and
 plotting crystal-plasticity simulation data.
 
-> **Alpha software:** A passing validation report means that the records match the selected
-> schema. It does not say that a simulation, constitutive model, or physical interpretation is
-> correct. The bundled data are generated from a fixed seed and contain no experimental or
-> commercial-solver output.
+> **Alpha software:** A passing validation report confirms that the records match the selected
+> schema. Scientific interpretation remains with the researcher. The bundled data are generated
+> from a fixed seed, while public reference data stay at their upstream source.
 
 ## When it helps
 
@@ -20,9 +19,9 @@ One stores `sigma_pa` in Pa, another expects `stress` in MPa. CPDataKit puts tho
 schema and an explicit mapping file, then keeps the validation result with the converted data.
 
 Use it before an analysis script, when exchanging files with a colleague, or when you need to
-explain later why a column was renamed. The package stays at the data boundary. It does not run
-a solver, post-process DAMASK, act as an Abaqus plug-in, run a UMAT, or read ODB files. CPDataKit
-has no official affiliation with DAMASK, Abaqus, or Dassault Systèmes.
+explain later why a column was renamed. The package stays at the data boundary and keeps data
+contracts, provenance, validation, and conversions explicit. Its documented readers and examples
+cover CPDataKit HDF5, selected DAMASK DADF5 data, and the Surfalex reference workflow.
 
 ## Supported contracts and formats
 
@@ -35,12 +34,15 @@ The built-in CPDataKit schema v1.0 has three profiles:
 Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
 take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
 summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
-operation log. CPDataKit HDF5 is not DAMASK DADF5 or Abaqus ODB.
+operation log. The current HDF5 writer also puts the canonical schema and its SHA-256 digest in
+the file. If you provide a schema URI, CPDataKit records it and leaves it alone. The read-only DAMASK
+DADF5 adapter can inspect or report a selection when the file
+has one clear choice. CPDataKit HDF5 remains a separate format from DAMASK DADF5 and Abaqus ODB.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
 missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
-must be declared or use `user_`. CPDataKit never guesses stress/strain measures, tensor order,
-orientation representation, units, or identifier semantics. See
+must be declared or use `user_`. Stress/strain measures, tensor order, orientation representation,
+units, and identifier semantics come from the explicit schema or mapping. See
 [the data format](https://github.com/17636365690/cpdatakit/blob/main/docs/data-format.md).
 
 ## Install
@@ -94,10 +96,14 @@ python examples/generate_sample_data.py --output sample_data
 The examples and tests cover these paths:
 
 - validate exported curve, point, or two-dimensional field records against an explicit contract.
-- normalize exporter-specific column names and units with a reviewable JSON mapping file.
+- normalize exporter-specific column names and units with a reviewable JSON mapping file. An
+  explicit mapping converts each element of a declared shaped field and leaves its dimensions intact.
 - preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
+- inspect files and produce shareable aggregate reports.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
+- run the Surfalex HF (AA6016A) Workflow 7A example with explicit tensor mappings, source hashes,
+  and schema provenance. Raw third-party files are downloaded only when requested.
 
 ## Useful links
 
@@ -106,6 +112,7 @@ The examples and tests cover these paths:
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
+- [Public Reference Case #1: Surfalex HF](https://github.com/17636365690/cpdatakit/tree/main/examples/public-datasets/surfalex-aa6016a)
 - [Roadmap and Issue tracker](https://github.com/17636365690/cpdatakit/issues)
 
 ## Command line
@@ -132,23 +139,45 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 ```
 
 See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
-for the JSON format and no-inference rules.
+for the JSON format and explicit-convention rules.
 
-Use `--force` to replace an output. Expected errors are concise and have no traceback. Put the
-global `--debug` option before the subcommand when an unexpected failure needs more detail. A
-validation or summary command returns `0` for conforming data and `1` for findings. Usage, read,
-and output failures return `2`. Run `cpdatakit --help` or `cpdatakit <command> --help` for details.
+When you need a quick look at a file, run:
+
+```bash
+cpdatakit inspect curve.h5 --format json --output inspect.json
+cpdatakit report curve.h5 --schema curve --output report.html
+cpdatakit report curve.h5 --schema curve --format markdown --output report.md
+```
+
+`inspect` accepts an optional schema. It prints the detected format, fields, dtype, shape,
+units, missing values, HDF5 chunks, provenance, adapter, and structural risks. `report` needs a
+schema and writes HTML by default. Markdown and JSON are available through `--format`. The HTML file
+contains its own styles, so it opens and prints offline. Reports carry summary
+statistics and validation findings. Raw records stay out of the file. Existing output files need
+`--force` before they can be replaced.
+
+Expected errors are concise. Put the global `--debug` option before the
+subcommand when an unexpected failure needs more detail. `validate`, `summary`, `inspect`, and
+`report` return `0` when validation finds zero errors. They return `1` when the data contains findings.
+Usage, read, schema, and output failures return `2`. A passing report confirms that the declared
+checks ran cleanly. Review physical and scientific correctness with the domain method alongside
+the report. Run `cpdatakit --help` or
+`cpdatakit <command> --help` for command details.
 
 ## Python API
 
 ```python
 from cpdatakit import (
     FieldMapping,
+    build_report,
+    inspect_dataset,
+    load_hdf5,
     load_dataset,
     normalize_dataset,
     summarize_dataset,
     validate_dataset,
 )
+from cpdatakit.adapters import DamaskDADF5Adapter
 
 raw = load_dataset("raw.csv")
 normalized = normalize_dataset(
@@ -163,6 +192,14 @@ normalized = normalize_dataset(
 report = validate_dataset(normalized, "curve")
 summary = summarize_dataset(normalized, "curve", validation=report)
 print(report.valid, summary["record_count"])
+inspection = inspect_dataset("curve.h5", schema="curve")
+offline_report = build_report("curve.h5", "curve")
+print(inspection["record_count"], offline_report["validation"]["valid"])
+
+dadf5 = DamaskDADF5Adapter(
+    kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
+).load("result.hdf5")
+window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
 ```
 
 Mapping conflicts, unknown fields, and incompatible units raise documented subclasses of
@@ -196,9 +233,10 @@ the field rules it should follow. That gives the next change something concrete 
 ## Known limitations and roadmap
 
 Version 0.2.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
-It has no solver adapters, constitutive integration, 3D interactive graphics, automatic scientific
-inference, streaming, or distributed processing. DAMASK and Abaqus remain reserved adapter
-boundaries. Adding either requires format evidence, license review, and reproducible test data. See the
+Native HDF5 inspection uses bounded reads. Report analysis uses the existing validation and
+statistics APIs. The bundled DAMASK DADF5 reader handles a narrow, read-only selection. Future
+adapter work follows the documented format evidence, license review, and reproducible-fixture
+process. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 
@@ -208,5 +246,5 @@ Use [CITATION.cff](https://github.com/17636365690/cpdatakit/blob/main/CITATION.c
 software. CPDataKit is licensed under Apache-2.0. See
 [LICENSE](https://github.com/17636365690/cpdatakit/blob/main/LICENSE). Direct runtime dependency
 licenses and review notes are in
-[NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE). No real experimental or
-commercial-solver data are redistributed.
+[NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE). Bundled examples use fixed-seed
+synthetic data, and public reference files remain available from their upstream records.
