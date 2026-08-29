@@ -719,6 +719,22 @@ def render_inspection_text(result: Mapping[str, Any]) -> str:
                 f"errors={len(validation.get('errors', []))}, "
                 f"warnings={len(validation.get('warnings', []))}"
             )
+            for label, key in (
+                ("Validation errors", "errors"),
+                ("Validation warnings", "warnings"),
+            ):
+                issues = validation.get(key, [])
+                if not isinstance(issues, list) or not issues:
+                    continue
+                lines.append(f"{label}:")
+                for issue in issues:
+                    if isinstance(issue, Mapping):
+                        lines.append(
+                            f"  - {_safe_text(issue.get('code'))}: "
+                            f"{_safe_text(issue.get('message'))} "
+                            f"(field={_safe_text(issue.get('field'))}, "
+                            f"affected={_safe_text(issue.get('affected_records'))})"
+                        )
     return "\n".join(lines) + "\n"
 
 

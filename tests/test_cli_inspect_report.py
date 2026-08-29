@@ -73,6 +73,18 @@ def test_cli_inspect_defaults_to_text_stdout(
     assert "CPDataKit inspection" in capsys.readouterr().out
 
 
+def test_cli_inspect_text_shows_schema_validation_codes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    data = tmp_path / "invalid.csv"
+    data.write_text("step,strain,stress\n-1,0.0,0.0\n", encoding="utf-8")
+
+    assert main(["inspect", str(data), "--schema", "curve"]) == 1
+    output = capsys.readouterr().out
+
+    assert "below_minimum" in output
+
+
 def test_cli_report_html_and_markdown_write_offline_artifacts(tmp_path: Path) -> None:
     data = tmp_path / "curve.csv"
     data.write_text("step,strain,stress\n0,0.0,0.0\n1,0.1,10.0\n", encoding="utf-8")
