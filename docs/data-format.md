@@ -48,6 +48,11 @@ unsupported versions instead of guessing a migration.
 CSV and JSON take units from the selected schema. A `Dataset` or CPDataKit HDF5 may carry explicit
 per-field units, which must be dimensionally compatible with schema units. Pint performs only
 declared conversions, including both scale and offset for affine units such as degrees Celsius.
+When a mapping targets a declared vector, matrix, or tensor field, Pint converts each numeric
+element while preserving the complete per-record shape and trailing dimensions. Ragged arrays,
+wrong shapes, booleans, strings, complex values, and incompatible units are rejected. The mapping
+still must explicitly declare both input and output units; CPDataKit does not infer stress/strain
+measures, tensor component order, orientation representation, or identifier semantics.
 Producers must declare stress measure, strain measure, tensor component order, orientation
 representation, and identifier semantics when relevant.
 

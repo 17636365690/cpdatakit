@@ -43,7 +43,8 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 示例和测试覆盖以下路径：
 
 - 在分析或交换前，按显式 schema 验证 curve、point 和二维 field 数据；
-- 使用 JSON mapping 文件处理不同导出器的字段名和单位；
+- 使用 JSON mapping 文件处理不同导出器的字段名和单位；对于声明过的向量、矩阵和张量字段，
+  单位转换按元素进行并保持原有 shape，不会自动展平；
 - 以声明的 shape 和 component order 保存向量/张量数据；
 - 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。

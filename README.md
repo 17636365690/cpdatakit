@@ -95,7 +95,8 @@ python examples/generate_sample_data.py --output sample_data
 The examples and tests cover these paths:
 
 - validate exported curve, point, or two-dimensional field records against an explicit contract.
-- normalize exporter-specific column names and units with a reviewable JSON mapping file.
+- normalize exporter-specific column names and units with a reviewable JSON mapping file, including
+  elementwise conversion for declared shaped numeric fields without flattening their dimensions.
 - preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
 - inspect files and produce reports that can be shared without including raw records.

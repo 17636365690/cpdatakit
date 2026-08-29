@@ -30,6 +30,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
   metadata objects; reject missing, unsupported, malformed, or inconsistent envelopes.
 - Refuse invalid HDF5 validation results unless `allow_invalid=True` is explicit, and make writes
   atomic with temporary-file cleanup after serialization failures.
+- Apply explicit Pint unit conversions to declared vector, matrix, and tensor fields without
+  flattening their per-record shapes; malformed shaped values now fail with record context.
 
 ### Changed
 
