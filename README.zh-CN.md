@@ -50,6 +50,8 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - 以声明的 shape 和 component order 保存向量/张量数据；
 - 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
+- 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，展示显式张量 mapping、来源 hash
+  和 schema provenance；第三方原始文件只在用户请求时下载。
 
 ## 项目与集成链接
 
@@ -58,6 +60,7 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - [五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [示例目录](https://github.com/17636365690/cpdatakit/tree/main/examples)
+- [公共参考案例 #1：Surfalex HF](https://github.com/17636365690/cpdatakit/tree/main/examples/public-datasets/surfalex-aa6016a)
 - [路线图与 Issue](https://github.com/17636365690/cpdatakit/issues)
 如果需要新的数据契约或输入格式，请在 Issue 中附一个小型合成样例和字段规则，后续改动就有
 具体的测试对象。

@@ -11,8 +11,10 @@
   preserved; opt-in record-axis HDF5 storage chunking; 100k/1M-record scaling evidence; and an
   85% CI coverage gate with clean-wheel HDF5 API smoke checks. The first optional adapter remains
   a read-only DAMASK DADF5 selection reader with official format and license references; further
-  adapters remain evidence-gated and require reproducible fixtures. Broader large-file optimization
-  remains tracked by Issue #4.
+  adapters remain evidence-gated and require reproducible fixtures. Public Reference Case #1 now
+  documents a hash-verified Surfalex HF (AA6016A) Workflow 7A conversion without adding a
+  generic MatFlow adapter or redistributing raw data. Broader large-file optimization remains
+  tracked by Issue #4.
 - **v0.4.0:** schema migration tools, comparison/report bundles, and stronger compatibility tests.
 
 No roadmap item promises full ODB or full DAMASK solver integration. Further DADF5 coverage

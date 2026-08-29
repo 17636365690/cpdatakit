@@ -103,6 +103,8 @@ The examples and tests cover these paths:
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
 - inspect files and produce reports that can be shared without including raw records.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
+- reproduce a public Surfalex HF (AA6016A) Workflow 7A conversion with explicit tensor mappings,
+  source hashes, and schema provenance; raw third-party files are fetched on demand.
 
 ## Useful links
 
@@ -111,6 +113,7 @@ The examples and tests cover these paths:
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
+- [Public Reference Case #1: Surfalex HF](https://github.com/17636365690/cpdatakit/tree/main/examples/public-datasets/surfalex-aa6016a)
 - [Roadmap and Issue tracker](https://github.com/17636365690/cpdatakit/issues)
 
 ## Command line
