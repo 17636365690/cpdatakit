@@ -47,7 +47,7 @@ units, and identifier semantics come from the explicit schema or mapping. See
 
 ## Install
 
-Install version `0.2.0` from PyPI:
+Install the current release from PyPI:
 
 ```bash
 python -m pip install cpdatakit
@@ -56,7 +56,7 @@ python -m pip install cpdatakit
 For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.3.0/cpdatakit-0.3.0-py3-none-any.whl"
 ```
 
 Then follow the
@@ -108,7 +108,7 @@ The examples and tests cover these paths:
 ## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
-- [v0.2.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.2.0)
+- [v0.3.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.3.0)
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
@@ -232,7 +232,7 @@ the field rules it should follow. That gives the next change something concrete 
 
 ## Known limitations and roadmap
 
-Version 0.2.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
+Version 0.3.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
 Native HDF5 inspection uses bounded reads. Report analysis uses the existing validation and
 statistics APIs. The bundled DAMASK DADF5 reader handles a narrow, read-only selection. Future
 adapter work follows the documented format evidence, license review, and reproducible-fixture

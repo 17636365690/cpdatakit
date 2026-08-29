@@ -32,7 +32,7 @@ python -m pip install cpdatakit
 For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.3.0/cpdatakit-0.3.0-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example

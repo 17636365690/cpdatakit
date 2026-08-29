@@ -4,6 +4,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-30
+
 ### Added
 
 - Explicit `load_hdf5()` field/range reads and `iter_hdf5_chunks()` lazy chunk iteration, with

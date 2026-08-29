@@ -16,7 +16,7 @@ CPDataKit 是一个与求解器无关的 Python 工具包，用来在晶体塑�
 来源、验证和单位转换集中在数据边界，并提供 CPDataKit HDF5、选定 DAMASK DADF5 数据和
 Surfalex 公开参考流程的文档化路径。
 
-v0.2.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
+v0.3.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。应力/应变量、张量顺序、取向表达、单位和 ID 含义都通过 schema 或 mapping
 显式提供。已有的
@@ -26,7 +26,7 @@ CPDataKit 会记录它，URI 的访问由调用方负责。
 
 ## 安装与快速开始
 
-当前 `v0.2.0` 已发布到 PyPI，使用以下命令安装：
+当前 `v0.3.0` 已发布到 PyPI，使用以下命令安装：
 
 ```powershell
 python -m pip install cpdatakit
@@ -35,7 +35,7 @@ python -m pip install cpdatakit
 如果需要固定 GitHub Release wheel，可使用：
 
 ```powershell
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.2.0/cpdatakit-0.2.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.3.0/cpdatakit-0.3.0-py3-none-any.whl"
 ```
 
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
@@ -57,7 +57,7 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.2.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.2.0)
+- [v0.3.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.3.0)
 - [五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [示例目录](https://github.com/17636365690/cpdatakit/tree/main/examples)
