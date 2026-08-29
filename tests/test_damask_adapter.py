@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 import cpdatakit.adapters as adapters
-from cpdatakit.exceptions import CPDataKitError
+from cpdatakit.exceptions import AdapterError, CPDataKitError
 from cpdatakit.validation import validate_dataset
 
 
@@ -120,3 +120,82 @@ def test_damask_dadf5_adapter_requires_dataset_metadata(tmp_path: Path) -> None:
 
     with pytest.raises(CPDataKitError, match="unit"):
         _adapter(label="Taylor", datasets=["P"]).load(path)
+
+
+def test_damask_dadf5_adapter_accepts_legacy_version_and_numeric_increment(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "legacy.hdf5"
+    _write_dadf5(path, version=(0, 14))
+
+    dataset = _adapter(increment="0", label="Taylor", datasets=["F"]).load(path)
+
+    assert dataset.metadata["adapter"]["format_version"] == "0.14"
+    assert dataset.metadata["adapter"]["increment"] == "increment_0"
+
+
+def test_damask_dadf5_adapter_reads_phase_selection(tmp_path: Path) -> None:
+    path = tmp_path / "phase.hdf5"
+    _write_dadf5(path)
+    with h5py.File(path, "r+") as handle:
+        phase = handle["increment_0"].create_group("phase")
+        mechanical = phase.create_group("Alpha").create_group("mechanical")
+        dataset = mechanical.create_dataset("O", data=np.zeros((2, 4)))
+        dataset.attrs["unit"] = "q"
+        dataset.attrs["description"] = "Quaternion orientation"
+
+    loaded = _adapter(kind="phase", label="Alpha", datasets=["O"]).load(path)
+
+    assert "user_dadf5_phase_Alpha_mechanical_O" in loaded.data
+    assert loaded.metadata["adapter"]["kind"] == "phase"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"increment": True}, "increment"),
+        ({"kind": "other"}, "kind"),
+        ({"field": ""}, "field"),
+        ({"label": ""}, "label"),
+        ({"datasets": "F"}, "datasets"),
+        ({"datasets": []}, "datasets"),
+        ({"datasets": ["F", "F"]}, "duplicates"),
+        ({"datasets": [1]}, "datasets"),
+    ],
+)
+def test_damask_dadf5_adapter_rejects_invalid_configuration(
+    kwargs: dict[str, object], message: str
+) -> None:
+    with pytest.raises(AdapterError, match=message):
+        _adapter(**kwargs)
+
+
+def test_damask_dadf5_adapter_rejects_missing_root_structure(tmp_path: Path) -> None:
+    path = tmp_path / "missing-root.hdf5"
+    with h5py.File(path, "w"):
+        pass
+
+    with pytest.raises(AdapterError, match="version metadata"):
+        _adapter(label="Taylor").load(path)
+
+
+def test_damask_dadf5_adapter_rejects_missing_description(tmp_path: Path) -> None:
+    path = tmp_path / "missing-description.hdf5"
+    _write_dadf5(path)
+    with h5py.File(path, "r+") as handle:
+        del handle["increment_0/homogenization/Taylor/mechanical/F"].attrs["description"]
+
+    with pytest.raises(AdapterError, match="description"):
+        _adapter(label="Taylor", datasets=["F"]).load(path)
+
+
+def test_damask_dadf5_adapter_rejects_normalized_name_collision(tmp_path: Path) -> None:
+    path = tmp_path / "collision.hdf5"
+    _write_dadf5(
+        path,
+        values={"a-b": np.zeros((2, 1)), "a_b": np.ones((2, 1))},
+        units={"a-b": "1", "a_b": "1"},
+    )
+
+    with pytest.raises(AdapterError, match="collide"):
+        _adapter(label="Taylor").load(path)
