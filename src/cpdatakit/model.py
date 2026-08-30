@@ -37,14 +37,14 @@ class ValidationIssue:
 
 @dataclass(slots=True)
 class ValidationResult:
-    """Structured validation report; validity means schema conformance only."""
+    """Structured validation report for the declared schema."""
 
     errors: list[ValidationIssue] = field(default_factory=list)
     warnings: list[ValidationIssue] = field(default_factory=list)
 
     @property
     def valid(self) -> bool:
-        """Whether no schema-conformance errors were found."""
+        """Whether the declared schema checks found zero errors."""
         return not self.errors
 
     def to_dict(self) -> dict[str, Any]:

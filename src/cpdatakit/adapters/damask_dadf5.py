@@ -67,7 +67,7 @@ class DamaskDADF5Adapter(DatasetAdapter):
 
     The adapter reads data beneath one increment/kind/label/field group and returns a
     CPDataKit ``point`` dataset. External field names are preserved in a ``user_dadf5_``
-    namespace; no DAMASK runtime or source code is required.
+    namespace, and h5py handles the file access within the adapter.
     """
 
     def __init__(

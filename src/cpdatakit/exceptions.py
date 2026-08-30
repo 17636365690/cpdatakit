@@ -6,7 +6,7 @@ class CPDataKitError(Exception):
 
 
 class DataReadError(CPDataKitError):
-    """Raised when an input cannot be read as a supported dataset."""
+    """Raised when an input fails a supported dataset reader."""
 
 
 class DataValidationError(CPDataKitError):
@@ -14,16 +14,16 @@ class DataValidationError(CPDataKitError):
 
 
 class AdapterError(CPDataKitError):
-    """Raised when an external-format adapter cannot safely load input."""
+    """Raised when an external-format adapter fails to load its input safely."""
 
 
 class SchemaError(CPDataKitError):
-    """Raised when a schema is missing, malformed, or unsupported."""
+    """Raised when schema data fails validation or loading."""
 
 
 class NormalizationError(CPDataKitError):
-    """Raised when an explicit mapping cannot be applied safely."""
+    """Raised when an explicit mapping fails validation or conversion."""
 
 
 class OutputExistsError(CPDataKitError):
-    """Raised when an operation would overwrite a file without consent."""
+    """Raised when an existing file needs explicit force before replacement."""

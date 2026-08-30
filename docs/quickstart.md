@@ -71,11 +71,12 @@ cpdatakit inspect curve.h5 --format json --output inspect.json
 cpdatakit report curve.h5 --schema curve --output report.html
 ```
 
-检查结果会列出格式和版本、字段顺序、dtype、shape、单位、缺失值、HDF5 chunk、provenance、
-adapter 信息以及结构风险。报告还会带上 schema profile/version、validation errors 和 warnings、
-描述性统计与范围说明。`report.html` 可以直接用浏览器打开，也可以在没有网络的环境中打印。
-输出文件默认保留，替换时加 `--force`。验证结果描述声明的结构检查，物理或科学
-判断结合领域方法完成。
+The inspection result lists the format and version, field order, dtype, shape, units, missing
+values, HDF5 chunks, provenance, adapter details, and structural risks. The report adds the schema
+profile/version, validation errors and warnings, descriptive statistics, and scope note. Open
+`report.html` in a browser or print it in an offline environment. Existing output stays in place.
+pass `--force` when replacement is intended. The report describes declared structural checks. Use
+domain methods to interpret physical and scientific results.
 
 ## 6. Plot the declared curve
 
@@ -84,12 +85,12 @@ cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-stra
 ```
 
 At this point, the directory contains `validation.json`, `summary.json`, `curve.h5`, and
-`stress-strain.png`. CPDataKit checks the data contract. Physical correctness remains outside
-the package's scope.
+`stress-strain.png`. CPDataKit checks the declared data contract. Use domain-specific methods to
+assess physical correctness.
 
 ## 7. Read a window or stream chunks
 
-Use the explicit HDF5 readers when a full materialized read is not the right fit:
+For bounded access, use the explicit HDF5 readers:
 
 ```python
 from cpdatakit.io import iter_hdf5_chunks, load_hdf5
@@ -102,7 +103,7 @@ for chunk in iter_hdf5_chunks("curve.h5", fields=["step", "stress"], chunk_size=
 `start` is inclusive and `stop` is exclusive. Field order follows the requested order, and
 every chunk is a `Dataset` with the HDF5 metadata and source path preserved. Reads are sliced
 along the record axis, so vector and tensor values keep their per-record shapes. Use
-`load_dataset()` when the existing full-read workflow is sufficient.
+Choose `load_dataset()` when the existing full-read workflow is sufficient.
 
 ## 8. Opt into record-axis HDF5 storage chunks
 
@@ -128,8 +129,8 @@ write_hdf5(
 window = load_hdf5("curve-chunked.h5", fields=["step", "stress"], start=10, stop=20)
 ```
 
-`hdf5_chunk_size` is an opt-in positive record count for the HDF5 storage chunks. Omitting it, or
-passing `None`, keeps the default layout. The value applies only to the first record axis, so
+`hdf5_chunk_size` is an opt-in positive record count for the HDF5 storage chunks. Leave it out or
+pass `None` to use the default layout. The value applies to the first record axis, so
 vector and tensor trailing dimensions remain intact. It is separate from the reader-side
 `iter_hdf5_chunks(..., chunk_size=...)` batch size. Use `load_hdf5()` for a selected window,
 `iter_hdf5_chunks()` for bounded iteration, and `load_dataset()` for the existing full-read path.
@@ -145,7 +146,8 @@ python scripts/benchmark_hdf5_read.py --records 1000000 --chunk-size 4096 --hdf5
 
 Each command prints JSON for full, selected-field, and chunked reads, including record counts,
 elapsed time, peak RSS where available, and the configured storage chunk size. Compare runs on the
-same machine and treat the benchmark as scaling evidence rather than a timing-based CI gate.
+same machine. The benchmark provides scaling evidence, while CI checks the result structure and
+record counts.
 
 ## Try invalid data
 

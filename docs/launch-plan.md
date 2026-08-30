@@ -19,8 +19,8 @@ Suggested topics: `crystal-plasticity`, `materials-science`, `scientific-python`
 
 ## Owner actions
 
-Create the GitHub repository, set the description/topics, enable private vulnerability reporting
-and branch protection, push only after reviewing `git status`/`git diff --stat`, let CI pass on
-every matrix job, create issues, then tag and publish the release using the release notes. PyPI
-publication follows package ownership, name availability, two-factor authentication, and trusted
-publishing setup.
+Create the GitHub repository, set the description and topics, enable private vulnerability
+reporting and branch protection, review `git status`/`git diff --stat` before pushing, and let CI
+pass on every matrix job. Create the issues, then tag and publish the release using the release
+notes. PyPI publication follows package ownership, name availability, two-factor authentication,
+and trusted publishing setup.

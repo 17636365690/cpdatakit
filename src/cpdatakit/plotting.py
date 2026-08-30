@@ -94,7 +94,7 @@ def plot_counts(dataset: Dataset, schema: str | ProfileSchema, field: str) -> tu
 
 
 def plot_field2d(dataset: Dataset, schema: str | ProfileSchema) -> tuple[Figure, Axes]:
-    """Plot an irregular or regular 2D scalar field without interpolation claims."""
+    """Plot a 2D scalar field using its declared sample coordinates."""
     contract = load_schema(schema)
     needed = {"x", "y", "value"}
     if not needed.issubset(dataset.data):
@@ -120,7 +120,7 @@ def plot_field2d(dataset: Dataset, schema: str | ProfileSchema) -> tuple[Figure,
 
 
 def save_figure(fig: Figure, output: str | Path, *, force: bool = False) -> Path:
-    """Save a PNG or SVG without overwriting unless requested."""
+    """Save a PNG or SVG and preserve existing files unless replacement is requested."""
     target = Path(output)
     if target.suffix.lower() not in {".png", ".svg"}:
         raise CPDataKitError("Plot output extension must be .png or .svg")

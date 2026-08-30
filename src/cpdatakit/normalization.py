@@ -144,7 +144,7 @@ def normalize_dataset(
     *,
     drop_unmapped: bool = False,
 ) -> Dataset:
-    """Normalize fields only from explicit mappings; never infer scientific conventions."""
+    """Normalize fields from explicit mappings and schema conventions."""
     contract = load_schema(schema)
     items = list(mappings or [])
     sources = [item.source for item in items]

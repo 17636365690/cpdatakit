@@ -1,8 +1,8 @@
 # Maintenance
 
-The current stability work documents the v0.3.0 release path. Keep `pyproject.toml` and
-`CITATION.cff` at the current release values in this branch. When a release is authorized, update the version metadata,
-`CHANGELOG.md`, and `CITATION.cff` together and run every check below before publishing.
+This document records the v0.3.0 release path. Keep `pyproject.toml` and `CITATION.cff` aligned
+with the current release. For each authorized release, update the version metadata, `CHANGELOG.md`,
+and `CITATION.cff` together, then run every check below before publishing.
 
 ## Exact release checklist
 
@@ -18,9 +18,9 @@ The current stability work documents the v0.3.0 release path. Keep `pyproject.to
    ruff format --check .
    ```
 
-   Coverage below 85% fails the release gate.
-3. Verify the version before building, then build the distributions twice and compare them
-   byte-for-byte. The following is the CI-equivalent shell sequence:
+   The release gate requires at least 85% coverage.
+3. Check the version before building. Build the distributions twice and compare them byte-for-byte.
+   The following is the CI-equivalent shell sequence:
 
    ```bash
    version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
@@ -57,14 +57,13 @@ The current stability work documents the v0.3.0 release path. Keep `pyproject.to
    ```
 
    Confirm valid JSON and exact record counts for full, selected-field, and chunked reads. Record
-   elapsed time and peak RSS for comparison; treat one-machine timing as diagnostic evidence rather
-   than a pass/fail threshold.
+   elapsed time and peak RSS for comparison. Timing from one machine provides diagnostic evidence.
 6. Complete the existing README commands, deterministic sample regeneration comparison,
-   secret/absolute-path scan, license review, and sdist/wheel content inspection. Publish after
-   the version in `pyproject.toml`, the installed wheel, the Git tag/release, and PyPI agree in a
-   fresh environment.
+   secret/absolute-path scan, license review, and sdist/wheel content inspection. Publish when the
+   version in `pyproject.toml`, the installed wheel, the Git tag/release, and PyPI agree in a fresh
+   environment.
 
-Review schema changes as public API: backward-compatible additions may remain in 1.x; changed
+Review schema changes as public API. Backward-compatible additions may remain in 1.x. Changes to
 meaning, units, requiredness, or conventions require a new schema version. Security reports follow
 `SECURITY.md`. Fixture contributions use synthetic, openly licensed, or redistribution-approved
 solver output.

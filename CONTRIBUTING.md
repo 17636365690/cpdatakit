@@ -4,7 +4,8 @@ Open an issue before large schema or adapter changes. Fork the project, create a
 add tests and documentation, then run `pytest`, `ruff check .`, `ruff format --check .`, and
 `python -m build`. Contributions are submitted under Apache-2.0.
 
-Use only synthetic, openly licensed, or redistribution-approved fixtures. Never commit ODB files,
-real confidential research data, secrets, personal paths, or commercial installation details.
-Scientific conventions must be explicit; do not add automatic guesses for units or measures.
+Use synthetic, openly licensed, or redistribution-approved fixtures. Keep ODB files, confidential
+research data, secrets, personal paths, and commercial installation details out of commits.
+Record scientific conventions explicitly in the schema or mapping so units and measures remain
+reviewable.
 

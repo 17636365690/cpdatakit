@@ -4,7 +4,8 @@ This is the first CPDataKit example built from a published research dataset. It 
 real MatFlow/Hickle HDF5 file from the Surfalex project, selects four documented volume outputs,
 and writes a CPDataKit HDF5 file that can be checked and reused.
 
-The source files are downloaded when you run fetch_data.py. They stay out of this repository.
+The fetch script downloads the source files. The repository stores their identifiers, hashes,
+schema, mapping, and offline fixture.
 
 ## Source
 
@@ -88,17 +89,16 @@ From the repository root:
 
 fetch_data.py checks both MD5 and SHA-256. workflow.py reads the four paths above, checks their
 record axes and shapes, applies the mapping, and writes the output with the schema snapshot.
-The report is plain JSON. It contains counts, metadata, and validation findings; tensor records
+The report is plain JSON. It contains counts, metadata, and validation findings. Tensor records
 remain in the converted HDF5 artifact.
 
 The expected result has 1,501 records, fields step/stress/strain/F/Fp, MPa stress, (3, 3)
 per-record tensor shapes, and zero validation errors. The expected schema hash is in the manifest.
 
-## Case boundary
+## Scope of this case
 
-This extractor follows the paths and conventions documented for Workflow 7A. Raw data stays under
-its upstream license and is downloaded by the user. Future readers can extend the same pattern with
-their own format evidence, licensing record, schema, mapping, and offline fixture.
+This extractor follows the paths and conventions documented for Workflow 7A. The fetch script reads
+data under its upstream license. Future readers can extend the same pattern with their own format
+evidence, licensing record, schema, mapping, and offline fixture.
 
-Reports may leave shaped-field aggregate statistics empty. That is deliberate. CPDataKit keeps
-tensor components intact instead of silently flattening them.
+Reports may omit shaped-field aggregate statistics because CPDataKit keeps tensor components intact.

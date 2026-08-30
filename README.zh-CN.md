@@ -3,8 +3,8 @@
 CPDataKit 是一个与求解器无关的 Python 工具包，用来在晶体塑性模拟数据进入分析脚本或交给
 其他工具前，检查字段、单位和形状，并完成标准化、统计和绘图。
 
-> 当前为 alpha 版本。验证通过表示记录符合所选 schema，科学解释仍需结合研究者的领域判断。
-> 仓库示例由固定随机种子生成，公开参考数据保留在其上游记录中。
+> **Alpha 版本：** 验证报告说明记录是否符合所选 schema。物理结果使用领域方法解释。
+> 仓库示例使用固定随机种子，公开参考数据保留在上游来源。
 
 ## 什么时候用
 
@@ -12,17 +12,16 @@ CPDataKit 是一个与求解器无关的 Python 工具包，用来在晶体塑�
 `strain` 和 `stress`。CPDataKit 把这些约定写进 schema 和 mapping 文件，并把验证结果保存
 到输出 HDF5。
 
-它适合放在分析脚本前、文件交接时，或者需要追溯字段改名原因的地方。CPDataKit 将数据契约、
+它可以放在分析脚本前或文件交接环节，也适合记录字段改名的原因。CPDataKit 把数据契约、
 来源、验证和单位转换集中在数据边界，并提供 CPDataKit HDF5、选定 DAMASK DADF5 数据和
 Surfalex 公开参考流程的文档化路径。
 
-v0.3.0 提供 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
+v0.3.0 支持 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
 CPDataKit 自有 HDF5。schema 显式声明字段、类型、shape、物理角色、单位、缺失值、索引、
 范围与科学约定。应力/应变量、张量顺序、取向表达、单位和 ID 含义都通过 schema 或 mapping
-显式提供。已有的
-DAMASK DADF5 只读适配器也能在文件只有一个明确选择时完成检查和报告。
-当前 writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
-CPDataKit 会记录它，URI 的访问由调用方负责。
+显式提供。DAMASK DADF5 只读适配器在文件中存在一个明确选择时，也能完成检查和报告。
+Writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
+CPDataKit 会把它记录为由调用方管理的 provenance。
 
 ## 安装与快速开始
 
@@ -52,7 +51,7 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
 - 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，查看显式张量 mapping、来源 hash
-  和 schema provenance。第三方原始文件只在用户请求时下载。
+  和 schema provenance。流程按需下载第三方原始文件，并记录来源 hash。
 
 ## 项目与集成链接
 
@@ -90,8 +89,8 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
-HTML，也支持 `--format markdown` 和 `--format json`。报告只保留统计和验证结果，原始记录留在
-输入数据中。输出已存在时要显式传入 `--force` 才会替换。验证或检查发现数据问题时退出码为 `1`，
+HTML，也支持 `--format markdown` 和 `--format json`。报告包含统计和验证结果，原始记录继续保留在
+输入数据中。替换已有输出时显式传入 `--force`。验证或检查发现数据问题时退出码为 `1`，
 参数、schema、读取和输出错误为 `2`。验证结果描述声明的结构检查，物理或科学判断结合领域方法完成。使用 `cpdatakit --help`
 查看完整帮助。
 
@@ -122,14 +121,14 @@ dadf5 = DamaskDADF5Adapter(
 window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
 ```
 
-字段映射与单位转换必须通过 `FieldMapping` 显式提供；未参与标准化的原始字段默认保留。
+字段映射与单位转换必须通过 `FieldMapping` 显式提供。未映射的原始字段默认保留。
 绘图函数返回 Matplotlib `Figure/Axes`，支持 PNG 和 SVG，并适用于 CI 无显示环境。
 
-## 文档、限制与贡献
+## 文档、范围与贡献
 
 详细格式见[数据格式文档](https://github.com/17636365690/cpdatakit/blob/main/docs/data-format.md)，
 架构、适配器、维护和路线图见仓库 `docs/`。
-当前提供一个范围受限的 DAMASK DADF5 只读选择适配器，适配器贡献按格式证据、许可、可复现
+仓库提供一个文档化的 DAMASK DADF5 只读选择适配器，适配器贡献按格式证据、许可、可复现
 夹具和科学约定清单审核。贡献前请阅读
 [CONTRIBUTING.md](https://github.com/17636365690/cpdatakit/blob/main/CONTRIBUTING.md)。项目采用
 Apache-2.0，依赖许可核查见
