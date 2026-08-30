@@ -340,7 +340,7 @@ def write_schema(
     *,
     force: bool = False,
 ) -> Path:
-    """Write a validated schema JSON file without overwriting by default."""
+    """Write a validated schema JSON file and preserve existing files by default."""
     target = Path(output)
     if target.exists() and not force:
         raise SchemaError(f"Schema output already exists: {target}; pass force=True to replace it")

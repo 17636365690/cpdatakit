@@ -9,8 +9,8 @@ CPDataKit is a solver-independent Python toolkit for checking, normalizing, summ
 plotting crystal-plasticity simulation data.
 
 > **Alpha software:** A passing validation report confirms that the records match the selected
-> schema. Scientific interpretation remains with the researcher. The bundled data are generated
-> from a fixed seed, while public reference data stay at their upstream source.
+> schema. Use domain methods to interpret physical results. The bundled data use a fixed seed, and
+> public reference data remain at their upstream source.
 
 ## When it helps
 
@@ -35,9 +35,9 @@ Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`)
 take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
 summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
 operation log. The current HDF5 writer also puts the canonical schema and its SHA-256 digest in
-the file. If you provide a schema URI, CPDataKit records it and leaves it alone. The read-only DAMASK
+the file. CPDataKit records a supplied schema URI as caller-managed provenance. The read-only DAMASK
 DADF5 adapter can inspect or report a selection when the file
-has one clear choice. CPDataKit HDF5 remains a separate format from DAMASK DADF5 and Abaqus ODB.
+has one clear choice. CPDataKit HDF5 uses its own format alongside DAMASK DADF5 and Abaqus ODB.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
 missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
@@ -103,7 +103,8 @@ The examples and tests cover these paths:
 - inspect files and produce shareable aggregate reports.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
 - run the Surfalex HF (AA6016A) Workflow 7A example with explicit tensor mappings, source hashes,
-  and schema provenance. Raw third-party files are downloaded only when requested.
+  and schema provenance. The example downloads third-party raw files on request and records their
+  source hashes.
 
 ## Useful links
 
@@ -153,14 +154,14 @@ cpdatakit report curve.h5 --schema curve --format markdown --output report.md
 units, missing values, HDF5 chunks, provenance, adapter, and structural risks. `report` needs a
 schema and writes HTML by default. Markdown and JSON are available through `--format`. The HTML file
 contains its own styles, so it opens and prints offline. Reports carry summary
-statistics and validation findings. Raw records stay out of the file. Existing output files need
-`--force` before they can be replaced.
+statistics and validation findings. Reports contain aggregate metadata while source records remain
+in the input dataset. Pass `--force` to replace an existing output file.
 
-Expected errors are concise. Put the global `--debug` option before the
+CLI errors are concise. Put the global `--debug` option before the
 subcommand when an unexpected failure needs more detail. `validate`, `summary`, `inspect`, and
 `report` return `0` when validation finds zero errors. They return `1` when the data contains findings.
-Usage, read, schema, and output failures return `2`. A passing report confirms that the declared
-checks ran cleanly. Review physical and scientific correctness with the domain method alongside
+Usage, read, schema, and output failures return `2`. A passing report indicates successful completion
+of the declared checks. Use domain methods to interpret physical and scientific results alongside
 the report. Run `cpdatakit --help` or
 `cpdatakit <command> --help` for command details.
 
@@ -230,13 +231,12 @@ Contributions follow
 When you need a new data contract or input format, open an issue with a small synthetic sample and
 the field rules it should follow. That gives the next change something concrete to test.
 
-## Known limitations and roadmap
+## Scope and roadmap
 
 Version 0.3.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
 Native HDF5 inspection uses bounded reads. Report analysis uses the existing validation and
-statistics APIs. The bundled DAMASK DADF5 reader handles a narrow, read-only selection. Future
-adapter work follows the documented format evidence, license review, and reproducible-fixture
-process. See the
+statistics APIs. The bundled DAMASK DADF5 reader covers a documented read-only selection. New
+adapters use the documented format evidence, license review, and reproducible-fixture process. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 

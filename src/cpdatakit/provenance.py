@@ -12,7 +12,7 @@ from ._version import __version__
 
 
 def sha256_file(path: str | Path) -> str:
-    """Compute the SHA-256 digest of a file without loading it all at once."""
+    """Compute a file's SHA-256 digest in streaming chunks."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b""):

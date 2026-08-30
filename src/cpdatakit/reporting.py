@@ -381,7 +381,7 @@ def write_report(
     format: str = "html",
     force: bool = False,
 ) -> Path:
-    """Write a report artifact without overwriting by default."""
+    """Write a report artifact and preserve existing files by default."""
 
     renderers = {
         "html": render_report_html,

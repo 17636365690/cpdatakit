@@ -102,7 +102,7 @@ def _safe_metadata(value: object, *, key: str | None = None) -> object:
 
 
 def sanitize_for_output(value: object) -> object:
-    """Return a JSON-compatible value without paths or credential values."""
+    """Return a JSON-compatible value with portable paths and redacted credentials."""
 
     return _safe_metadata(value)
 
@@ -738,7 +738,7 @@ def write_inspection(
     format: str = "text",
     force: bool = False,
 ) -> Path:
-    """Write an inspection artifact without overwriting by default."""
+    """Write an inspection artifact and preserve existing files by default."""
 
     if format == "json":
         rendered = render_inspection_json(result)

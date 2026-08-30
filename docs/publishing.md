@@ -24,16 +24,15 @@ timestamp, file-order, or backend drift before a release is published.
 
 After the pending publisher exists and the release commit is tagged, open the workflow on the
 `main` branch and run **Publish to PyPI** manually with the release tag. The workflow and the `pypi`
-environment reject dispatches from other refs. It also rejects missing/off-main tags and
-inconsistent version metadata; builds both distributions from the exact tag; runs `twine check`;
-and exchanges GitHub's short-lived OIDC identity for a temporary PyPI credential. Review and
-approve the queued `pypi` deployment only after confirming the tag and build job. After the
-workflow succeeds, verify a clean `pip install cpdatakit==<version>`, then publish the matching GitHub
-Release and attach the already-verified distributions. Run the PyPI workflow and GitHub Release
-publication as two explicit steps; this keeps immutable distribution uploads under one controlled
-path.
+environment accept dispatches from `main`, require an existing tag on that branch, and compare all
+release metadata before building. They build both distributions from the exact tag and run
+`twine check`. They exchange GitHub's short-lived OIDC identity for a temporary PyPI credential.
+Review the queued `pypi` deployment after confirming the tag and build job. When the workflow succeeds, verify
+a clean `pip install cpdatakit==<version>`, then publish the matching GitHub Release with the
+already-verified distributions. Keep the PyPI workflow and GitHub Release publication as two
+explicit steps so each artifact has a clear verification point.
 
-Each successful version runs once because PyPI distributions are immutable. For later versions, update
+Each version is published once because PyPI distributions are immutable. For later versions, update
 `pyproject.toml`, `src/cpdatakit/_version.py`, `CITATION.cff`, and `CHANGELOG.md` together, merge a
-green release PR, tag the release commit, manually publish and verify PyPI, and only then publish
-the matching GitHub Release.
+green release PR, tag the release commit, publish and verify PyPI, then publish the matching GitHub
+Release.

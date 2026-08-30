@@ -2,9 +2,9 @@
 
 An adapter translates one documented external representation into `Dataset`. Subclass
 `cpdatakit.adapters.DatasetAdapter`, accept `pathlib.Path`, and return data plus explicit units and
-conventions. A pure-Python reader with a narrow, documented scope may live in the core package.
+conventions. A pure-Python reader with a focused, documented scope can live in the core package.
 Readers that depend on solver runtimes or heavy format-specific libraries use an optional
-package/extra. The current DAMASK reader follows the narrow core-reader boundary and uses h5py.
+package/extra. The current DAMASK reader is a focused core reader built on h5py.
 
 ## Acceptance checklist
 
@@ -26,13 +26,13 @@ An adapter proposal should satisfy every item before contribution:
 - [ ] Solver runtimes and other format-specific heavy dependencies are supplied through an
       optional package or extra.
 
-Use the DADF5 label only for the documented DAMASK hierarchy. ODB adapters require a legitimately
+Use the DADF5 label for the documented DAMASK hierarchy. An ODB adapter needs a legitimately
 testable Abaqus environment and a matching acceptance record.
 
 ## DAMASK DADF5 reader
 
-CPDataKit includes a narrow, read-only reader for documented DAMASK DADF5 result selections.
-The implementation uses h5py directly and stays independent of the DAMASK runtime. It supports
+CPDataKit includes a documented read-only reader for selected DAMASK DADF5 results.
+The implementation uses h5py directly and keeps the DAMASK runtime outside the package. It supports
 DADF5 version 0.14 and 1.x, one explicit `increment`, `phase` or `homogenization` branch, one
 explicit label, one field group, and selected direct datasets such as `F`, `P`, or `O`.
 
@@ -57,7 +57,8 @@ the caller through the documented selection and schema. Missing metadata, ambigu
 unsupported versions, and inconsistent record counts fail with `AdapterError`.
 
 The format and hierarchy are based on the [official DAMASK DADF5 documentation](https://www.damask-mpie.de/documentation/reference/processing_tools/post-processing.html)
-and [official license notice](https://damask-multiphysics.org/development/license.html). CPDataKit
-keeps DAMASK source code, solver output, and restricted fixtures upstream under their original
-terms. DAMASK is an AGPLv3 project and its names remain the property of their respective owners.
+and [official license notice](https://damask-multiphysics.org/development/license.html). DAMASK
+source code, solver output, and restricted fixtures remain at their upstream sources under their
+original terms. DAMASK is an AGPLv3 project and its names remain the property of their respective
+owners.
 

@@ -20,6 +20,6 @@ body:
     attributes:
       label: Data safety
       options:
-        - label: I will not upload restricted, confidential, or commercial-software data.
+        - label: I will use synthetic, public, or redistribution-approved data in this issue.
           required: true
 

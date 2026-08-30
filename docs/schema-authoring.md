@@ -34,7 +34,8 @@ print(describe_schema(schema))
 
 `validate_schema` accepts a built-in profile, a JSON path, a `ProfileSchema`, or a JSON-like
 mapping. `schema_to_dict` and `schema_to_json` provide canonical serialization for review and
-version control. `write_schema` refuses to overwrite an existing file unless `force=True`.
+version control. `write_schema` preserves an existing file. Pass `force=True` when replacement is
+intended.
 
 ## Canonical schema hash
 
@@ -78,6 +79,6 @@ Example:
 cpdatakit convert input.csv --schema curve --mapping mapping.json --output curve.h5
 ```
 
-The mapping file applies declared field and unit choices. Targets must be declared by the schema,
-sources must exist in the input, duplicate targets are rejected, and existing output files still
-require `--force` before replacement.
+The mapping file applies declared field and unit choices. The schema declares each target, the input
+provides each source, and duplicate targets produce a validation error. Pass `--force` when the
+command should replace an existing output file.

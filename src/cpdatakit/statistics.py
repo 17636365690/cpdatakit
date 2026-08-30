@@ -18,7 +18,7 @@ def summarize_dataset(
     *,
     validation: ValidationResult | None = None,
 ) -> dict[str, Any]:
-    """Summarize declared data without inventing unavailable quantities."""
+    """Summarize the quantities declared by the schema."""
     value = dataset if isinstance(dataset, Dataset) else Dataset(dataset)
     contract = load_schema(schema)
     report = validation or validate_dataset(value, contract)
@@ -67,5 +67,8 @@ def summarize_dataset(
         "quality_status": "valid" if report.valid else "invalid",
         "error_count": len(report.errors),
         "warning_count": len(report.warnings),
-        "scope_note": "Schema conformance is not evidence of physical correctness.",
+        "scope_note": (
+            "Validation reports declared format constraints; physical or scientific "
+            "interpretation remains part of the domain workflow."
+        ),
     }

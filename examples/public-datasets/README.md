@@ -1,8 +1,7 @@
 # Public dataset reference cases
 
-These cases put CPDataKit next to real published data. The raw files stay upstream. Each case has
-its citation, license note, download and hash checks, schema, mapping, offline fixture, and workflow
-in one place.
+These cases place CPDataKit alongside published research data. Each case records its citation,
+license note, download and hash checks, schema, mapping, offline fixture, and workflow in one place.
 
 ## Available cases
 
@@ -10,4 +9,4 @@ in one place.
   workflow with 3 x 3 stress, strain, and deformation-gradient fields.
 
 The extractor is tailored to the Surfalex case and follows the adapter acceptance checklist. New
-solver adapters use the same format evidence, license review, and shareable-fixture process.
+adapters can use the same format evidence, license review, and shareable-fixture process.

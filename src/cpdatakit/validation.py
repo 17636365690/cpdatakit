@@ -355,7 +355,7 @@ def _append_duplicate_issues(
 
 
 class _DuplicateTracker:
-    """Accumulate duplicate findings without retaining the source rows."""
+    """Accumulate duplicate findings while keeping their identities and counts."""
 
     def __init__(self, schema: ProfileSchema) -> None:
         self._record_counts: Counter[object] = Counter()
@@ -424,7 +424,7 @@ def validate_dataset(
     *,
     units: dict[str, str] | None = None,
 ) -> ValidationResult:
-    """Validate declared structure; this never certifies physical correctness."""
+    """Validate declared structure and return a schema-conformance report."""
     value = dataset if isinstance(dataset, Dataset) else Dataset(dataset)
     contract = load_schema(schema)
     if units is not None:

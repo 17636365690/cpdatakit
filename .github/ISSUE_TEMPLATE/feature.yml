@@ -5,7 +5,7 @@ labels: [enhancement]
 body:
   - type: textarea
     id: problem
-    attributes: {label: Problem, description: Which research-data workflow is blocked?}
+    attributes: {label: Problem, description: Which research-data workflow should improve?}
     validations: {required: true}
   - type: textarea
     id: proposal
