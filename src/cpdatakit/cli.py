@@ -30,6 +30,12 @@ from .plotting import (
 )
 from .reporting import build_report, write_report
 from .schema import load_schema
+from .schema_diff import (
+    diff_schemas,
+    render_schema_diff_json,
+    render_schema_diff_markdown,
+    write_schema_diff,
+)
 from .statistics import summarize_dataset
 from .validation import validate_dataset
 
@@ -89,6 +95,14 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--format", choices=["html", "markdown", "json"], default="html")
     report.add_argument("--output", required=True, type=Path)
     report.add_argument("--force", action="store_true", help="Replace an existing output")
+    schema = commands.add_parser("schema", help="Compare schema contracts")
+    schema_commands = schema.add_subparsers(dest="schema_command", required=True)
+    schema_diff = schema_commands.add_parser("diff", help="Compare two schema contracts")
+    schema_diff.add_argument("source", type=Path)
+    schema_diff.add_argument("target", type=Path)
+    schema_diff.add_argument("--format", choices=["json", "markdown"], default="json")
+    schema_diff.add_argument("--output", type=Path)
+    schema_diff.add_argument("--force", action="store_true", help="Replace an existing output")
     return parser
 
 
@@ -136,7 +150,24 @@ def _run_report(args: argparse.Namespace) -> int:
     return 0 if report["validation"]["valid"] else 1
 
 
+def _run_schema_diff(args: argparse.Namespace) -> int:
+    diff = diff_schemas(args.source, args.target)
+    if args.output is None:
+        rendered = (
+            render_schema_diff_json(diff)
+            if args.format == "json"
+            else render_schema_diff_markdown(diff)
+        )
+        print(rendered, end="")
+    else:
+        write_schema_diff(diff, args.output, format=args.format, force=args.force)
+        print(args.output.name)
+    return 0
+
+
 def _run(args: argparse.Namespace) -> int:
+    if args.command == "schema":
+        return _run_schema_diff(args)
     if args.command == "inspect":
         return _run_inspect(args)
     if args.command == "report":
@@ -208,7 +239,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.debug:
             raise
         parser.print_usage(sys.stderr)
-        message = sanitize_error_message(exc) if args.command in {"inspect", "report"} else str(exc)
+        message = (
+            sanitize_error_message(exc)
+            if args.command in {"inspect", "report", "schema"}
+            else str(exc)
+        )
         print(f"{parser.prog}: error: {message}", file=sys.stderr)
         return 2
 

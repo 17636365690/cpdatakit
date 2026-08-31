@@ -24,6 +24,7 @@ from .schema import (
     validate_schema,
     write_schema,
 )
+from .schema_diff import diff_schemas
 from .statistics import summarize_dataset
 from .validation import validate_dataset
 
@@ -34,6 +35,7 @@ __all__ = [
     "__version__",
     "build_report",
     "describe_schema",
+    "diff_schemas",
     "inspect_dataset",
     "inspect_hdf5_structure",
     "iter_hdf5_chunks",

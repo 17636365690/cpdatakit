@@ -64,8 +64,9 @@ All lists use source/target schema order, and `changed[*].changes` uses a fixed 
 - `breaking` covers a removed field, a newly required field, dtype/shape/component/unit changes,
   range or index changes, convention changes, extension-prefix changes, profile changes, and schema
   version changes.
-- A field rename is represented as a removal plus an addition and sets
-  `requires_explicit_data_mapping=true`; no name similarity is inferred.
+- A field removal or rename is represented explicitly and sets
+  `requires_explicit_data_mapping=true`; adding an optional field alone does not.
+- A field rename is represented as a removal plus an addition; no name similarity is inferred.
 - Any changed unit or scientific convention requires an explicit caller mapping and domain review,
   even if Pint could perform a dimensional conversion.
 
