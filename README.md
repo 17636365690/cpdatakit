@@ -142,14 +142,14 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 for the JSON format and explicit-convention rules.
 
-Compare two schema contracts without changing either file:
+Compare two schema contracts:
 
 ```bash
 cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
 ```
 
-The comparison classifies identical, backward-compatible, and breaking contract changes. It does
-not migrate records or rewrite HDF5 artifacts.
+The result labels the change as identical, backward-compatible, or breaking. The command is
+read-only. Data migration and HDF5 rewrites are separate operations.
 
 Compare two JSON validation reports and write an offline bundle:
 
@@ -157,9 +157,9 @@ Compare two JSON validation reports and write an offline bundle:
 cpdatakit compare left-report.json right-report.json --output comparison-bundle
 ```
 
-The bundle contains JSON, Markdown, HTML, and a manifest with member hashes. It compares declared
-schema, validation, structure, and scalar descriptive aggregates; it does not compare raw tensor
-records or certify physical equivalence.
+The bundle contains JSON, Markdown, HTML, and a manifest with member hashes. It covers declared
+schema, validation, structure, and scalar descriptive aggregates. Raw tensor records and physical
+equivalence require separate analysis.
 
 When you need a quick look at a file, run:
 

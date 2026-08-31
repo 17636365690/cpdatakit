@@ -55,8 +55,7 @@ access.
 
 ## Compare contracts
 
-The v0.4.0 first slice compares two validated contracts without modifying either schema or any
-dataset:
+The v0.4.0 schema tools compare two validated contracts:
 
 ```bash
 cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
@@ -71,10 +70,10 @@ diff = diff_schemas("old-schema.json", "new-schema.json")
 print(diff["classification"])
 ```
 
-The result distinguishes identical, backward-compatible, and breaking changes. Optional-field
-additions, additive aliases, and description-only changes are compatible; unit, shape, component,
-index, range, convention, and requiredness changes remain explicit and potentially breaking. This
-command does not migrate records or rewrite HDF5 artifacts.
+The result labels changes as identical, backward-compatible, or breaking. Optional-field additions,
+additive aliases, and description-only changes are compatible. Changes to units, shapes, components,
+indexes, ranges, conventions, or requiredness are reported as breaking and need explicit review or
+mapping. Data migration is a separate operation. The command leaves schema and dataset files alone.
 
 ## CLI mapping files
 

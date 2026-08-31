@@ -20,9 +20,8 @@ from .schema_diff import diff_schemas
 
 _STATISTICS = ("min", "max", "mean", "std")
 _SCOPE_NOTE = (
-    "This comparison covers declared schema, validation, structure, and descriptive "
-    "aggregates only; "
-    "it is not a physical or scientific correctness certificate."
+    "This comparison covers declared schema, validation, structure, and descriptive aggregates. "
+    "Physical and scientific equivalence require separate analysis."
 )
 
 
@@ -137,7 +136,7 @@ def _compare_statistics(
 
 
 def compare_reports(left: Mapping[str, Any], right: Mapping[str, Any]) -> dict[str, Any]:
-    """Return a deterministic aggregate comparison of two report payloads."""
+    """Compare two report payloads and return JSON-ready aggregate details."""
     left_report = _require_report(left, "left")
     right_report = _require_report(right, "right")
     left_schema = left_report.get("schema")
@@ -306,7 +305,7 @@ def write_comparison_bundle(
     *,
     force: bool = False,
 ) -> Path:
-    """Write a deterministic comparison bundle directory."""
+    """Write the comparison bundle to a directory."""
     target = Path(output)
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass force=True to replace it")
