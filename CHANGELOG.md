@@ -8,6 +8,8 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 - Deterministic `diff_schemas()` comparisons and the non-destructive `cpdatakit schema diff`
   command for classifying contract compatibility.
+- Aggregate `compare_reports()` output and offline `cpdatakit compare` bundles with JSON, Markdown,
+  HTML, and hashed manifest members.
 
 ### Fixed
 

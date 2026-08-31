@@ -1,6 +1,7 @@
 """CPDataKit public API."""
 
 from ._version import __version__
+from .comparison import compare_reports
 from .inspection import inspect_dataset, inspect_hdf5_structure
 from .io import iter_hdf5_chunks, load_dataset, load_hdf5
 from .normalization import FieldMapping, load_mapping_file, normalize_dataset
@@ -34,6 +35,7 @@ __all__ = [
     "ProfileSchema",
     "__version__",
     "build_report",
+    "compare_reports",
     "describe_schema",
     "diff_schemas",
     "inspect_dataset",

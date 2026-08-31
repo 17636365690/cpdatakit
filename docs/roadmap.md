@@ -9,7 +9,8 @@
   Workflow 7A reference case, an 85% CI coverage gate, lower-bound dependency tests, and clean-wheel
   HDF5 API smoke checks.
 - **v0.4.0:** schema diff and explicit migration foundations, comparison/report bundles, and
-  stronger compatibility tests. The first schema slice compares contracts without migrating data.
+  stronger compatibility tests. The first schema slice compares contracts without migrating data;
+  the comparison slice consumes JSON reports without comparing raw records.
 
 Further DADF5 and ODB coverage follows the documented evidence and license review process.
 

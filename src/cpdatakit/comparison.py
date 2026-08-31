@@ -1,0 +1,346 @@
+"""Compare aggregate CPDataKit reports and write offline bundles."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import shutil
+import tempfile
+from collections.abc import Mapping
+from numbers import Real
+from pathlib import Path
+from typing import Any
+
+from .exceptions import CPDataKitError, OutputExistsError
+from .inspection import sanitize_for_output
+from .reporting import render_report_json
+from .schema_diff import diff_schemas
+
+_STATISTICS = ("min", "max", "mean", "std")
+_SCOPE_NOTE = (
+    "This comparison covers declared schema, validation, structure, and descriptive "
+    "aggregates only; "
+    "it is not a physical or scientific correctness certificate."
+)
+
+
+def _require_report(value: object, side: str) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise CPDataKitError(f"{side} report must be a mapping")
+    return value
+
+
+def _field_names(report: Mapping[str, Any]) -> list[str]:
+    fields = report.get("fields", [])
+    if not isinstance(fields, list):
+        return []
+    return [
+        str(item["name"])
+        for item in fields
+        if isinstance(item, Mapping) and isinstance(item.get("name"), str)
+    ]
+
+
+def _schema_summary(schema: object, digest: object) -> object:
+    if not isinstance(schema, Mapping):
+        return "not available"
+    return {
+        "profile": schema.get("profile", "not available"),
+        "schema_version": schema.get("schema_version", "not available"),
+        "sha256": digest,
+    }
+
+
+def _finite_number(value: object) -> bool:
+    return isinstance(value, Real) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def _safe_value(value: object) -> object:
+    return sanitize_for_output(value)
+
+
+def _stats_mapping(report: Mapping[str, Any]) -> Mapping[str, Any]:
+    statistics = report.get("statistics", {})
+    if not isinstance(statistics, Mapping):
+        return {}
+    numeric_fields = statistics.get("numeric_fields", {})
+    return numeric_fields if isinstance(numeric_fields, Mapping) else {}
+
+
+def _metric_value(numeric_fields: Mapping[str, Any], field: str, metric: str) -> object:
+    field_stats = numeric_fields.get(field)
+    if isinstance(field_stats, Mapping):
+        return field_stats.get(metric, "not available")
+    return field_stats if metric == "value" else "not available"
+
+
+def _compare_statistics(
+    left: Mapping[str, Any], right: Mapping[str, Any]
+) -> dict[str, list[dict[str, Any]]]:
+    left_stats = _stats_mapping(left)
+    right_stats = _stats_mapping(right)
+    field_names = list(left_stats)
+    field_names.extend(name for name in right_stats if name not in left_stats)
+    changed: list[dict[str, Any]] = []
+    unavailable: list[dict[str, Any]] = []
+
+    left_record_count = left.get("record_count", "not available")
+    right_record_count = right.get("record_count", "not available")
+    if _finite_number(left_record_count) and _finite_number(right_record_count):
+        if left_record_count != right_record_count:
+            changed.append(
+                {
+                    "field": "records",
+                    "metric": "record_count",
+                    "left": _safe_value(left_record_count),
+                    "right": _safe_value(right_record_count),
+                    "delta": right_record_count - left_record_count,
+                }
+            )
+    elif _safe_value(left_record_count) != _safe_value(right_record_count):
+        unavailable.append(
+            {
+                "field": "records",
+                "metric": "record_count",
+                "left": _safe_value(left_record_count),
+                "right": _safe_value(right_record_count),
+            }
+        )
+
+    for field in field_names:
+        for metric in _STATISTICS:
+            left_value = _metric_value(left_stats, field, metric)
+            right_value = _metric_value(right_stats, field, metric)
+            if _finite_number(left_value) and _finite_number(right_value):
+                if left_value != right_value:
+                    changed.append(
+                        {
+                            "field": field,
+                            "metric": metric,
+                            "left": _safe_value(left_value),
+                            "right": _safe_value(right_value),
+                            "delta": right_value - left_value,
+                        }
+                    )
+            elif _safe_value(left_value) != _safe_value(right_value):
+                unavailable.append(
+                    {
+                        "field": field,
+                        "metric": metric,
+                        "left": _safe_value(left_value),
+                        "right": _safe_value(right_value),
+                    }
+                )
+    return {"changed": changed, "unavailable": unavailable}
+
+
+def compare_reports(left: Mapping[str, Any], right: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a deterministic aggregate comparison of two report payloads."""
+    left_report = _require_report(left, "left")
+    right_report = _require_report(right, "right")
+    left_schema = left_report.get("schema")
+    right_schema = right_report.get("schema")
+    if isinstance(left_schema, Mapping) and isinstance(right_schema, Mapping):
+        schema_result = diff_schemas(left_schema, right_schema)
+        schema_summary = {
+            "classification": schema_result["classification"],
+            "diff": schema_result,
+        }
+        left_schema_summary = _schema_summary(left_schema, schema_result["source"]["sha256"])
+        right_schema_summary = _schema_summary(right_schema, schema_result["target"]["sha256"])
+        changed_fields = schema_result["fields"]["changed"]
+    else:
+        schema_summary = {
+            "classification": "not available",
+            "diff": {"reason": "schema definition unavailable"},
+        }
+        left_schema_summary = _schema_summary(left_schema, "not available")
+        right_schema_summary = _schema_summary(right_schema, "not available")
+        changed_fields = []
+
+    left_names = _field_names(left_report)
+    right_names = _field_names(right_report)
+    result = {
+        "format": "CPDataKit comparison 1.0",
+        "left": {
+            "file": left_report.get("file", {}),
+            "schema": left_schema_summary,
+            "record_count": left_report.get("record_count", "not available"),
+        },
+        "right": {
+            "file": right_report.get("file", {}),
+            "schema": right_schema_summary,
+            "record_count": right_report.get("record_count", "not available"),
+        },
+        "schema": schema_summary,
+        "structure": {
+            "fields_added": [name for name in right_names if name not in left_names],
+            "fields_removed": [name for name in left_names if name not in right_names],
+            "fields_changed": changed_fields,
+        },
+        "validation": {
+            "left": left_report.get("validation", {}),
+            "right": right_report.get("validation", {}),
+        },
+        "statistics": _compare_statistics(left_report, right_report),
+        "scope_note": _SCOPE_NOTE,
+    }
+    return dict(sanitize_for_output(result))
+
+
+def render_comparison_markdown(comparison: Mapping[str, Any]) -> str:
+    """Render a comparison mapping as stable Markdown."""
+    value = dict(sanitize_for_output(comparison))
+    structure = value.get("structure", {})
+    statistics = value.get("statistics", {})
+    lines = [
+        "# CPDataKit Comparison",
+        "",
+        "## Classification",
+        "",
+        f"- Schema: {value.get('schema', {}).get('classification', 'not available')}",
+        "",
+        "## Structure",
+        "",
+        "| Change | Fields |",
+        "| --- | --- |",
+        f"| Added | {', '.join(structure.get('fields_added', [])) or 'None'} |",
+        f"| Removed | {', '.join(structure.get('fields_removed', [])) or 'None'} |",
+        "",
+        "## Validation",
+        "",
+        "| Side | Valid | Errors | Warnings |",
+        "| --- | --- | ---: | ---: |",
+    ]
+    validation = value.get("validation", {})
+    for side in ("left", "right"):
+        item = validation.get(side, {}) if isinstance(validation, Mapping) else {}
+        lines.append(
+            f"| {side} | {item.get('valid', 'not available')} | "
+            f"{len(item.get('errors', []))} | {len(item.get('warnings', []))} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Statistics",
+            "",
+            "| Field | Metric | Left | Right | Delta |",
+            "| --- | --- | ---: | ---: | ---: |",
+        ]
+    )
+    changed = statistics.get("changed", []) if isinstance(statistics, Mapping) else []
+    for item in changed:
+        lines.append(
+            f"| {item.get('field')} | {item.get('metric')} | {item.get('left')} | "
+            f"{item.get('right')} | {item.get('delta')} |"
+        )
+    if not changed:
+        lines.append("| None | | | | |")
+    unavailable = statistics.get("unavailable", []) if isinstance(statistics, Mapping) else []
+    lines.extend(
+        [
+            "",
+            "## Unavailable statistics",
+            "",
+            "| Field | Metric | Left | Right |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for item in unavailable:
+        lines.append(
+            f"| {item.get('field')} | {item.get('metric')} | {item.get('left')} | "
+            f"{item.get('right')} |"
+        )
+    if not unavailable:
+        lines.append("| None | | | |")
+    lines.extend(
+        [
+            "",
+            "## Scope",
+            "",
+            str(value.get("scope_note", _SCOPE_NOTE)),
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_comparison_html(comparison: Mapping[str, Any]) -> str:
+    """Render a comparison mapping as static, escaped HTML."""
+    safe = dict(sanitize_for_output(comparison))
+    payload = json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False)
+    from html import escape
+
+    return "\n".join(
+        [
+            "<!doctype html>",
+            '<html lang="en"><head><meta charset="utf-8">',
+            "<title>CPDataKit Comparison</title>",
+            "<style>body{font-family:Arial,sans-serif;color:#222;margin:2rem;}"
+            "pre{white-space:pre-wrap;background:#f6f8fa;padding:1rem;}"
+            ".scope{border-left:.35rem solid #17365d;padding:.7rem 1rem;"
+            "background:#f2f6fa;}</style>",
+            "</head><body>",
+            "<h1>CPDataKit Comparison</h1>",
+            f"<pre>{escape(payload, quote=True)}</pre>",
+            f'<p class="scope">{escape(str(safe.get("scope_note", _SCOPE_NOTE)), quote=True)}</p>',
+            "</body></html>",
+            "",
+        ]
+    )
+
+
+def _member_payloads(comparison: Mapping[str, Any]) -> dict[str, str]:
+    return {
+        "comparison.json": render_report_json(comparison),
+        "comparison.md": render_comparison_markdown(comparison),
+        "comparison.html": render_comparison_html(comparison),
+    }
+
+
+def write_comparison_bundle(
+    comparison: Mapping[str, Any],
+    output: str | Path,
+    *,
+    force: bool = False,
+) -> Path:
+    """Write a deterministic comparison bundle directory."""
+    target = Path(output)
+    if target.exists() and not force:
+        raise OutputExistsError(f"Output already exists: {target}; pass force=True to replace it")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    members = _member_payloads(comparison)
+    safe_comparison = dict(sanitize_for_output(comparison))
+    temporary = Path(tempfile.mkdtemp(prefix=f".{target.name}.", dir=target.parent))
+    try:
+        digests = []
+        for name, content in members.items():
+            path = temporary / name
+            payload = content.encode("utf-8")
+            path.write_bytes(payload)
+            digests.append({"name": name, "sha256": hashlib.sha256(payload).hexdigest()})
+        manifest = {
+            "format": "CPDataKit comparison bundle 1.0",
+            "members": digests,
+            "left": safe_comparison.get("left", {}),
+            "right": safe_comparison.get("right", {}),
+            "schema": safe_comparison.get("schema", {}),
+        }
+        manifest_text = json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
+        (temporary / "manifest.json").write_bytes(manifest_text.encode("utf-8"))
+        if target.exists():
+            if target.is_dir():
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        os.replace(temporary, target)
+    except BaseException as exc:
+        shutil.rmtree(temporary, ignore_errors=True)
+        if isinstance(exc, CPDataKitError):
+            raise
+        if isinstance(exc, OSError):
+            raise CPDataKitError(f"Cannot write comparison bundle {target}: {exc}") from exc
+        raise
+    return target

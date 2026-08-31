@@ -151,6 +151,16 @@ cpdatakit schema diff old-schema.json new-schema.json --format markdown --output
 The comparison classifies identical, backward-compatible, and breaking contract changes. It does
 not migrate records or rewrite HDF5 artifacts.
 
+Compare two JSON validation reports and write an offline bundle:
+
+```bash
+cpdatakit compare left-report.json right-report.json --output comparison-bundle
+```
+
+The bundle contains JSON, Markdown, HTML, and a manifest with member hashes. It compares declared
+schema, validation, structure, and scalar descriptive aggregates; it does not compare raw tensor
+records or certify physical equivalence.
+
 When you need a quick look at a file, run:
 
 ```bash
