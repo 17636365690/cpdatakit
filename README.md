@@ -56,7 +56,7 @@ python -m pip install cpdatakit
 For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.3.0/cpdatakit-0.3.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.4.0/cpdatakit-0.4.0-py3-none-any.whl"
 ```
 
 Then follow the
@@ -109,7 +109,7 @@ The examples and tests cover these paths:
 ## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
-- [v0.3.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.3.0)
+- [v0.4.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.4.0)
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
@@ -254,10 +254,11 @@ the field rules it should follow. That gives the next change something concrete 
 
 ## Scope and roadmap
 
-Version 0.3.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data.
-Native HDF5 inspection uses bounded reads. Report analysis uses the existing validation and
-statistics APIs. The bundled DAMASK DADF5 reader covers a documented read-only selection. New
-adapters use the documented format evidence, license review, and reproducible-fixture process. See the
+Version 0.4.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data. It
+also includes schema contract diffs and offline comparisons of aggregate JSON reports. Native HDF5
+inspection uses bounded reads. Report analysis uses the existing validation and statistics APIs. The
+bundled DAMASK DADF5 reader covers a documented read-only selection. New adapters use the documented
+format evidence, license review, and reproducible-fixture process. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 

@@ -4,12 +4,13 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-31
+
 ### Added
 
-- Deterministic `diff_schemas()` comparisons and the `cpdatakit schema diff` command for contract
-  compatibility checks.
-- Aggregate `compare_reports()` output and offline `cpdatakit compare` bundles. Each bundle includes
-  JSON, Markdown, HTML, and a manifest with member hashes.
+- `diff_schemas()` and `cpdatakit schema diff` compare contract compatibility deterministically.
+- `compare_reports()` and `cpdatakit compare` write offline bundles with JSON, Markdown, HTML, and
+  a manifest of member hashes.
 
 ### Fixed
 

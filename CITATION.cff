@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use CPDataKit, please cite this software."
 title: "CPDataKit: Crystal Plasticity Data Quality Toolkit"
 type: software
-version: 0.3.0
-date-released: 2026-08-30
+version: 0.4.0
+date-released: 2026-08-31
 authors:
   - name: "CPDataKit contributors"
 license: Apache-2.0

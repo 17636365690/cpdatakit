@@ -8,9 +8,10 @@
   It also includes the read-only DAMASK DADF5 selection reader, the hash-verified Surfalex HF
   Workflow 7A reference case, an 85% CI coverage gate, lower-bound dependency tests, and clean-wheel
   HDF5 API smoke checks.
-- **v0.4.0:** schema diff and explicit migration foundations, comparison/report bundles, and
-  compatibility tests. The schema command compares contracts. The comparison command reads JSON
-  reports and compares their schema, validation, structure, and scalar statistics.
+- **v0.4.0 (released 2026-08-31):** schema diff, the first pieces of explicit migration support,
+  comparison/report bundles, and compatibility tests. The schema command compares contracts. The
+  comparison command reads JSON reports and compares their schema, validation, structure, and
+  scalar statistics.
 
 Further DADF5 and ODB coverage follows the documented evidence and license review process.
 
