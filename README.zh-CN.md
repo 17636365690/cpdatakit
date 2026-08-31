@@ -95,6 +95,15 @@ cpdatakit schema diff old-schema.json new-schema.json --format markdown --output
 
 比较结果会区分 identical、backward-compatible 和 breaking，不会迁移记录或重写 HDF5 文件。
 
+比较两份 JSON 验证报告并生成离线 bundle：
+
+```powershell
+cpdatakit compare left-report.json right-report.json --output comparison-bundle
+```
+
+bundle 包含 JSON、Markdown、HTML 和带成员 hash 的 manifest。它只比较声明的 schema、验证结果、
+结构和标量统计，不比较原始张量记录，也不证明物理等价。
+
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
 HTML，也支持 `--format markdown` 和 `--format json`。报告包含统计和验证结果，原始记录继续保留在

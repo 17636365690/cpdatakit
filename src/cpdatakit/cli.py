@@ -11,6 +11,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 
 from . import __version__
+from .comparison import compare_reports, write_comparison_bundle
 from .exceptions import CPDataKitError
 from .inspection import (
     inspect_dataset,
@@ -95,6 +96,11 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--format", choices=["html", "markdown", "json"], default="html")
     report.add_argument("--output", required=True, type=Path)
     report.add_argument("--force", action="store_true", help="Replace an existing output")
+    compare = commands.add_parser("compare", help="Compare two JSON validation reports")
+    compare.add_argument("left", type=Path, help="Left JSON report")
+    compare.add_argument("right", type=Path, help="Right JSON report")
+    compare.add_argument("--output", required=True, type=Path)
+    compare.add_argument("--force", action="store_true", help="Replace an existing bundle")
     schema = commands.add_parser("schema", help="Compare schema contracts")
     schema_commands = schema.add_subparsers(dest="schema_command", required=True)
     schema_diff = schema_commands.add_parser("diff", help="Compare two schema contracts")
@@ -165,7 +171,28 @@ def _run_schema_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _read_report(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise CPDataKitError(f"Report input does not exist: {path}") from exc
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise CPDataKitError(f"Cannot read report input {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise CPDataKitError(f"Report input must be a JSON object: {path}")
+    return payload
+
+
+def _run_compare(args: argparse.Namespace) -> int:
+    comparison = compare_reports(_read_report(args.left), _read_report(args.right))
+    write_comparison_bundle(comparison, args.output, force=args.force)
+    print(args.output)
+    return 0
+
+
 def _run(args: argparse.Namespace) -> int:
+    if args.command == "compare":
+        return _run_compare(args)
     if args.command == "schema":
         return _run_schema_diff(args)
     if args.command == "inspect":
@@ -241,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_usage(sys.stderr)
         message = (
             sanitize_error_message(exc)
-            if args.command in {"inspect", "report", "schema"}
+            if args.command in {"inspect", "report", "schema", "compare"}
             else str(exc)
         )
         print(f"{parser.prog}: error: {message}", file=sys.stderr)
