@@ -4,6 +4,14 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject non-canonical embedded HDF5 schema JSON even when its semantic hash matches.
+- Return a structured `invalid_shape` finding for ragged shaped values instead of leaking a NumPy
+  shape-conversion exception.
+- Refuse empty HDF5 output before creating a temporary file, keeping writer and reader contracts
+  closed.
+
 ## [0.3.0] - 2026-08-30
 
 ### Added

@@ -84,8 +84,10 @@ the first dataset axis as the record axis. Shaped values retain their trailing d
 Files produced by the current writer also carry `schema_json`, the compact canonical JSON for the
 validated schema, and `schema_sha256`, its lowercase SHA-256 digest over UTF-8 bytes. An optional
 `schema_uri` records an external reference for caller-managed access. Readers check the embedded
-schema, its profile/version, and its digest. Legacy format-1.0 files that lack these additive
-attributes remain readable. A snapshot must contain all of its paired attributes.
+schema, its exact canonical JSON representation, profile/version, and digest. Legacy format-1.0
+files that lack these additive attributes remain readable. A snapshot must contain all of its paired
+attributes. The writer rejects empty datasets because the HDF5 table contract requires a non-zero
+record count and the current reader refuses empty tables.
 
 `write_hdf5()` writes validated results by default. To record an invalid validation result, pass
 `allow_invalid=True`. HDF5 writes use a same-directory temporary file and replace the target after
@@ -127,9 +129,11 @@ cpdatakit inspect INPUT [--schema SCHEMA] [--format text|json] [--output PATH] [
 cpdatakit report INPUT --schema SCHEMA --output PATH [--format html|markdown|json] [--force]
 ```
 
-Existing outputs stay protected by default. Pass `--force` when a command should replace one. Exit
-status `0` means zero validation errors, `1` means data findings, and `2` means a parameter, schema,
-input, metadata, or output failure.
+Existing outputs stay protected by default. Pass `--force` when a command should replace one. For
+`validate`, `summary`, and `report`, status `0` means processing succeeded with zero validation
+errors and status `1` means validation errors. For `inspect`, status `1` also covers declared
+structural or missing-value risks; warning-only findings are reported but do not invalidate the
+result. Status `2` means a parameter, schema, input, metadata, or output failure.
 
 ## Validation meaning
 

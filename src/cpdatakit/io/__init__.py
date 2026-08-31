@@ -92,6 +92,9 @@ def _read_schema_snapshot(
         embedded = validate_schema(payload)
     except SchemaError as exc:
         raise DataReadError(f"Invalid embedded HDF5 schema_json: {path}: {exc}") from exc
+    canonical_schema = schema_to_canonical_json(embedded)
+    if schema_text != canonical_schema:
+        raise DataReadError(f"HDF5 schema_json is not canonical: {path}")
     if embedded.profile != profile or embedded.schema_version != schema_version:
         raise DataReadError(
             f"Embedded HDF5 schema profile/schema_version does not match root metadata: {path}"
@@ -371,6 +374,8 @@ def write_hdf5(
         raise DataValidationError(
             "Cannot write a dataset with validation errors; pass allow_invalid=True explicitly"
         )
+    if dataset.data.empty:
+        raise DataValidationError("Cannot write an empty dataset")
     target.parent.mkdir(parents=True, exist_ok=True)
     declared_units = {item.name: item.unit for item in schema.fields if item.name in dataset.data}
     units = {**declared_units, **dataset.metadata.get("units", {})}

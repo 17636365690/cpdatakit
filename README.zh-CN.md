@@ -90,8 +90,9 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
 HTML，也支持 `--format markdown` 和 `--format json`。报告包含统计和验证结果，原始记录继续保留在
-输入数据中。替换已有输出时显式传入 `--force`。验证或检查发现数据问题时退出码为 `1`，
-参数、schema、读取和输出错误为 `2`。验证结果描述声明的结构检查，物理或科学判断结合领域方法完成。使用 `cpdatakit --help`
+输入数据中。替换已有输出时显式传入 `--force`。处理成功且没有验证错误时退出码为 `0`；
+验证错误，或 `inspect` 发现声明的结构/缺失值风险时为 `1`。只有 warning 的结果仍会被报告，
+但不会让结果失效。参数、schema、读取和输出错误为 `2`。验证结果描述声明的结构检查，物理或科学判断结合领域方法完成。使用 `cpdatakit --help`
 查看完整帮助。
 
 ## Python API

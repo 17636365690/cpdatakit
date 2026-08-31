@@ -35,7 +35,12 @@ def _is_real_number(value: object) -> bool:
 
 
 def _matches_shape(value: object, shape: tuple[int, ...]) -> bool:
-    return isinstance(value, (list, tuple, np.ndarray)) and tuple(np.asarray(value).shape) == shape
+    if not isinstance(value, (list, tuple, np.ndarray)):
+        return False
+    try:
+        return tuple(np.asarray(value).shape) == shape
+    except (TypeError, ValueError):
+        return False
 
 
 def _array_dtype_matches(value: object, dtype: str) -> bool:

@@ -6,7 +6,7 @@ import pytest
 
 from cpdatakit.exceptions import SchemaError
 from cpdatakit.model import Dataset
-from cpdatakit.schema import load_schema
+from cpdatakit.schema import load_schema, make_field_schema, make_profile_schema
 from cpdatakit.validation import validate_dataset
 
 
@@ -193,3 +193,18 @@ def test_nested_extension_values_do_not_crash_duplicate_detection() -> None:
         }
     )
     assert "duplicate_record" in codes(validate_dataset(dataset, "curve"))
+
+
+def test_ragged_shaped_values_return_invalid_shape_issue() -> None:
+    schema = make_profile_schema(
+        "point",
+        [make_field_schema("vector", "float", required=True, shape=[2], unit="1")],
+    )
+    dataset = Dataset(
+        pd.DataFrame({"vector": [[[1.0, 2.0], [3.0]]]}),
+        {"units": {"vector": "1"}},
+    )
+
+    result = validate_dataset(dataset, schema)
+
+    assert "invalid_shape" in codes(result)
