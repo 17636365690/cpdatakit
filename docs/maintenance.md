@@ -1,6 +1,6 @@
 # Maintenance
 
-This document records the v0.3.0 release path. Keep `pyproject.toml` and `CITATION.cff` aligned
+This document records the v0.4.0 release path. Keep `pyproject.toml` and `CITATION.cff` aligned
 with the current release. For each authorized release, update the version metadata, `CHANGELOG.md`,
 and `CITATION.cff` together, then run every check below before publishing.
 
