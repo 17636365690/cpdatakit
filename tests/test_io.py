@@ -361,6 +361,34 @@ def test_write_hdf5_removes_temp_file_after_serialization_failure(tmp_path: Path
     assert list(tmp_path.glob(f".{output.name}.*")) == []
 
 
+def test_write_hdf5_rejects_empty_dataset_before_temp_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    schema = load_schema("curve")
+    dataset = Dataset(
+        pd.DataFrame(
+            {
+                "step": pd.Series(dtype="int64"),
+                "strain": pd.Series(dtype="float64"),
+                "stress": pd.Series(dtype="float64"),
+            }
+        ),
+        {"units": {"step": "1", "strain": "1", "stress": "MPa"}},
+    )
+    result = validate_dataset(dataset, schema)
+    output = tmp_path / "empty.h5"
+
+    def fail_if_temp_created(*args: object, **kwargs: object) -> None:
+        raise AssertionError("temporary output must not be created for an empty dataset")
+
+    monkeypatch.setattr("cpdatakit.io.tempfile.mkstemp", fail_if_temp_created)
+    with pytest.raises(DataValidationError, match="empty"):
+        write_hdf5(dataset, output, schema, result, allow_invalid=True)
+
+    assert not output.exists()
+    assert list(tmp_path.glob(f".{output.name}.*")) == []
+
+
 def test_path_styles_are_representable() -> None:
     assert PureWindowsPath(r"C:\data\curve.csv").suffix == ".csv"
     assert PurePosixPath("/data/curve.csv").suffix == ".csv"
@@ -412,6 +440,19 @@ def test_hdf5_roundtrip_embeds_and_recovers_schema_snapshot(curve: Dataset, tmp_
         "sha256": schema_sha256(schema),
         "uri": uri,
     }
+
+
+def test_hdf5_rejects_noncanonical_schema_snapshot(curve: Dataset, tmp_path: Path) -> None:
+    schema = load_schema("curve")
+    output = tmp_path / "noncanonical-snapshot.h5"
+    write_hdf5(curve, output, schema, validate_dataset(curve, schema))
+
+    with h5py.File(output, "r+") as handle:
+        handle.attrs["schema_json"] = json.dumps(schema_to_dict(schema), indent=2)
+        handle.attrs["schema_sha256"] = schema_sha256(schema)
+
+    with pytest.raises(DataReadError, match="schema_json"):
+        load_hdf5(output)
 
 
 @pytest.mark.parametrize(

@@ -179,6 +179,31 @@ def test_cli_inspect_and_report_return_one_for_validation_errors(tmp_path: Path)
     assert "below_minimum" in report.read_text(encoding="utf-8")
 
 
+def test_cli_warning_only_findings_keep_success_status(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    schema = tmp_path / "warning-only.json"
+    schema.write_text(
+        '{"profile":"point","schema_version":"1.0","fields":['
+        '{"name":"value","dtype":"float","required":true,"unit":"1"}]}',
+        encoding="utf-8",
+    )
+    data = tmp_path / "warning-only.csv"
+    data.write_text("value\n1.0\n1.0\n", encoding="utf-8")
+    report = tmp_path / "warning-only.html"
+
+    assert main(["validate", str(data), "--schema", str(schema)]) == 0
+    validate_output = capsys.readouterr().out
+    assert '"duplicate_record"' in validate_output
+
+    assert main(["inspect", str(data), "--schema", str(schema)]) == 0
+    inspect_output = capsys.readouterr().out
+    assert "duplicate_record" in inspect_output
+
+    assert main(["report", str(data), "--schema", str(schema), "--output", str(report)]) == 0
+    assert "duplicate_record" in report.read_text(encoding="utf-8")
+
+
 @pytest.mark.parametrize("command", ["inspect", "report"])
 def test_cli_returns_two_for_missing_or_bad_input(
     tmp_path: Path, command: str, capsys: pytest.CaptureFixture[str]

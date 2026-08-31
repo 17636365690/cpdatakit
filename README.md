@@ -159,10 +159,12 @@ in the input dataset. Pass `--force` to replace an existing output file.
 
 CLI errors are concise. Put the global `--debug` option before the
 subcommand when an unexpected failure needs more detail. `validate`, `summary`, `inspect`, and
-`report` return `0` when validation finds zero errors. They return `1` when the data contains findings.
-Usage, read, schema, and output failures return `2`. A passing report indicates successful completion
-of the declared checks. Use domain methods to interpret physical and scientific results alongside
-the report. Run `cpdatakit --help` or
+`report` return `0` when processing succeeds with zero validation errors. They return `1` for
+validation errors, or for the `inspect` command's declared structural and missing-value risks.
+Warning-only findings are still reported but do not invalidate the result. Usage, read, schema,
+and output failures return `2`. A passing report indicates successful completion of the declared
+checks. Use domain methods to interpret physical and scientific results alongside the report. Run
+`cpdatakit --help` or
 `cpdatakit <command> --help` for command details.
 
 ## Python API
