@@ -87,13 +87,13 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 
 详见[schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)。
 
-比较两个 schema 契约且不修改原文件：
+比较两个 schema 契约：
 
 ```powershell
 cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
 ```
 
-比较结果会区分 identical、backward-compatible 和 breaking，不会迁移记录或重写 HDF5 文件。
+结果分为 identical、backward-compatible 和 breaking。这个命令只读。记录迁移和 HDF5 重写另行处理。
 
 比较两份 JSON 验证报告并生成离线 bundle：
 
@@ -101,8 +101,8 @@ cpdatakit schema diff old-schema.json new-schema.json --format markdown --output
 cpdatakit compare left-report.json right-report.json --output comparison-bundle
 ```
 
-bundle 包含 JSON、Markdown、HTML 和带成员 hash 的 manifest。它只比较声明的 schema、验证结果、
-结构和标量统计，不比较原始张量记录，也不证明物理等价。
+bundle 包含 JSON、Markdown、HTML 和带成员 hash 的 manifest。比较内容包括声明的 schema、验证结果、
+结构和标量统计。原始张量记录和物理等价性需要另行分析。
 
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的

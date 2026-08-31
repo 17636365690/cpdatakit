@@ -1,4 +1,4 @@
-"""Deterministic schema compatibility comparisons."""
+"""Compare validated schemas deterministically."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def _requires_mapping(
 
 
 def diff_schemas(source: SchemaInput, target: SchemaInput) -> dict[str, Any]:
-    """Return a deterministic JSON-compatible schema compatibility diff."""
+    """Compare two schemas and return a JSON-ready compatibility diff."""
     source_contract = validate_schema(source)
     target_contract = validate_schema(target)
     source_canonical = schema_to_canonical_json(source_contract)
@@ -141,7 +141,7 @@ def diff_schemas(source: SchemaInput, target: SchemaInput) -> dict[str, Any]:
 
 
 def render_schema_diff_json(diff: Mapping[str, Any]) -> str:
-    """Render a schema diff as stable JSON."""
+    """Render a schema diff as JSON with stable key order."""
     return json.dumps(diff, indent=2, sort_keys=True, allow_nan=False) + "\n"
 
 
@@ -202,8 +202,8 @@ def render_schema_diff_markdown(diff: Mapping[str, Any]) -> str:
             "",
             "## Scope",
             "",
-            "This command compares declared schema contracts only; it does not migrate data or "
-            "rewrite HDF5 artifacts.",
+            "This command compares declared schema contracts. Data migration and HDF5 rewrites are "
+            "separate operations.",
             "",
         ]
     )

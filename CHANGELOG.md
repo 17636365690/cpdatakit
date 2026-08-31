@@ -6,10 +6,10 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ### Added
 
-- Deterministic `diff_schemas()` comparisons and the non-destructive `cpdatakit schema diff`
-  command for classifying contract compatibility.
-- Aggregate `compare_reports()` output and offline `cpdatakit compare` bundles with JSON, Markdown,
-  HTML, and hashed manifest members.
+- Deterministic `diff_schemas()` comparisons and the `cpdatakit schema diff` command for contract
+  compatibility checks.
+- Aggregate `compare_reports()` output and offline `cpdatakit compare` bundles. Each bundle includes
+  JSON, Markdown, HTML, and a manifest with member hashes.
 
 ### Fixed
 

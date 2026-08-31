@@ -2,9 +2,14 @@
 
 > For agentic workers: use the repository's approved subagent or executing-plan workflow to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-Goal: Add deterministic schema-diff and compatibility classification tooling as the first, non-destructive slice of the v0.4.0 schema-migration roadmap.
+Goal: Add deterministic schema-diff and compatibility classification tooling for the v0.4.0
+schema-migration roadmap. This stage compares contracts and leaves data changes to a later
+migration command.
 
-Architecture: Keep schema validation and canonical hashing as the source of truth. Add a pure schema_diff module that compares validated ProfileSchema objects and emits JSON-compatible results; add a thin CLI renderer only after the API contract is accepted. Do not rewrite datasets or HDF5 files in this slice.
+Architecture: Keep schema validation and canonical hashing as the source of truth. Add a pure
+schema_diff module that compares validated ProfileSchema objects and returns JSON-ready results.
+Add the CLI renderer after accepting the API contract. Data migration and HDF5 rewrites are outside
+this stage.
 
 Tech Stack: Python 3.10+, dataclasses, JSON, existing schema helpers, pytest, Hypothesis, Ruff, and Hatchling.
 
@@ -17,8 +22,9 @@ Spec: docs/superpowers/specs/2026-08-31-schema-migration-design.md
 - Classify field removal, requiredness, dtype, shape, components, units, ranges, index flags, conventions, profile, extension prefix, and version changes as breaking.
 - Classify only optional-field additions, alias additions, and description-only changes as backward-compatible.
 - Preserve source/target order and use the fixed property order from the approved specification.
-- A breaking diff is valid comparison output, not an exception; malformed schemas remain SchemaError.
-- Set requires_explicit_data_mapping for removals/renames and unit or meaning changes; optional additions alone do not set it.
+- A breaking diff is normal comparison output. Malformed schemas still raise SchemaError.
+- Set requires_explicit_data_mapping for removals/renames and unit or meaning changes. Optional
+  additions leave it false.
 
 ---
 
@@ -85,10 +91,10 @@ Interfaces:
 
 - [ ] Step 3: Implement compatibility classification
 
-  Return identical for equal canonical JSON, backward-compatible only when every difference is an
-  optional addition, alias addition, or description change, and breaking otherwise. Set
-  requires_explicit_data_mapping for field removals/renames or any unit/meaning change; optional
-  additions alone do not set it.
+  Return identical for equal canonical JSON. Return backward-compatible when every difference is an
+  optional addition, alias addition, or description change. Classify all other differences as
+  breaking. Set requires_explicit_data_mapping for field removals/renames or any unit/meaning
+  change. Optional additions leave it false.
 
 - [ ] Step 4: Export the function without importing a second schema implementation
 
