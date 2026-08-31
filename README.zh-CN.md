@@ -87,6 +87,14 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 
 详见[schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)。
 
+比较两个 schema 契约且不修改原文件：
+
+```powershell
+cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
+```
+
+比较结果会区分 identical、backward-compatible 和 breaking，不会迁移记录或重写 HDF5 文件。
+
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
 HTML，也支持 `--format markdown` 和 `--format json`。报告包含统计和验证结果，原始记录继续保留在

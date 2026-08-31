@@ -53,6 +53,29 @@ schema therefore produces the same hash on different runs. CPDataKit stores this
 HDF5 `schema_json` attribute. An optional `schema_uri` is recorded as provenance for caller-managed
 access.
 
+## Compare contracts
+
+The v0.4.0 first slice compares two validated contracts without modifying either schema or any
+dataset:
+
+```bash
+cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
+```
+
+The Python API is also available:
+
+```python
+from cpdatakit import diff_schemas
+
+diff = diff_schemas("old-schema.json", "new-schema.json")
+print(diff["classification"])
+```
+
+The result distinguishes identical, backward-compatible, and breaking changes. Optional-field
+additions, additive aliases, and description-only changes are compatible; unit, shape, component,
+index, range, convention, and requiredness changes remain explicit and potentially breaking. This
+command does not migrate records or rewrite HDF5 artifacts.
+
 ## CLI mapping files
 
 All field renames and unit conversions must be explicit. Pass a JSON mapping file to `validate`,

@@ -4,6 +4,11 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+- Deterministic `diff_schemas()` comparisons and the non-destructive `cpdatakit schema diff`
+  command for classifying contract compatibility.
+
 ### Fixed
 
 - Reject non-canonical embedded HDF5 schema JSON even when its semantic hash matches.

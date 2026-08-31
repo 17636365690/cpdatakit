@@ -18,6 +18,7 @@ Spec: docs/superpowers/specs/2026-08-31-schema-migration-design.md
 - Classify only optional-field additions, alias additions, and description-only changes as backward-compatible.
 - Preserve source/target order and use the fixed property order from the approved specification.
 - A breaking diff is valid comparison output, not an exception; malformed schemas remain SchemaError.
+- Set requires_explicit_data_mapping for removals/renames and unit or meaning changes; optional additions alone do not set it.
 
 ---
 
@@ -86,7 +87,8 @@ Interfaces:
 
   Return identical for equal canonical JSON, backward-compatible only when every difference is an
   optional addition, alias addition, or description change, and breaking otherwise. Set
-  requires_explicit_data_mapping for field additions/removals or any unit/meaning change.
+  requires_explicit_data_mapping for field removals/renames or any unit/meaning change; optional
+  additions alone do not set it.
 
 - [ ] Step 4: Export the function without importing a second schema implementation
 

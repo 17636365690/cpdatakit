@@ -142,6 +142,15 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 See the [schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 for the JSON format and explicit-convention rules.
 
+Compare two schema contracts without changing either file:
+
+```bash
+cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
+```
+
+The comparison classifies identical, backward-compatible, and breaking contract changes. It does
+not migrate records or rewrite HDF5 artifacts.
+
 When you need a quick look at a file, run:
 
 ```bash
