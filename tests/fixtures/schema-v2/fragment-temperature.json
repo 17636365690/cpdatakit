@@ -1,0 +1,9 @@
+{
+  "profile": "thermal-field",
+  "schema_version": "2.0",
+  "dimensions": [],
+  "coordinates": [],
+  "variables": [
+    {"name": "temperature", "dims": ["time", "y", "x"], "dtype": "float", "unit": "K", "role": "measured_field"}
+  ]
+}

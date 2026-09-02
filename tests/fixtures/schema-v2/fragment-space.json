@@ -1,0 +1,13 @@
+{
+  "profile": "thermal-field",
+  "schema_version": "2.0",
+  "dimensions": [
+    {"name": "y", "length": 3},
+    {"name": "x", "length": 4}
+  ],
+  "coordinates": [
+    {"name": "y", "dims": ["y"], "dtype": "float", "unit": "mm"},
+    {"name": "x", "dims": ["x"], "dtype": "float", "unit": "mm"}
+  ],
+  "variables": []
+}

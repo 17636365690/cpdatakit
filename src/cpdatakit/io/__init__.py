@@ -441,3 +441,19 @@ def write_hdf5(
             temp_path.unlink(missing_ok=True)
         raise
     return target
+
+
+def load_hdf5_v2(path: str | Path, *, selection: Any | None = None):
+    """Lazily load an HDF5 2.0 ScientificDataset."""
+
+    from .hdf5_v2 import load_hdf5_v2 as _load_hdf5_v2
+
+    return _load_hdf5_v2(path, selection=selection)
+
+
+def write_hdf5_v2(value: Any, output: str | Path, schema: Any, *, force: bool = False) -> Path:
+    """Lazily write an HDF5 2.0 ScientificDataset."""
+
+    from .hdf5_v2 import write_hdf5_v2 as _write_hdf5_v2
+
+    return _write_hdf5_v2(value, output, schema, force=force)

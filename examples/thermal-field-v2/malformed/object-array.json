@@ -1,0 +1,6 @@
+{
+  "format": "CPDataKit v0.6 malformed reference 1.0",
+  "dimensions": {"time": 2},
+  "variables": {"value": {"dims": ["time"], "dtype": "object", "unit": null, "values": [[1], {"nested": true}]}},
+  "reason": "object dtype cannot be represented losslessly"
+}

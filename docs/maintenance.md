@@ -1,15 +1,22 @@
 # Maintenance
 
-This document records the v0.5.0 release path. Keep `pyproject.toml` and `CITATION.cff` aligned
+This document records the v0.6.0 release path. Keep `pyproject.toml` and `CITATION.cff` aligned
 with the current release. For each authorized release, update the version metadata, `CHANGELOG.md`,
 and `CITATION.cff` together, then run every check below before publishing.
 
+The v0.6.0 release requires Python 3.12 or later. Keep Python 3.10 and 3.11 support on the v0.5.x
+maintenance line until a separate maintenance decision is made.
+
+The v0.6 dependency workflow runs wheel-only lower/latest probes on Ubuntu, macOS, and Windows for
+Python 3.12 and 3.13. Runtime metadata uses only the candidate set after every hosted cell passes;
+local Windows/Linux evidence is recorded in `docs/v0.6-dependency-probe.md`.
+
 ## Exact release checklist
 
-1. Run the full supported-Python test matrix: `ubuntu-latest` and `windows-latest`, each with
-   Python 3.10, 3.11, 3.12, and 3.13, installing `.[dev]` and running `pytest`.
-   The separate `minimum-dependencies` CI job runs Python 3.10 with the lower-bound runtime
-   dependency ranges from `pyproject.toml` and the test dependencies needed by the suite.
+1. Run the full supported-Python test matrix: Ubuntu, macOS, and Windows, each with Python 3.12
+   and 3.13, installing `.[dev]` and running `pytest`. The separate `minimum-dependencies` CI job
+   installs the measured v0.6 lower-bound runtime ranges and the test dependencies needed by the
+   suite.
 2. Run the Ubuntu quality gate with Python 3.12:
 
    ```bash
@@ -58,7 +65,8 @@ and `CITATION.cff` together, then run every check below before publishing.
 
    Confirm valid JSON and exact record counts for full, selected-field, and chunked reads. Record
    elapsed time and peak RSS for comparison. Timing from one machine provides diagnostic evidence.
-6. Complete the existing README commands, deterministic sample regeneration comparison,
+6. Complete the existing README commands, the `cpdatakit ui --no-browser` clean-wheel smoke,
+   deterministic sample regeneration comparison,
    secret/absolute-path scan, license review, and sdist/wheel content inspection. Publish when the
    version in `pyproject.toml`, the installed wheel, the Git tag/release, and PyPI agree in a fresh
    environment.

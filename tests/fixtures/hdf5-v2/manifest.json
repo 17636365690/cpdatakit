@@ -1,0 +1,17 @@
+{
+  "format": "CPDataKit HDF5 2.0 preflight fixtures 1.0",
+  "files": [
+    "missing-dimension-reference.h5",
+    "root-version-mismatch.h5",
+    "schema-hash-mismatch.h5",
+    "valid.h5"
+  ],
+  "required_groups": ["coordinates", "dimensions", "variables"],
+  "dimensions": {"time": 4, "y": 3, "x": 4},
+  "temperature": {
+    "shape": [4, 3, 4],
+    "dims": ["time", "y", "x"],
+    "unit": "K",
+    "role": "measured_field"
+  }
+}

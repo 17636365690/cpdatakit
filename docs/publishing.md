@@ -22,15 +22,14 @@ timestamp, file-order, or backend drift before a release is published.
 
 ## First publication
 
-After the pending publisher exists and the release commit is tagged, open the workflow on the
-`main` branch and run **Publish to PyPI** manually with the release tag. The workflow and the `pypi`
-environment accept dispatches from `main`, require an existing tag on that branch, and compare all
-release metadata before building. They build both distributions from the exact tag and run
-`twine check`. They exchange GitHub's short-lived OIDC identity for a temporary PyPI credential.
-Review the queued `pypi` deployment after confirming the tag and build job. When the workflow succeeds, verify
-a clean `pip install cpdatakit==<version>`, then publish the matching GitHub Release with the
-already-verified distributions. Keep the PyPI workflow and GitHub Release publication as two
-explicit steps so each artifact has a clear verification point.
+After the pending publisher exists and the release commit is tagged, pushing the `vX.Y.Z` tag
+triggers **Publish to PyPI**. The workflow accepts only semantic-version tag refs, verifies that the
+tag commit is on `main`, checks all release metadata before building, and builds both distributions
+from the exact tag. It runs `twine check` and exchanges GitHub's short-lived OIDC identity for a
+temporary PyPI credential. Review the queued `pypi` deployment after confirming the tag and build
+job. When the workflow succeeds, verify a clean `pip install cpdatakit==<version>`, then publish the
+matching GitHub Release with the already-verified distributions. Keep the PyPI workflow and GitHub
+Release publication as two explicit steps so each artifact has a clear verification point.
 
 Each version is published once because PyPI distributions are immutable. For later versions, update
 `pyproject.toml`, `src/cpdatakit/_version.py`, `CITATION.cff`, and `CHANGELOG.md` together, merge a
