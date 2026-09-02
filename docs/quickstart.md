@@ -29,10 +29,10 @@ Install the current release from PyPI:
 python -m pip install cpdatakit
 ```
 
-For a pinned GitHub release wheel, use:
+For a pinned GitHub v0.6.0 release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.5.0/cpdatakit-0.5.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.6.0/cpdatakit-0.6.0-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example
@@ -87,6 +87,17 @@ cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-stra
 At this point, the directory contains `validation.json`, `summary.json`, `curve.h5`, and
 `stress-strain.png`. CPDataKit checks the declared data contract. Use domain-specific methods to
 assess physical correctness.
+
+## 7. Open the local workbench
+
+For project-local uploads and service-backed workflows, run:
+
+```bash
+cpdatakit ui --workspace cpdatakit-workspace
+```
+
+The workbench binds to loopback, opens the default browser, and keeps its catalog, uploads, and
+artifacts below the selected workspace. Use `--no-browser` for a headless smoke check.
 
 ## 7. Read a window or stream chunks
 

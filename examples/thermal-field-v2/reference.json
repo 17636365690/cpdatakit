@@ -1,0 +1,33 @@
+{
+  "format": "CPDataKit v0.6 thermal field reference 1.0",
+  "dimensions": {"time": 4, "y": 3, "x": 4},
+  "coordinates": {
+    "time": {"dims": ["time"], "unit": "s", "values": [0.0, 10.0, 20.0, 30.0]},
+    "y": {"dims": ["y"], "unit": "mm", "values": [-1.0, 0.0, 1.0]},
+    "x": {"dims": ["x"], "unit": "mm", "values": [0.0, 1.0, 2.0, 3.0]},
+    "stage": {
+      "dims": ["time"],
+      "unit": null,
+      "dtype": "string",
+      "values": ["ambient", "heating", "hold", "cooling"]
+    }
+  },
+  "variables": {
+    "temperature": {
+      "dims": ["time", "y", "x"],
+      "dtype": "float64",
+      "unit": "K",
+      "role": "measured_field",
+      "values": [
+        [[273.15, 274.15, 275.15, 276.15], [275.15, 276.15, 277.15, 278.15], [277.15, 278.15, 279.15, 280.15]],
+        [[283.15, 284.15, 285.15, 286.15], [285.15, 286.15, 287.15, 288.15], [287.15, 288.15, 289.15, 290.15]],
+        [[293.15, 294.15, 295.15, 296.15], [295.15, 296.15, 297.15, 298.15], [297.15, 298.15, 299.15, 300.15]],
+        [[303.15, 304.15, 305.15, 306.15], [305.15, 306.15, 307.15, 308.15], [307.15, 308.15, 309.15, 310.15]]
+      ]
+    }
+  },
+  "attributes": {
+    "formula": "273.15 + 10*time_index + 2*y_index + x_index",
+    "source": "deterministic preflight fixture"
+  }
+}

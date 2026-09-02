@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12", "3.13"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,6 +26,24 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: pytest
 
+  macos-wheel-smoke:
+    name: macOS clean-wheel smoke
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install build
+      - run: python -m build --wheel --outdir dist
+      - run: python -m venv wheel-env
+      - run: wheel-env/bin/python -m pip install dist/*.whl
+      - run: wheel-env/bin/cpdatakit --version
+      - run: wheel-env/bin/python -c "import cpdatakit; print(cpdatakit.__version__)"
+      - run: wheel-env/bin/cpdatakit ui --no-browser --help
+      - run: wheel-env/bin/python -c "from cpdatakit.web import create_app; print(create_app('ui-smoke').title)"
+
   minimum-dependencies:
     name: Minimum supported dependencies
     runs-on: ubuntu-latest
@@ -31,18 +51,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.10"
+          python-version: "3.12"
           cache: pip
       - name: Install lower-bound runtime and test dependencies
         run: |
           python -m pip install \
-            "numpy>=1.24,<1.25" \
-            "pandas>=2.0,<2.1" \
-            "h5py>=3.8,<3.9" \
-            "matplotlib>=3.7,<3.8" \
-            "pint>=0.22,<0.23" \
-            "pytest>=7.4,<8" \
-            "hypothesis>=6.100,<7"
+            "numpy>=2.0,<3" \
+            "pandas>=2.2,<3" \
+            "h5py>=3.8,<4" \
+            "matplotlib>=3.7" \
+            "pint>=0.22" \
+            "xarray>=2026.7,<2027" \
+            "zarr>=3.1,<4" \
+            "pyarrow>=25,<26" \
+            "h5netcdf>=1.5,<2" \
+            "netCDF4>=1.7,<2" \
+            "fastapi>=0.141,<1" \
+            "uvicorn>=0.35,<1" \
+            "Jinja2>=3.1,<4" \
+            "python-multipart>=0.0.20,<1" \
+            "pytest>=7.4" \
+            "pytest-cov>=4.1" \
+            "hypothesis>=6.100" \
+            "httpx>=0.28,<1"
       - run: python -m pip install -e . --no-deps
       - run: pytest
 
@@ -89,6 +120,8 @@ jobs:
           wheel-env/bin/python -m pip install dist/*.whl
           wheel-env/bin/cpdatakit --version
           wheel-env/bin/python -c "import cpdatakit; print(cpdatakit.__version__)"
+          wheel-env/bin/cpdatakit ui --no-browser --help
+          wheel-env/bin/python -c "from cpdatakit.web import create_app; print(create_app('ui-smoke').title)"
           wheel-env/bin/python -c "from cpdatakit import load_hdf5, iter_hdf5_chunks; print('HDF5 APIs available')"
           wheel-env/bin/python -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('quickstart-smoke')"
           wheel-env/bin/cpdatakit validate quickstart-smoke/synthetic_curve.csv --schema curve --json-output validation.json

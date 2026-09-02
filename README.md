@@ -45,6 +45,8 @@ operation log. The current HDF5 writer also puts the canonical schema and its SH
 the file. CPDataKit records a supplied schema URI as caller-managed provenance. The read-only DAMASK
 DADF5 adapter can inspect or report a selection when the file
 has one clear choice. CPDataKit HDF5 uses its own format alongside DAMASK DADF5 and Abaqus ODB.
+The v0.6 N-dimensional path adds `ScientificDataset`, CPDataKit HDF5 2.0, NetCDF, Zarr 3, and
+tabular-only Parquet adapters with explicit capability checks.
 
 Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
 missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
@@ -60,10 +62,10 @@ Install the current release from PyPI:
 python -m pip install cpdatakit
 ```
 
-For a pinned GitHub release wheel, use:
+For a pinned GitHub v0.6.0 release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.5.0/cpdatakit-0.5.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.6.0/cpdatakit-0.6.0-py3-none-any.whl"
 ```
 
 Then follow the
@@ -84,6 +86,9 @@ Activate on Windows PowerShell:
 .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 ```
+
+The v0.6.0 release requires Python 3.12 or later because its xarray and Zarr stack has moved past
+the v0.5 dependency floor. The released v0.5.x line remains the compatibility path for Python 3.10 and 3.11.
 
 Activate on POSIX shells:
 
@@ -108,6 +113,10 @@ The examples and tests cover these paths:
 - preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
 - convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
 - inspect files and produce shareable aggregate reports.
+- start the local-first workbench with `cpdatakit ui`; it keeps uploads and artifacts in an explicit
+  workspace and does not load browser assets from a network.
+- read/write explicit N-dimensional values through schema 2.0, HDF5 2.0, NetCDF, Zarr 3, and
+  tabular-only Parquet adapters.
 - run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
 - run the Surfalex HF (AA6016A) Workflow 7A example with explicit tensor mappings, source hashes,
   and schema provenance. The example downloads third-party raw files on request and records their
@@ -116,6 +125,7 @@ The examples and tests cover these paths:
 ## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
+- [v0.6.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.6.0)
 - [v0.5.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.5.0)
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
@@ -168,6 +178,17 @@ cpdatakit schema diff old-schema.json new-schema.json --format markdown --output
 
 The result labels the change as identical, backward-compatible, or breaking. The command is
 read-only. Data migration and HDF5 rewrites are separate operations.
+
+Start the local workbench (it binds to loopback and opens the default browser):
+
+```bash
+cpdatakit ui
+cpdatakit ui --workspace ./cpdatakit-workspace --no-browser
+```
+
+The UI provides project-local uploads, bounded inspection, validation, conversion, reports,
+comparisons, plots, capability discovery, and job polling. `--no-browser` is useful for headless
+or CI smoke checks.
 
 Compare two JSON validation reports and write an offline bundle:
 
@@ -272,12 +293,11 @@ the field rules it should follow. That gives the next change something concrete 
 
 ## Scope and roadmap
 
-Version 0.5 generalizes external profile names while retaining the v0.4 in-memory table, fixed-shape
-value, and HDF5 1.0 contracts. It includes schema contract diffs, offline aggregate comparisons, and
-a schema-driven x-y plot. Native HDF5
-inspection uses bounded reads. Report analysis uses the existing validation and statistics APIs. The
-bundled DAMASK DADF5 reader covers a documented read-only selection. New adapters use the documented
-format evidence, license review, and reproducible-fixture process. See the
+Version 0.6.0 adds the local workbench, shared application services, explicit N-dimensional data and
+schema/HDF5 2.0 contracts, open-format adapters, and a local SQLite/job boundary while retaining the
+v0.5 tabular, schema 1.0, HDF5 1.0, and CLI contracts. Native HDF5 inspection uses bounded reads.
+The bundled DAMASK DADF5 reader covers a documented read-only selection. New adapters use the
+documented format evidence, license review, and reproducible-fixture process. See the
 [roadmap](https://github.com/17636365690/cpdatakit/blob/main/docs/roadmap.md) for the next three
 versions.
 

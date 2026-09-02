@@ -1,12 +1,8 @@
 name: Publish to PyPI
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing Git tag to publish
-        required: true
-        default: v0.5.0
+  push:
+    tags: ["v*.*.*"]
 
 permissions:
   contents: read
@@ -14,10 +10,9 @@ permissions:
 jobs:
   build:
     name: Build distributions
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
-      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_TAG: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,8 +25,8 @@ jobs:
       - name: Verify trusted dispatch and synchronized release metadata
         shell: bash
         run: |
-          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
-            echo "This workflow must be dispatched from main, got: ${GITHUB_REF}" >&2
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "This workflow must run from a tag, got: ${GITHUB_REF}" >&2
             exit 1
           fi
           if [[ ! "${RELEASE_TAG}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
@@ -73,7 +68,9 @@ jobs:
           wheel-env/bin/cpdatakit summary quickstart-smoke/synthetic_curve.csv --schema curve --json-output summary.json
           wheel-env/bin/cpdatakit convert quickstart-smoke/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Fixed-seed release quickstart"
           wheel-env/bin/cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+          wheel-env/bin/cpdatakit ui --no-browser --help
+          wheel-env/bin/python -c "from cpdatakit.web import create_app; print(create_app('ui-smoke').title)"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: python-package-distributions
           path: dist/
@@ -89,7 +86,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: python-package-distributions
           path: dist/

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CPDataKit local workbench</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <script type="module" src="{{ url_for('static', path='app.js') }}"></script>
+  </head>
+  <body>
+    <h1>CPDataKit local workbench</h1>
+    <p>Local-only project workspace for bounded inspection and validation.</p>
+    <section>
+      <h2>Create project</h2>
+      <form method="post" action="/api/projects">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="project-name">Project name</label>
+        <input id="project-name" name="name" required maxlength="200">
+        <button type="submit">Create project</button>
+      </form>
+    </section>
+    <section>
+      <h2>Projects</h2>
+      <ul>
+        {% for project in projects %}
+        <li data-project-id="{{ project.id }}">{{ project.name }}</li>
+        {% else %}
+        <li>No projects yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </body>
+</html>

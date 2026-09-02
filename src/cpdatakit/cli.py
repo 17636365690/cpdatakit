@@ -4,42 +4,40 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 import sys
+import webbrowser
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-
 from . import __version__
-from .comparison import compare_reports, write_comparison_bundle
+from .application import (
+    ComparisonRequest,
+    ConvertRequest,
+    DatasetRequest,
+    ImportInspectRequest,
+    PlotRequest,
+    ReportRequest,
+    SchemaDiffRequest,
+    convert_and_write,
+    diff_schema_contracts,
+    import_and_inspect,
+    plot_declared_fields,
+    validate_and_summarize,
+)
+from .application import (
+    build_report as build_report_service,
+)
+from .application import (
+    compare_reports as compare_reports_service,
+)
 from .exceptions import CPDataKitError
 from .inspection import (
-    inspect_dataset,
     render_inspection_json,
     render_inspection_text,
     sanitize_error_message,
     write_inspection,
 )
-from .io import load_dataset, write_hdf5
-from .normalization import load_mapping_file, normalize_dataset
-from .plotting import (
-    plot_counts,
-    plot_field2d,
-    plot_histogram,
-    plot_stress_strain,
-    plot_xy,
-    save_figure,
-)
-from .reporting import build_report, write_report
-from .schema import load_schema
-from .schema_diff import (
-    diff_schemas,
-    render_schema_diff_json,
-    render_schema_diff_markdown,
-    write_schema_diff,
-)
-from .statistics import summarize_dataset
-from .validation import validate_dataset
 
 
 def _common(parser: argparse.ArgumentParser) -> None:
@@ -112,6 +110,26 @@ def _parser() -> argparse.ArgumentParser:
     schema_diff.add_argument("--format", choices=["json", "markdown"], default="json")
     schema_diff.add_argument("--output", type=Path)
     schema_diff.add_argument("--force", action="store_true", help="Replace an existing output")
+    ui = commands.add_parser("ui", help="Open the local web workbench")
+    ui.add_argument(
+        "--workspace",
+        type=Path,
+        default=Path.cwd() / ".cpdatakit",
+        help="Workspace directory for the local catalog and project files",
+    )
+    ui.add_argument(
+        "--host",
+        choices=["127.0.0.1", "localhost", "::1"],
+        default="127.0.0.1",
+        help="Loopback interface to bind",
+    )
+    ui.add_argument(
+        "--port",
+        type=int,
+        default=0,
+        help="TCP port; 0 selects an available port",
+    )
+    ui.add_argument("--no-browser", action="store_true", help="Do not open a browser window")
     return parser
 
 
@@ -138,7 +156,12 @@ def _inspection_status(result: dict[str, Any]) -> int:
 
 
 def _run_inspect(args: argparse.Namespace) -> int:
-    result = inspect_dataset(args.data, schema=args.schema)
+    service_result = import_and_inspect(ImportInspectRequest(data=args.data, schema=args.schema))
+    if not service_result.ok or service_result.value is None:
+        if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+            raise CPDataKitError("Inspection service failed without an error")
+        raise CPDataKitError(service_result.error.message)
+    result = service_result.value
     if args.output is None:
         rendered = (
             render_inspection_json(result)
@@ -153,47 +176,96 @@ def _run_inspect(args: argparse.Namespace) -> int:
 
 
 def _run_report(args: argparse.Namespace) -> int:
-    report = build_report(args.data, args.schema)
-    write_report(report, args.output, format=args.format, force=args.force)
+    service_result = build_report_service(
+        ReportRequest(
+            data=args.data,
+            schema=args.schema,
+            output=args.output,
+            format=args.format,
+            force=args.force,
+        )
+    )
+    if not service_result.ok or service_result.value is None:
+        if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+            raise CPDataKitError("Report service failed without an error")
+        raise CPDataKitError(service_result.error.message)
+    report = service_result.value.report
     print(args.output.name)
     return 0 if report["validation"]["valid"] else 1
 
 
 def _run_schema_diff(args: argparse.Namespace) -> int:
-    diff = diff_schemas(args.source, args.target)
-    if args.output is None:
-        rendered = (
-            render_schema_diff_json(diff)
-            if args.format == "json"
-            else render_schema_diff_markdown(diff)
+    service_result = diff_schema_contracts(
+        SchemaDiffRequest(
+            source=args.source,
+            target=args.target,
+            format=args.format,
+            output=args.output,
+            force=args.force,
         )
-        print(rendered, end="")
+    )
+    if not service_result.ok or service_result.value is None:
+        if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+            raise CPDataKitError("Schema diff service failed without an error")
+        raise CPDataKitError(service_result.error.message)
+    if args.output is None:
+        print(service_result.value.rendered, end="")
     else:
-        write_schema_diff(diff, args.output, format=args.format, force=args.force)
         print(args.output.name)
     return 0
 
 
-def _read_report(path: Path) -> dict[str, Any]:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise CPDataKitError(f"Report input does not exist: {path}") from exc
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise CPDataKitError(f"Cannot read report input {path}: {exc}") from exc
-    if not isinstance(payload, dict):
-        raise CPDataKitError(f"Report input must be a JSON object: {path}")
-    return payload
-
-
 def _run_compare(args: argparse.Namespace) -> int:
-    comparison = compare_reports(_read_report(args.left), _read_report(args.right))
-    write_comparison_bundle(comparison, args.output, force=args.force)
+    service_result = compare_reports_service(
+        ComparisonRequest(
+            left=args.left,
+            right=args.right,
+            output=args.output,
+            force=args.force,
+        )
+    )
+    if not service_result.ok:
+        if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+            raise CPDataKitError("Comparison service failed without an error")
+        raise CPDataKitError(service_result.error.message)
     print(args.output)
     return 0
 
 
+def _available_port(host: str) -> int:
+    family = socket.AF_INET6 if ":" in host else socket.AF_INET
+    with socket.socket(family, socket.SOCK_STREAM) as probe:
+        probe.bind((host, 0))
+        return int(probe.getsockname()[1])
+
+
+def _run_ui(args: argparse.Namespace) -> int:
+    if args.host not in {"127.0.0.1", "localhost", "::1"}:
+        raise CPDataKitError("The local UI can bind only to a loopback host")
+    if args.port < 0 or args.port > 65_535:
+        raise CPDataKitError("UI port must be between 0 and 65535")
+    try:
+        import uvicorn
+    except ImportError as exc:
+        raise CPDataKitError(
+            "The local UI dependencies are unavailable; install the CPDataKit UI dependencies."
+        ) from exc
+    from .web import create_app
+
+    port = args.port or _available_port(args.host)
+    app = create_app(args.workspace)
+    display_host = f"[{args.host}]" if ":" in args.host else args.host
+    url = f"http://{display_host}:{port}"
+    print(url)
+    if not args.no_browser:
+        webbrowser.open(url)
+    uvicorn.run(app, host=args.host, port=port, log_level="debug" if args.debug else "info")
+    return 0
+
+
 def _run(args: argparse.Namespace) -> int:
+    if args.command == "ui":
+        return _run_ui(args)
     if args.command == "compare":
         return _run_compare(args)
     if args.command == "schema":
@@ -204,61 +276,60 @@ def _run(args: argparse.Namespace) -> int:
         return _run_report(args)
     if args.command == "plot" and args.kind == "xy" and (not args.x or not args.y):
         raise CPDataKitError("--x and --y are required for xy")
-    schema = load_schema(args.schema)
-    dataset = load_dataset(args.data)
-    if args.mapping is not None:
-        mappings, drop_unmapped = load_mapping_file(args.mapping)
-        dataset = normalize_dataset(
-            dataset,
-            schema,
-            mappings,
-            drop_unmapped=drop_unmapped,
+    if args.command in {"validate", "summary"}:
+        service_result = validate_and_summarize(
+            DatasetRequest(data=args.data, schema=args.schema, mapping=args.mapping)
         )
-    result = validate_dataset(dataset, schema)
-    if args.command == "validate":
-        _write_json(result.to_dict(), args.json_output, args.force)
-        return 0 if result.valid else 1
-    if args.command == "summary":
-        _write_json(
-            summarize_dataset(dataset, schema, validation=result), args.json_output, args.force
-        )
-        return 0 if result.valid else 1
+        if not service_result.ok or service_result.value is None:
+            if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+                raise CPDataKitError("Validation service failed without an error")
+            raise CPDataKitError(service_result.error.message)
+        validation = service_result.value.validation
+        if args.command == "validate":
+            _write_json(validation.to_dict(), args.json_output, args.force)
+        else:
+            _write_json(service_result.value.summary, args.json_output, args.force)
+        return 0 if validation.valid else 1
     if args.command == "convert":
-        if not result.valid:
-            print(json.dumps(result.to_dict(), indent=2), file=sys.stderr)
-            return 1
-        write_hdf5(
-            dataset,
-            args.output,
-            schema,
-            result,
-            source_description=args.source_description,
-            operation_log=["load", "validate", "convert"],
-            force=args.force,
+        service_result = convert_and_write(
+            ConvertRequest(
+                data=args.data,
+                schema=args.schema,
+                output=args.output,
+                mapping=args.mapping,
+                source_description=args.source_description,
+                force=args.force,
+            )
         )
+        if service_result.value is not None and not service_result.value.validation.valid:
+            print(json.dumps(service_result.value.validation.to_dict(), indent=2), file=sys.stderr)
+            return 1
+        if not service_result.ok:
+            if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+                raise CPDataKitError("Conversion service failed without an error")
+            raise CPDataKitError(service_result.error.message)
         print(args.output)
         return 0
-    if not result.valid:
-        print(json.dumps(result.to_dict(), indent=2), file=sys.stderr)
+    service_result = plot_declared_fields(
+        PlotRequest(
+            data=args.data,
+            schema=args.schema,
+            output=args.output,
+            kind=args.kind,
+            field=args.field,
+            x=args.x,
+            y=args.y,
+            mapping=args.mapping,
+            force=args.force,
+        )
+    )
+    if service_result.value is not None and not service_result.value.validation.valid:
+        print(json.dumps(service_result.value.validation.to_dict(), indent=2), file=sys.stderr)
         return 1
-    if args.kind == "stress-strain":
-        fig, _ = plot_stress_strain(dataset, schema)
-    elif args.kind == "histogram":
-        if not args.field:
-            raise CPDataKitError("--field is required for histogram")
-        fig, _ = plot_histogram(dataset, schema, args.field)
-    elif args.kind == "grain-count":
-        fig, _ = plot_counts(dataset, schema, "grain_id")
-    elif args.kind == "phase-count":
-        fig, _ = plot_counts(dataset, schema, "phase_id")
-    elif args.kind == "field2d":
-        fig, _ = plot_field2d(dataset, schema)
-    else:
-        fig, _ = plot_xy(dataset, schema, args.x, args.y)
-    try:
-        save_figure(fig, args.output, force=args.force)
-    finally:
-        plt.close(fig)
+    if not service_result.ok:
+        if service_result.error is None:  # pragma: no cover - ServiceResult enforces this
+            raise CPDataKitError("Plot service failed without an error")
+        raise CPDataKitError(service_result.error.message)
     print(args.output)
     return 0
 

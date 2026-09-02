@@ -1,0 +1,25 @@
+{
+  "profile": "thermal-field",
+  "schema_version": "2.0",
+  "source_manifest": ["base.json", "fragment-space.json", "fragment-temperature.json"],
+  "resolved_order": ["time", "y", "x", "stage", "temperature"],
+  "resolved": {
+    "profile": "thermal-field",
+    "schema_version": "2.0",
+    "conventions": {"time_basis": "elapsed seconds"},
+    "dimensions": [
+      {"name": "time", "length": 4},
+      {"name": "y", "length": 3},
+      {"name": "x", "length": 4}
+    ],
+    "coordinates": [
+      {"name": "time", "dims": ["time"], "dtype": "float", "unit": "s"},
+      {"name": "y", "dims": ["y"], "dtype": "float", "unit": "mm"},
+      {"name": "x", "dims": ["x"], "dtype": "float", "unit": "mm"},
+      {"name": "stage", "dims": ["time"], "dtype": "string", "unit": null}
+    ],
+    "variables": [
+      {"name": "temperature", "dims": ["time", "y", "x"], "dtype": "float", "unit": "K", "role": "measured_field"}
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "builtin_profiles": [
+    "curve",
+    "field2d",
+    "point"
+  ],
+  "builtin_schema_hashes": {
+    "curve": "6234e8cd78f0ad9f0251cd233fd7111f6c62fc17835289ab521369880977fa44",
+    "field2d": "766d6ee0e1ad3b2a77d0fdffb3a5aec4274a33490a51315676fb48d57817e4b0",
+    "point": "c668c4b05cf542ab4c3af8aba7b1b03ebd4a20d49186773b2a5a229f27e6c59b"
+  },
+  "callable_signatures": {
+    "build_report": "(path: 'str | Path', schema: 'str | Path | ProfileSchema | Mapping[str, Any]') -> 'dict[str, Any]'",
+    "compare_reports": "(left: 'Mapping[str, Any]', right: 'Mapping[str, Any]') -> 'dict[str, Any]'",
+    "describe_schema": "(schema: 'SchemaInput') -> 'str'",
+    "diff_schemas": "(source: 'SchemaInput', target: 'SchemaInput') -> 'dict[str, Any]'",
+    "inspect_dataset": "(path: 'str | Path', *, schema: 'SchemaInput | None' = None) -> 'dict[str, Any]'",
+    "inspect_hdf5_structure": "(path: 'str | Path') -> 'dict[str, Any]'",
+    "iter_hdf5_chunks": "(path: 'str | Path', *, fields: 'Iterable[str] | None' = None, chunk_size: 'int' = 10000) -> 'Iterator[Dataset]'",
+    "load_dataset": "(path: 'str | Path') -> 'Dataset'",
+    "load_hdf5": "(path: 'str | Path', *, fields: 'Iterable[str] | None' = None, start: 'int | None' = None, stop: 'int | None' = None) -> 'Dataset'",
+    "load_mapping_file": "(path: 'str | Path') -> 'tuple[list[FieldMapping], bool]'",
+    "load_schema": "(schema: 'SchemaInput') -> 'ProfileSchema'",
+    "make_field_schema": "(name: 'str', dtype: \"Literal['float', 'integer', 'string', 'boolean']\", *, required: 'bool' = False, shape: 'Iterable[int]' = (), components: 'Iterable[str]' = (), role: 'str' = 'custom', unit: 'str | None' = None, allow_missing: 'bool' = False, aliases: 'Iterable[str]' = (), minimum: 'float | None' = None, maximum: 'float | None' = None, index: 'bool' = False, unique: 'bool' = False, description: 'str' = '') -> 'FieldSchema'",
+    "make_profile_schema": "(profile: 'str', fields: 'Iterable[FieldSchema]', *, schema_version: 'str' = '1.0', conventions: 'Mapping[str, Any] | None' = None, extension_prefix: 'str' = 'user_') -> 'ProfileSchema'",
+    "normalize_dataset": "(dataset: 'Dataset', schema: 'str | ProfileSchema', mappings: 'list[FieldMapping] | None' = None, *, drop_unmapped: 'bool' = False) -> 'Dataset'",
+    "render_report_html": "(report: 'Mapping[str, Any]') -> 'str'",
+    "render_report_json": "(report: 'Mapping[str, Any]') -> 'str'",
+    "render_report_markdown": "(report: 'Mapping[str, Any]') -> 'str'",
+    "schema_sha256": "(schema: 'SchemaInput') -> 'str'",
+    "schema_to_canonical_json": "(schema: 'SchemaInput') -> 'str'",
+    "schema_to_dict": "(schema: 'SchemaInput') -> 'dict[str, Any]'",
+    "schema_to_json": "(schema: 'SchemaInput', *, indent: 'int' = 2) -> 'str'",
+    "summarize_dataset": "(dataset: 'Dataset | pd.DataFrame', schema: 'str | ProfileSchema', *, validation: 'ValidationResult | None' = None) -> 'dict[str, Any]'",
+    "validate_dataset": "(dataset: 'Dataset | pd.DataFrame', schema: 'str | ProfileSchema', *, units: 'dict[str, str] | None' = None) -> 'ValidationResult'",
+    "validate_schema": "(schema: 'SchemaInput') -> 'ProfileSchema'",
+    "write_schema": "(schema: 'SchemaInput', output: 'str | Path', *, force: 'bool' = False) -> 'Path'"
+  },
+  "cli_commands": {
+    "compare": [
+      "--force",
+      "--help",
+      "--output"
+    ],
+    "convert": [
+      "--force",
+      "--help",
+      "--mapping",
+      "--output",
+      "--schema",
+      "--source-description"
+    ],
+    "inspect": [
+      "--force",
+      "--format",
+      "--help",
+      "--output",
+      "--schema"
+    ],
+    "plot": [
+      "--field",
+      "--force",
+      "--help",
+      "--kind",
+      "--mapping",
+      "--output",
+      "--schema",
+      "--x",
+      "--y"
+    ],
+    "report": [
+      "--force",
+      "--format",
+      "--help",
+      "--output",
+      "--schema"
+    ],
+    "schema": [
+      "--help"
+    ],
+    "summary": [
+      "--force",
+      "--help",
+      "--json-output",
+      "--mapping",
+      "--schema"
+    ],
+    "validate": [
+      "--force",
+      "--help",
+      "--json-output",
+      "--mapping",
+      "--schema"
+    ]
+  },
+  "hdf5": {
+    "format_version": "1.0",
+    "required_root_attributes": [
+      "format",
+      "format_version",
+      "profile",
+      "schema_version",
+      "units_json",
+      "field_mapping_json",
+      "provenance_json",
+      "validation_summary_json"
+    ],
+    "supported_extensions": [
+      ".csv",
+      ".h5",
+      ".hdf5",
+      ".json"
+    ]
+  },
+  "package_exports": [
+    "FieldMapping",
+    "FieldSchema",
+    "ProfileSchema",
+    "__version__",
+    "build_report",
+    "compare_reports",
+    "describe_schema",
+    "diff_schemas",
+    "inspect_dataset",
+    "inspect_hdf5_structure",
+    "iter_hdf5_chunks",
+    "load_dataset",
+    "load_hdf5",
+    "load_mapping_file",
+    "load_schema",
+    "make_field_schema",
+    "make_profile_schema",
+    "normalize_dataset",
+    "render_report_html",
+    "render_report_json",
+    "render_report_markdown",
+    "schema_sha256",
+    "schema_to_canonical_json",
+    "schema_to_dict",
+    "schema_to_json",
+    "summarize_dataset",
+    "validate_dataset",
+    "validate_schema",
+    "write_schema"
+  ]
+}

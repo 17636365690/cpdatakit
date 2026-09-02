@@ -1,0 +1,7 @@
+{
+  "profile": "thermal-field",
+  "schema_version": "2.0",
+  "extends": "base.json",
+  "includes": ["fragment-temperature.json", "fragment-temperature.json"],
+  "reason": "duplicate variable declaration"
+}

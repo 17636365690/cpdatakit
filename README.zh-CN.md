@@ -24,19 +24,24 @@ diff 与离线报告比较。schema 显式声明字段、类型、shape、
 显式提供。DAMASK DADF5 只读适配器在文件中存在一个明确选择时，也能完成检查和报告。
 Writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
 CPDataKit 会把它记录为由调用方管理的 provenance。
+v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和仅限表格的 Parquet
+适配器，所有 N 维数据和能力检查都保持显式。
 
 ## 安装与快速开始
 
-当前 `v0.5.0` 已发布到 PyPI，使用以下命令安装：
+当前 `v0.6.0` 已发布到 PyPI，使用以下命令安装：
 
 ```powershell
 python -m pip install cpdatakit
 ```
 
+v0.6.0 要求 Python 3.12 或更高版本，因为 xarray 和 Zarr 已经高于 v0.5 的依赖下限。
+Python 3.10 和 3.11 用户继续使用已发布的 v0.5.x 兼容线。
+
 如果需要固定 GitHub Release wheel，可使用：
 
 ```powershell
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.5.0/cpdatakit-0.5.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.6.0/cpdatakit-0.6.0-py3-none-any.whl"
 ```
 
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
@@ -56,10 +61,13 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
   和 schema provenance。流程按需下载第三方原始文件，并记录来源 hash。
 - 运行不含晶体塑性字段的 `examples/thermal-cycle/`，完成自定义 profile、显式温度/时间单位
   转换、HDF5 round-trip、检查、报告、比较和通用 x-y 绘图。
+- 使用 `cpdatakit ui` 启动 loopback-only 本地工作台，执行项目上传、检查、验证、转换、报告、
+  比较、绘图和 job 轮询；静态资源随 wheel 提供，不依赖 CDN。
 
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
+- [v0.6.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.6.0)
 - [v0.5.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.5.0)
 - [五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
@@ -106,6 +114,16 @@ cpdatakit schema diff old-schema.json new-schema.json --format markdown --output
 ```
 
 结果分为 identical、backward-compatible 和 breaking。这个命令只读。记录迁移和 HDF5 重写另行处理。
+
+启动本地工作台（默认绑定 loopback 并打开浏览器）：
+
+```powershell
+cpdatakit ui
+cpdatakit ui --workspace .\cpdatakit-workspace --no-browser
+```
+
+`--no-browser` 适用于无头环境和 CI smoke；工作台的上传、验证、转换、报告、比较、绘图、能力
+发现和 job 轮询都限制在显式 workspace 内。
 
 比较两份 JSON 验证报告并生成离线 bundle：
 

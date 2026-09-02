@@ -4,6 +4,36 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+### Added
+
+No unreleased changes.
+
+## [0.6.0] - 2026-09-03
+
+### Added
+
+- Added an xarray-backed `ScientificDataset`, schema 2.0 local composition, and HDF5 2.0
+  N-dimensional read/write support while keeping the tabular `Dataset` and HDF5 1.0 contracts.
+- Added lossless NetCDF, Zarr 3, and Parquet adapters with capability checks and explicit optional
+  dependency diagnostics.
+- Added typed application services, deterministic capability discovery, a transactional SQLite
+  catalog, cooperative in-process jobs, and the loopback-only `cpdatakit ui` workbench.
+- Added bundled Jinja templates and static assets, project uploads, bounded inspect, validation,
+  conversion, report, comparison, plot, and job polling/cancellation routes.
+
+### Changed
+
+- Set the v0.6 runtime floor to Python 3.12 and promoted the measured lower-bound dependency matrix;
+  the v0.5.x line remains the compatibility path for Python 3.10 and 3.11.
+- Added clean-wheel UI smoke coverage and tag-triggered PyPI Trusted Publishing checks across the
+  Python 3.12/3.13 Windows, macOS, and Linux matrix.
+
+### v0.6 implementation slice
+
+- Added typed application services for import/inspect, schema/mapping resolution, validation/summary,
+  HDF5 1.0 conversion, report generation, report comparison, and declared plotting. Existing CLI
+  commands route through the core slice without changing v0.5 command names or exit-code behavior.
+
 ## [0.5.0] - 2026-09-02
 
 ### Added

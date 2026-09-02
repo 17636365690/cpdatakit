@@ -1,0 +1,6 @@
+{
+  "format": "CPDataKit v0.6 malformed reference 1.0",
+  "dimensions": {"sample": 2, "time": 2},
+  "variables": {"value": {"dims": ["sample", "time"], "dtype": "float64", "unit": "1"}},
+  "reason": "multiple candidate record dimensions"
+}

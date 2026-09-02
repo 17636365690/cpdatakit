@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cpdatakit"
-version = "0.5.0"
+version = "0.6.0"
 description = "Schema-first validation, normalization, and audit tooling for scientific data"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
 authors = [{name = "CPDataKit contributors"}]
 keywords = [
@@ -23,18 +23,25 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-  "numpy>=1.24",
-  "pandas>=2.0",
-  "h5py>=3.8",
+  "numpy>=2.0,<3",
+  "pandas>=2.2,<3",
+  "h5py>=3.8,<4",
   "matplotlib>=3.7",
   "pint>=0.22",
+  "xarray>=2026.7,<2027",
+  "zarr>=3.1,<4",
+  "pyarrow>=25,<26",
+  "h5netcdf>=1.5,<2",
+  "netCDF4>=1.7,<2",
+  "fastapi>=0.141,<1",
+  "uvicorn>=0.35,<1",
+  "Jinja2>=3.1,<4",
+  "python-multipart>=0.0.20,<1",
 ]
 
 [project.optional-dependencies]
@@ -44,6 +51,7 @@ dev = [
   "pytest>=7.4",
   "pytest-cov>=4.1",
   "hypothesis>=6.100",
+  "httpx>=0.28,<1",
   "ruff>=0.6",
   "twine>=5.1",
 ]

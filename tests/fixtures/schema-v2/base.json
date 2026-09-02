@@ -1,0 +1,11 @@
+{
+  "profile": "thermal-field",
+  "schema_version": "2.0",
+  "conventions": {"time_basis": "elapsed seconds"},
+  "dimensions": [{"name": "time", "length": 4}],
+  "coordinates": [
+    {"name": "time", "dims": ["time"], "dtype": "float", "unit": "s"},
+    {"name": "stage", "dims": ["time"], "dtype": "string", "unit": null}
+  ],
+  "variables": []
+}

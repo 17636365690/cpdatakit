@@ -18,6 +18,13 @@ use `DatasetAdapter` or a case-specific documented extractor with a focused read
 independent evidence. The bundled DAMASK DADF5 reader uses h5py and keeps the DAMASK runtime outside
 the import path.
 
+The additive `application` package owns the first v0.6 service migration slice: typed import/inspect,
+schema/mapping resolution, validation/summary, HDF5 1.0 conversion, reports, comparisons, and
+declared plots. It translates typed CPDataKit exceptions into sanitized service results, keeps
+artifacts workspace-relative, and has no argparse, HTTP, template, or browser dependency. The CLI
+routes these current data workflows through the service boundary while preserving its v0.5 exit-code
+and output contracts; schema diff remains on its existing path until its adapter is tested.
+
 Bundled `curve`, `point`, and `field2d` schemas, grain/phase summary enrichment, stress-strain and
 identifier plots, and the DAMASK adapter form the CP vertical. Generic profiles arrive as explicit
 JSON schemas and use the same core without acquiring CP fields or statistics. CP-specific functions
