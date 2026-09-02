@@ -79,3 +79,17 @@ def test_v06_release_notes_exist_for_the_tag() -> None:
     notes = ROOT / ".github" / "release-notes" / "v0.6.0.md"
     assert notes.is_file()
     assert "CPDataKit v0.6.0" in notes.read_text(encoding="utf-8")
+
+
+def test_v06_mainline_docs_close_preflight_claims_after_release() -> None:
+    roadmap = (ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    probe = (ROOT / "docs" / "v0.6-dependency-probe.md").read_text(encoding="utf-8")
+    schemas = (ROOT / "docs" / "schema-2.0.md").read_text(encoding="utf-8")
+    hdf5 = (ROOT / "docs" / "hdf5-2.0.md").read_text(encoding="utf-8")
+
+    assert "v0.6.0 (released 2026-09-03)" in roadmap
+    assert "12/12" in probe
+    assert "runtime dependencies are promoted in v0.6.0" in probe
+    assert "Next probe gate" not in probe
+    assert schemas.startswith("# CPDataKit schema 2.0\n")
+    assert hdf5.startswith("# CPDataKit HDF5 2.0\n")
