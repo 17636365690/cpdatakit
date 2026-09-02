@@ -1,4 +1,4 @@
-# CPDataKit schema 2.0 preflight
+# CPDataKit schema 2.0
 
 Schema 2.0 is the planned contract for `ScientificDataset`. It adds named dimensions, coordinates,
 N-dimensional variables, attributes, chunk hints, and explicit local composition. Schema 1.0 remains

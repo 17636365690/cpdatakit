@@ -1,4 +1,4 @@
-# CPDataKit HDF5 2.0 preflight
+# CPDataKit HDF5 2.0
 
 HDF5 2.0 is the planned storage envelope for `ScientificDataset`. It stores named dimensions,
 coordinates, and variables directly. It does not first flatten an N-dimensional value into a table.
