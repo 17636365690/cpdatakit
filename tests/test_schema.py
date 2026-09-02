@@ -100,6 +100,37 @@ def test_validate_schema_accepts_json_like_mapping() -> None:
     assert schema.profile == "point"
 
 
+def test_validate_schema_accepts_non_builtin_profile_name() -> None:
+    schema = validate_schema(
+        {
+            "profile": "thermal-cycle",
+            "schema_version": "1.0",
+            "fields": [
+                {
+                    "name": "temperature",
+                    "dtype": "float",
+                    "required": True,
+                    "unit": "K",
+                }
+            ],
+        }
+    )
+
+    assert schema.profile == "thermal-cycle"
+
+
+@pytest.mark.parametrize(
+    ("profile", "expected"),
+    [
+        ("curve", "6234e8cd78f0ad9f0251cd233fd7111f6c62fc17835289ab521369880977fa44"),
+        ("point", "c668c4b05cf542ab4c3af8aba7b1b03ebd4a20d49186773b2a5a229f27e6c59b"),
+        ("field2d", "766d6ee0e1ad3b2a77d0fdffb3a5aec4274a33490a51315676fb48d57817e4b0"),
+    ],
+)
+def test_builtin_schema_hash_is_a_compatibility_contract(profile: str, expected: str) -> None:
+    assert schema_sha256(profile) == expected
+
+
 def test_schema_canonical_json_and_hash_are_stable() -> None:
     schema = make_profile_schema(
         "point",

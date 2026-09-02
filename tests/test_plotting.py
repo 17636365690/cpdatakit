@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
 
+import cpdatakit.plotting as plotting
 from cpdatakit.exceptions import CPDataKitError, OutputExistsError
 from cpdatakit.model import Dataset
 from cpdatakit.plotting import (
@@ -15,6 +16,7 @@ from cpdatakit.plotting import (
     plot_stress_strain,
     save_figure,
 )
+from cpdatakit.schema import make_field_schema, make_profile_schema
 
 
 @pytest.mark.parametrize("extension", [".png", ".svg"])
@@ -52,6 +54,53 @@ def test_histogram_rejects_shaped_numeric_fields(tmp_path: Path) -> None:
     dataset = Dataset(pd.DataFrame({"vector": [[1.0, 2.0], [3.0, 4.0]]}))
     with pytest.raises(CPDataKitError, match="scalar numeric"):
         plot_histogram(dataset, schema, "vector")
+
+
+def test_xy_plot_uses_declared_fields_and_units() -> None:
+    schema = make_profile_schema(
+        "thermal-cycle",
+        [
+            make_field_schema("time", "float", required=True, unit="s"),
+            make_field_schema("temperature", "float", required=True, unit="K"),
+        ],
+    )
+    dataset = Dataset(pd.DataFrame({"time": [0.0, 60.0], "temperature": [298.15, 373.15]}))
+
+    _, ax = plotting.plot_xy(dataset, schema, "time", "temperature")
+
+    assert ax.get_xlabel() == "time [s]"
+    assert ax.get_ylabel() == "temperature [K]"
+    assert ax.get_title() == "temperature vs time"
+
+
+@pytest.mark.parametrize(
+    ("field", "dtype", "shape", "message"),
+    [
+        ("undeclared", "float", (), "absent or undeclared"),
+        ("vector", "float", (2,), "scalar numeric"),
+        ("label", "string", (), "scalar numeric"),
+    ],
+)
+def test_xy_plot_rejects_fields_outside_scalar_numeric_contract(
+    field: str, dtype: str, shape: tuple[int, ...], message: str
+) -> None:
+    fields = [make_field_schema("time", "float", required=True, unit="s")]
+    if field != "undeclared":
+        fields.append(
+            make_field_schema(
+                field,
+                dtype,  # type: ignore[arg-type]
+                required=True,
+                shape=shape,
+                unit="K" if dtype == "float" else None,
+            )
+        )
+    schema = make_profile_schema("thermal-cycle", fields)
+    values = [[1.0, 2.0]] if shape else ["hold"]
+    dataset = Dataset(pd.DataFrame({"time": [0.0], field: values}))
+
+    with pytest.raises(CPDataKitError, match=message):
+        plotting.plot_xy(dataset, schema, "time", field)
 
 
 @pytest.mark.parametrize("extension", [".png", ".svg"])

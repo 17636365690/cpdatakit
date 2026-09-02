@@ -1,0 +1,24 @@
+{
+  "mappings": [
+    {
+      "source": "elapsed_min",
+      "target": "time",
+      "input_unit": "min",
+      "output_unit": "s",
+      "source_note": "Exporter records elapsed time in minutes."
+    },
+    {
+      "source": "temp_c",
+      "target": "temperature",
+      "input_unit": "degC",
+      "output_unit": "K",
+      "source_note": "Exporter records temperature in degrees Celsius."
+    },
+    {
+      "source": "cycle_stage",
+      "target": "stage",
+      "source_note": "Exporter stage label renamed to the contract field."
+    }
+  ],
+  "drop_unmapped": true
+}

@@ -5,8 +5,9 @@
 [![PyPI](https://img.shields.io/pypi/v/cpdatakit)](https://pypi.org/project/cpdatakit/)
 [![License](https://img.shields.io/github/license/17636365690/cpdatakit)](https://github.com/17636365690/cpdatakit/blob/main/LICENSE)
 
-CPDataKit is a solver-independent Python toolkit for checking, normalizing, summarizing, and
-plotting crystal-plasticity simulation data.
+CPDataKit is a schema-first Python toolkit for validating, normalizing, and auditing scientific and
+engineering data. The project started from crystal-plasticity workflows, which remain its first
+fully supported vertical.
 
 > **Alpha software:** A passing validation report confirms that the records match the selected
 > schema. Use domain methods to interpret physical results. The bundled data use a fixed seed, and
@@ -14,9 +15,10 @@ plotting crystal-plasticity simulation data.
 
 ## When it helps
 
-A hand-off can be as small as a column name. One exporter writes `eps`, another writes `strain`.
-One stores `sigma_pa` in Pa, another expects `stress` in MPa. CPDataKit puts those choices in a
-schema and an explicit mapping file, then keeps the validation result with the converted data.
+A hand-off can be as small as a column name. One exporter stores temperature in degrees Celsius,
+another expects kelvin. A crystal-plasticity exporter writes `sigma_pa`, while an analysis expects
+`stress` in MPa. CPDataKit puts those choices in a schema and an explicit mapping file, then keeps
+the validation result with the converted data.
 
 Use it before an analysis script, when exchanging files with a colleague, or when you need to
 explain later why a column was renamed. The package stays at the data boundary and keeps data
@@ -25,11 +27,16 @@ cover CPDataKit HDF5, selected DAMASK DADF5 data, and the Surfalex reference wor
 
 ## Supported contracts and formats
 
-The built-in CPDataKit schema v1.0 has three profiles:
+The built-in CPDataKit schema v1.0 has three compatibility profiles from the original
+crystal-plasticity vertical:
 
 - `curve`: ordered macroscopic steps such as time, strain, stress, and load curves.
 - `point`: material-point, integration-point, element, or sample records.
 - `field2d`: scalar samples with two-dimensional Cartesian coordinates.
+
+External JSON schemas may use other non-empty profile names while keeping the same explicit field,
+dtype, unit, shape, and convention rules. See the complete non-CP
+[`thermal-cycle` example](https://github.com/17636365690/cpdatakit/tree/main/examples/thermal-cycle).
 
 Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
 take units and semantics from the selected schema. HDF5 stores the units, mapping, validation
@@ -56,7 +63,7 @@ python -m pip install cpdatakit
 For a pinned GitHub release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.4.0/cpdatakit-0.4.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.5.0/cpdatakit-0.5.0-py3-none-any.whl"
 ```
 
 Then follow the
@@ -109,7 +116,7 @@ The examples and tests cover these paths:
 ## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
-- [v0.4.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.4.0)
+- [v0.5.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.5.0)
 - [Quickstart](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring and mapping guide](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [Examples](https://github.com/17636365690/cpdatakit/tree/main/examples)
@@ -117,6 +124,17 @@ The examples and tests cover these paths:
 - [Roadmap and Issue tracker](https://github.com/17636365690/cpdatakit/issues)
 
 ## Command line
+
+Run the generic thermal-cycle workflow with an external profile and explicit mapping:
+
+```bash
+cpdatakit validate examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json
+cpdatakit convert examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --output thermal-cycle.h5
+cpdatakit plot thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output temperature-vs-time.png
+```
+
+The example README includes `summary`, `inspect`, `report`, and `compare` as well. Crystal
+plasticity remains available through the original built-in profiles and commands below.
 
 Validate and write a JSON report:
 
@@ -254,8 +272,9 @@ the field rules it should follow. That gives the next change something concrete 
 
 ## Scope and roadmap
 
-Version 0.4.0 accepts in-memory tables, explicit vectors and tensors, and scalar `field2d` data. It
-also includes schema contract diffs and offline comparisons of aggregate JSON reports. Native HDF5
+Version 0.5 generalizes external profile names while retaining the v0.4 in-memory table, fixed-shape
+value, and HDF5 1.0 contracts. It includes schema contract diffs, offline aggregate comparisons, and
+a schema-driven x-y plot. Native HDF5
 inspection uses bounded reads. Report analysis uses the existing validation and statistics APIs. The
 bundled DAMASK DADF5 reader covers a documented read-only selection. New adapters use the documented
 format evidence, license review, and reproducible-fixture process. See the

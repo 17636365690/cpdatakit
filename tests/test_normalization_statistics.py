@@ -86,6 +86,38 @@ def test_summary_values_and_not_available(curve: Dataset) -> None:
     assert report["missing_values"]["time"] == "not available"
 
 
+def test_custom_profile_summary_does_not_include_cp_identifier_statistics() -> None:
+    schema = make_profile_schema(
+        "thermal-cycle",
+        [make_field_schema("temperature", "float", required=True, unit="K")],
+    )
+    dataset = Dataset(
+        pd.DataFrame({"temperature": [298.15, 373.15]}),
+        {"units": {"temperature": "K"}},
+    )
+
+    report = summarize_dataset(dataset, schema)
+
+    assert report["numeric_fields"]["temperature"]["max"] == 373.15
+    assert "unique_grains" not in report
+    assert "unique_phases" not in report
+
+
+def test_shaped_numeric_summary_is_not_flattened_into_scalar_statistics() -> None:
+    schema = make_profile_schema(
+        "sensor-array",
+        [make_field_schema("reading", "float", required=True, shape=[2], unit="K")],
+    )
+    dataset = Dataset(
+        pd.DataFrame({"reading": [[298.15, 299.15], [300.15, 301.15]]}),
+        {"units": {"reading": "K"}},
+    )
+
+    report = summarize_dataset(dataset, schema)
+
+    assert report["numeric_fields"]["reading"] == "not available"
+
+
 @pytest.mark.parametrize(
     ("shape", "raw", "expected"),
     [

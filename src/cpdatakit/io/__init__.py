@@ -18,7 +18,7 @@ from ..exceptions import DataReadError, DataValidationError, OutputExistsError, 
 from ..model import Dataset, ValidationResult
 from ..provenance import build_provenance
 from ..schema import (
-    SUPPORTED_PROFILES,
+    BUILTIN_PROFILES,
     SUPPORTED_SCHEMA_VERSION,
     ProfileSchema,
     schema_sha256,
@@ -125,8 +125,8 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
         raise DataReadError(f"Unsupported HDF5 metadata format_version {format_version!r}: {path}")
 
     profile = _required_text_attr(handle, "profile", path)
-    if profile not in SUPPORTED_PROFILES:
-        raise DataReadError(f"Unsupported HDF5 metadata profile {profile!r}: {path}")
+    if not profile.strip():
+        raise DataReadError(f"HDF5 metadata profile must be non-empty: {path}")
 
     schema_version = _required_text_attr(handle, "schema_version", path)
     if schema_version != SUPPORTED_SCHEMA_VERSION:
@@ -143,6 +143,10 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
     snapshot = _read_schema_snapshot(handle, path, profile, schema_version)
     if snapshot is not None:
         metadata["schema_snapshot"] = snapshot
+    elif profile not in BUILTIN_PROFILES:
+        raise DataReadError(
+            f"HDF5 metadata custom profile {profile!r} requires an embedded schema snapshot: {path}"
+        )
     return metadata
 
 

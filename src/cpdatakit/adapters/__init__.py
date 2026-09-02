@@ -1,6 +1,15 @@
 """Optional external-format adapter interfaces and implementations."""
 
-from .base import DatasetAdapter
+from .base import AdapterInfo, DatasetAdapter
 from .damask_dadf5 import DamaskDADF5Adapter
+from .registry import DEFAULT_ADAPTER_REGISTRY, AdapterRegistry
 
-__all__ = ["DamaskDADF5Adapter", "DatasetAdapter"]
+DEFAULT_ADAPTER_REGISTRY.register(DamaskDADF5Adapter)
+
+__all__ = [
+    "DEFAULT_ADAPTER_REGISTRY",
+    "AdapterInfo",
+    "AdapterRegistry",
+    "DamaskDADF5Adapter",
+    "DatasetAdapter",
+]

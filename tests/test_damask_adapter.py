@@ -81,6 +81,22 @@ def test_damask_dadf5_adapter_loads_selected_datasets(tmp_path: Path) -> None:
     assert validate_dataset(dataset, "point").valid
 
 
+def test_damask_dadf5_adapter_detects_format_without_loading(tmp_path: Path) -> None:
+    path = tmp_path / "result.hdf5"
+    _write_dadf5(path)
+    unrelated = tmp_path / "unrelated.hdf5"
+    with h5py.File(unrelated, "w") as handle:
+        handle.attrs["format"] = "Other"
+
+    implementation = type(_adapter())
+
+    assert implementation.info().name == "damask-dadf5"
+    assert implementation.info().format_name == "DAMASK DADF5"
+    assert implementation.detect(path) is True
+    assert implementation.detect(unrelated) is False
+    assert adapters.DEFAULT_ADAPTER_REGISTRY.get("damask-dadf5") is implementation
+
+
 @pytest.mark.parametrize("version", [(0, 13), (2, 0)])
 def test_damask_dadf5_adapter_rejects_unsupported_version(
     tmp_path: Path, version: tuple[int, int]

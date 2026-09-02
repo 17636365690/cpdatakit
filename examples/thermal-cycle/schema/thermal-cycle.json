@@ -1,0 +1,49 @@
+{
+  "profile": "thermal-cycle",
+  "schema_version": "1.0",
+  "extension_prefix": "user_",
+  "conventions": {
+    "time_basis": "elapsed time from the start of the recorded cycle",
+    "temperature_basis": "absolute thermodynamic temperature",
+    "stage_semantics": "producer-declared cycle stage label"
+  },
+  "fields": [
+    {
+      "name": "time",
+      "aliases": ["elapsed_min"],
+      "required": true,
+      "dtype": "float",
+      "shape": [],
+      "role": "time",
+      "unit": "s",
+      "allow_missing": false,
+      "minimum": 0,
+      "index": true,
+      "unique": true,
+      "description": "Elapsed time from the start of the thermal cycle."
+    },
+    {
+      "name": "temperature",
+      "aliases": ["temp_c"],
+      "required": true,
+      "dtype": "float",
+      "shape": [],
+      "role": "measured_quantity",
+      "unit": "K",
+      "allow_missing": false,
+      "minimum": 0,
+      "description": "Measured absolute temperature."
+    },
+    {
+      "name": "stage",
+      "aliases": ["cycle_stage"],
+      "required": true,
+      "dtype": "string",
+      "shape": [],
+      "role": "category",
+      "unit": null,
+      "allow_missing": false,
+      "description": "Producer-declared stage of the thermal cycle."
+    }
+  ]
+}

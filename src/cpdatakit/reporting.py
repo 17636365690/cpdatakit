@@ -9,7 +9,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from .adapters import DamaskDADF5Adapter
+from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import CPDataKitError, OutputExistsError
 from .inspection import inspect_dataset, sanitize_for_output
 from .io import load_dataset
@@ -342,6 +342,10 @@ def render_report_html(report: Mapping[str, Any]) -> str:
 
 
 def _load_for_report(path: Path, inspection: Mapping[str, Any]):
+    adapter = inspection.get("adapter", {})
+    if isinstance(adapter, Mapping) and adapter.get("registry_name") == "damask-dadf5":
+        implementation = DEFAULT_ADAPTER_REGISTRY.get("damask-dadf5")
+        return implementation().load(path)
     if inspection.get("file", {}).get("format") == "DAMASK DADF5":
         return DamaskDADF5Adapter().load(path)
     return load_dataset(path)

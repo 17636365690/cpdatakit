@@ -14,6 +14,11 @@ entry contains `name`, `aliases`, `required`, `dtype`, per-record `shape`, `role
 `allow_missing`, range/index constraints, and a description. A profile also carries conventions
 and an extension prefix. Readers support schema version `1.0`.
 
+An external JSON schema may use any non-empty profile name. Bare names such as `curve` resolve only
+bundled schemas; pass a JSON path for an external profile. Generalization does not relax field
+declaration: fields must be declared or use the schema's existing explicit extension prefix, and
+numeric fields must declare units and shapes. CPDataKit does not infer scientific meaning.
+
 Aliases document accepted source names and take effect through an explicit `FieldMapping`. Custom
 fields are fully declared in a custom schema or begin with `user_`.
 
@@ -88,6 +93,12 @@ schema, its exact canonical JSON representation, profile/version, and digest. Le
 files that lack these additive attributes remain readable. A snapshot must contain all of its paired
 attributes. The writer rejects empty datasets because the HDF5 table contract requires a non-zero
 record count and the current reader refuses empty tables.
+
+For backward compatibility, a legacy HDF5 1.0 file using built-in `curve`, `point`, or `field2d` may
+omit the schema snapshot. A non-built-in profile must include a verified canonical `schema_json` and
+matching `schema_sha256`; without them the reader cannot establish the custom contract and fails
+closed. This rule adds no required root attribute to legacy built-in files and does not change
+`format_version=1.0`.
 
 `write_hdf5()` writes validated results by default. To record an invalid validation result, pass
 `allow_invalid=True`. HDF5 writes use a same-directory temporary file and replace the target after

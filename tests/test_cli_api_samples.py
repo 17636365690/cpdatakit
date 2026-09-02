@@ -71,6 +71,71 @@ def test_cli_hdf5_and_plot(curve: Dataset, tmp_path: Path) -> None:
     assert png.exists()
 
 
+def test_cli_xy_plot_for_custom_profile(tmp_path: Path) -> None:
+    schema = tmp_path / "thermal-cycle.json"
+    schema.write_text(
+        json.dumps(
+            {
+                "profile": "thermal-cycle",
+                "schema_version": "1.0",
+                "fields": [
+                    {"name": "time", "dtype": "float", "required": True, "unit": "s"},
+                    {
+                        "name": "temperature",
+                        "dtype": "float",
+                        "required": True,
+                        "unit": "K",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    data = tmp_path / "thermal-cycle.csv"
+    data.write_text("time,temperature\n0.0,298.15\n60.0,373.15\n", encoding="utf-8")
+    output = tmp_path / "thermal-cycle.png"
+
+    status = main(
+        [
+            "plot",
+            str(data),
+            "--schema",
+            str(schema),
+            "--kind",
+            "xy",
+            "--x",
+            "time",
+            "--y",
+            "temperature",
+            "--output",
+            str(output),
+        ]
+    )
+
+    assert status == 0
+    assert output.stat().st_size > 100
+
+
+def test_cli_xy_plot_requires_both_axes(tmp_path: Path) -> None:
+    data = tmp_path / "thermal-cycle.csv"
+    data.write_text("time,temperature\n0.0,298.15\n", encoding="utf-8")
+
+    status = main(
+        [
+            "plot",
+            str(data),
+            "--schema",
+            "curve",
+            "--kind",
+            "xy",
+            "--output",
+            str(tmp_path / "missing-axes.png"),
+        ]
+    )
+
+    assert status == 2
+
+
 def test_sample_generation_is_reproducible(tmp_path: Path) -> None:
     first, second = tmp_path / "one", tmp_path / "two"
     generate_sample_data(first)

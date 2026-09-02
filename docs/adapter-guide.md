@@ -6,6 +6,30 @@ conventions. A pure-Python reader with a focused, documented scope can live in t
 Readers that depend on solver runtimes or heavy format-specific libraries use an optional
 package/extra. The current DAMASK reader is a focused core reader built on h5py.
 
+## Registration and detection boundary
+
+`DatasetAdapter.load(path)` remains the only required method. Existing subclasses that implement
+only `load()` remain concrete. Optional class metadata is exposed through immutable `AdapterInfo`
+values with a stable name, display format name, and capability labels. The default `detect()` returns
+`False`, so detection is opt-in.
+
+`AdapterRegistry` registers adapter classes, not instances. It can list descriptors, resolve a
+stable name to a class, and return every detector matching a path. Callers construct the resolved
+class themselves and supply format-specific scientific selections. Duplicate names are rejected.
+`DEFAULT_ADAPTER_REGISTRY` contains the bundled DAMASK DADF5 adapter. This v0.5 boundary is
+in-process only; it does not discover Python entry points or install plugins.
+
+```python
+from cpdatakit.adapters import DEFAULT_ADAPTER_REGISTRY
+
+adapter_class = DEFAULT_ADAPTER_REGISTRY.get("damask-dadf5")
+adapter = adapter_class(label="Taylor", datasets=["F", "P"])
+dataset = adapter.load("result.hdf5")
+```
+
+Detection identifies a representation, not a valid or unambiguous scientific selection. A DADF5
+file with multiple labels is detected as DADF5 and still requires the caller to choose a label.
+
 ## Acceptance checklist
 
 An adapter proposal should satisfy every item before contribution:

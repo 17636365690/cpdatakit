@@ -1,5 +1,9 @@
 # Architecture
 
+CPDataKit has a generic scientific-data contract core and a crystal-plasticity compatibility
+vertical. The core does not infer physical semantics. It operates on tabular records whose fields,
+units, scalar or fixed per-record shapes, constraints, and conventions are explicitly declared.
+
 The `src` package separates contracts (`schema`, `model`), boundary failures (`exceptions`),
 read/write (`io`), pure transformations (`normalization`), checks (`validation`), descriptive
 output (`statistics`), structure inspection (`inspection`), offline report rendering (`reporting`),
@@ -13,6 +17,16 @@ ship as package resources, so installed wheels resolve them directly. External-f
 use `DatasetAdapter` or a case-specific documented extractor with a focused read-only contract and
 independent evidence. The bundled DAMASK DADF5 reader uses h5py and keeps the DAMASK runtime outside
 the import path.
+
+Bundled `curve`, `point`, and `field2d` schemas, grain/phase summary enrichment, stress-strain and
+identifier plots, and the DAMASK adapter form the CP vertical. Generic profiles arrive as explicit
+JSON schemas and use the same core without acquiring CP fields or statistics. CP-specific functions
+remain available as compatibility entry points rather than implicit requirements of every profile.
+
+External adapters retain `DatasetAdapter.load(path)`. Optional immutable descriptors and format
+detection are registered in an in-process `AdapterRegistry`; detection identifies representation
+only and never chooses scientific selections. Native CSV, JSON records, and CPDataKit HDF5 stay in
+the core reader boundary.
 
 The `inspect` boundary uses h5py directly for CPDataKit HDF5 attrs, dataset shape/dtype/chunks, and
 bounded slices. Structure discovery therefore stays independent of full-table materialization. The

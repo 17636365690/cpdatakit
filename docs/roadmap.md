@@ -12,6 +12,14 @@
   comparison/report bundles, and compatibility tests. The schema command compares contracts. The
   comparison command reads JSON reports and compares their schema, validation, structure, and
   scalar statistics.
+- **v0.5.0 (released 2026-09-02):** scientific/engineering contract-core positioning, external
+  non-CP profile names, self-describing custom-profile HDF5 1.0 files, generic x-y plots, explicit
+  separation of CP identifier statistics, a lightweight adapter registry, and a complete
+  thermal-cycle example.
+
+Potential v0.6 work includes explicit migration manifests, additional evidence-backed adapters,
+and richer schema-driven generic plots. N-dimensional array models, mesh topology, bulk new storage
+formats, physical inference, GUI/cloud platforms, and solver execution require separate designs and
+are not implied by v0.5.
 
 Further DADF5 and ODB coverage follows the documented evidence and license review process.
-
