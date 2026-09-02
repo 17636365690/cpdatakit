@@ -268,6 +268,7 @@ def test_inspect_identifies_damask_dadf5(tmp_path: Path) -> None:
 
     assert result["file"]["format"] == "DAMASK DADF5"
     assert result["adapter"]["name"] == "DamaskDADF5Adapter"
+    assert result["adapter"]["registry_name"] == "damask-dadf5"
     assert result["adapter"]["label"] == "Taylor"
     assert result["fields"][0]["name"] == "point_id"
     field = next(field for field in result["fields"] if field["name"].startswith("user_dadf5_"))
@@ -303,3 +304,20 @@ def test_inspect_hdf5_reports_schema_snapshot(curve: Dataset, tmp_path: Path) ->
         "sha256": schema_sha256(schema),
         "uri": "https://example.org/schema.json",
     }
+
+
+def test_inspect_hdf5_does_not_require_unit_for_declared_string_field(tmp_path: Path) -> None:
+    from cpdatakit.inspection import inspect_hdf5_structure
+    from cpdatakit.schema import make_field_schema, make_profile_schema
+
+    schema = make_profile_schema(
+        "thermal-cycle",
+        [make_field_schema("stage", "string", required=True, unit=None)],
+    )
+    dataset = Dataset(pd.DataFrame({"stage": ["ambient", "hold"]}))
+    output = tmp_path / "stages.h5"
+    write_hdf5(dataset, output, schema, validate_dataset(dataset, schema))
+
+    result = inspect_hdf5_structure(output)
+
+    assert result["risks"]["structural"] == []

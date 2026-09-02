@@ -1,0 +1,5 @@
+elapsed_min,temp_c,cycle_stage
+0,25,ambient
+10,150,heating
+20,150,hold
+30,25,cooling

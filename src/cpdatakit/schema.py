@@ -16,7 +16,8 @@ from typing import Any, Literal
 from .exceptions import SchemaError
 
 SUPPORTED_SCHEMA_VERSION = "1.0"
-SUPPORTED_PROFILES = {"curve", "point", "field2d"}
+BUILTIN_PROFILES = frozenset({"curve", "point", "field2d"})
+SUPPORTED_PROFILES = BUILTIN_PROFILES
 SUPPORTED_DTYPES = {"float", "integer", "string", "boolean"}
 
 
@@ -80,6 +81,9 @@ class ProfileSchema:
     def field_map(self) -> dict[str, FieldSchema]:
         """Map standard names to definitions."""
         return {item.name: item for item in self.fields}
+
+
+SchemaInput = str | Path | ProfileSchema | Mapping[str, Any]
 
 
 def _validate_field(item: FieldSchema) -> None:
@@ -151,8 +155,8 @@ def _validate_field(item: FieldSchema) -> None:
 
 
 def _validate_profile(schema: ProfileSchema) -> ProfileSchema:
-    if not isinstance(schema.profile, str) or schema.profile not in SUPPORTED_PROFILES:
-        raise SchemaError(f"Unsupported profile {schema.profile!r}")
+    if not isinstance(schema.profile, str) or not schema.profile.strip():
+        raise SchemaError("Schema 'profile' must be a non-empty string")
     if schema.schema_version != SUPPORTED_SCHEMA_VERSION:
         raise SchemaError(
             f"Unsupported schema version {schema.schema_version!r}; supported: "
@@ -268,7 +272,7 @@ def make_profile_schema(
     return _validate_profile(schema)
 
 
-def validate_schema(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> ProfileSchema:
+def validate_schema(schema: SchemaInput) -> ProfileSchema:
     """Validate a schema object, JSON mapping, built-in profile, or JSON path."""
     if isinstance(schema, ProfileSchema):
         return _validate_profile(schema)
@@ -277,7 +281,7 @@ def validate_schema(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> P
     return load_schema(schema)
 
 
-def schema_to_dict(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> dict[str, Any]:
+def schema_to_dict(schema: SchemaInput) -> dict[str, Any]:
     """Return a validated schema as a JSON-serializable mapping."""
     contract = validate_schema(schema)
     return {
@@ -307,7 +311,7 @@ def schema_to_dict(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> di
     }
 
 
-def schema_to_canonical_json(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> str:
+def schema_to_canonical_json(schema: SchemaInput) -> str:
     """Return compact deterministic JSON for schema hashing and snapshots."""
     contract = validate_schema(schema)
     try:
@@ -322,20 +326,18 @@ def schema_to_canonical_json(schema: str | Path | ProfileSchema | Mapping[str, A
         raise SchemaError(f"Schema is not JSON serializable: {exc}") from exc
 
 
-def schema_sha256(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> str:
+def schema_sha256(schema: SchemaInput) -> str:
     """Return SHA-256 of the canonical schema JSON UTF-8 bytes."""
     return hashlib.sha256(schema_to_canonical_json(schema).encode("utf-8")).hexdigest()
 
 
-def schema_to_json(
-    schema: str | Path | ProfileSchema | Mapping[str, Any], *, indent: int = 2
-) -> str:
+def schema_to_json(schema: SchemaInput, *, indent: int = 2) -> str:
     """Render a validated schema as canonical, human-readable JSON."""
     return json.dumps(schema_to_dict(schema), indent=indent, sort_keys=True) + "\n"
 
 
 def write_schema(
-    schema: str | Path | ProfileSchema | Mapping[str, Any],
+    schema: SchemaInput,
     output: str | Path,
     *,
     force: bool = False,
@@ -349,7 +351,7 @@ def write_schema(
     return target
 
 
-def describe_schema(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> str:
+def describe_schema(schema: SchemaInput) -> str:
     """Return a concise Markdown description of a validated schema contract."""
     contract = validate_schema(schema)
     lines = [
@@ -375,12 +377,14 @@ def describe_schema(schema: str | Path | ProfileSchema | Mapping[str, Any]) -> s
     return "\n".join(lines) + "\n"
 
 
-def load_schema(schema: str | Path | ProfileSchema) -> ProfileSchema:
+def load_schema(schema: SchemaInput) -> ProfileSchema:
     """Load a built-in profile name or a JSON schema path."""
     if isinstance(schema, ProfileSchema):
         return _validate_profile(schema)
+    if isinstance(schema, Mapping):
+        return _parse(schema)
     path = Path(schema)
-    if str(schema) in SUPPORTED_PROFILES and not path.exists():
+    if str(schema) in BUILTIN_PROFILES and not path.exists():
         resource = files("cpdatakit.schemas").joinpath(f"{schema}.json")
         try:
             return _parse(json.loads(resource.read_text(encoding="utf-8")))

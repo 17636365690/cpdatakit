@@ -1,23 +1,24 @@
 # CPDataKit
 
-CPDataKit 是一个与求解器无关的 Python 工具包，用来在晶体塑性模拟数据进入分析脚本或交给
-其他工具前，检查字段、单位和形状，并完成标准化、统计和绘图。
+CPDataKit 是一个面向科学和工程数据的 schema-first Python 验证、标准化和审计工具。项目最初
+从晶体塑性工作流开始，crystal plasticity 仍然是第一个完整支持的垂直场景。
 
 > **Alpha 版本：** 验证报告说明记录是否符合所选 schema。物理结果使用领域方法解释。
 > 仓库示例使用固定随机种子，公开参考数据保留在上游来源。
 
 ## 什么时候用
 
-数据交接时，字段名和单位很容易分叉。比如导出器给出 `eps` 和 `sigma_pa`，分析脚本却需要
-`strain` 和 `stress`。CPDataKit 把这些约定写进 schema 和 mapping 文件，并把验证结果保存
-到输出 HDF5。
+数据交接时，字段名和单位很容易分叉。例如热循环导出器使用摄氏度而下游需要开尔文；晶体
+塑性导出器给出 `eps` 和 `sigma_pa`，分析脚本却需要 `strain` 和 `stress`。CPDataKit 把这些
+约定写进 schema 和 mapping 文件，并把验证结果保存到输出 HDF5。
 
 它可以放在分析脚本前或文件交接环节，也适合记录字段改名的原因。CPDataKit 把数据契约、
 来源、验证和单位转换集中在数据边界，并提供 CPDataKit HDF5、选定 DAMASK DADF5 数据和
 Surfalex 公开参考流程的文档化路径。
 
-v0.4.0 支持 `curve`、`point` 和 `field2d` 三种 profile，读取 UTF-8 CSV、JSON records 和
-CPDataKit 自有 HDF5，并提供 schema diff 与离线报告比较。schema 显式声明字段、类型、shape、
+内置 `curve`、`point` 和 `field2d` 是来自 CP 垂直场景的兼容 profile。外部 JSON schema 可使用
+其他非空 profile 名称。CPDataKit 读取 UTF-8 CSV、JSON records 和自有 HDF5，并提供 schema
+diff 与离线报告比较。schema 显式声明字段、类型、shape、
 物理角色、单位、缺失值、索引、
 范围与科学约定。应力/应变量、张量顺序、取向表达、单位和 ID 含义都通过 schema 或 mapping
 显式提供。DAMASK DADF5 只读适配器在文件中存在一个明确选择时，也能完成检查和报告。
@@ -26,7 +27,7 @@ CPDataKit 会把它记录为由调用方管理的 provenance。
 
 ## 安装与快速开始
 
-当前 `v0.4.0` 已发布到 PyPI，使用以下命令安装：
+当前 `v0.5.0` 已发布到 PyPI，使用以下命令安装：
 
 ```powershell
 python -m pip install cpdatakit
@@ -35,7 +36,7 @@ python -m pip install cpdatakit
 如果需要固定 GitHub Release wheel，可使用：
 
 ```powershell
-python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.4.0/cpdatakit-0.4.0-py3-none-any.whl"
+python -m pip install "https://github.com/17636365690/cpdatakit/releases/download/v0.5.0/cpdatakit-0.5.0-py3-none-any.whl"
 ```
 
 然后按照[五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
@@ -53,11 +54,13 @@ python -m pip install "https://github.com/17636365690/cpdatakit/releases/downloa
 - 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
 - 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，查看显式张量 mapping、来源 hash
   和 schema provenance。流程按需下载第三方原始文件，并记录来源 hash。
+- 运行不含晶体塑性字段的 `examples/thermal-cycle/`，完成自定义 profile、显式温度/时间单位
+  转换、HDF5 round-trip、检查、报告、比较和通用 x-y 绘图。
 
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.4.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.4.0)
+- [v0.5.0 GitHub Release](https://github.com/17636365690/cpdatakit/releases/tag/v0.5.0)
 - [五分钟快速教程](https://github.com/17636365690/cpdatakit/blob/main/docs/quickstart.md)
 - [Schema authoring 与 mapping 指南](https://github.com/17636365690/cpdatakit/blob/main/docs/schema-authoring.md)
 - [示例目录](https://github.com/17636365690/cpdatakit/tree/main/examples)
@@ -78,6 +81,14 @@ cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.png
 cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.svg
 cpdatakit inspect curve.h5 --format json --output inspect.json
 cpdatakit report curve.h5 --schema curve --output report.html
+```
+
+通用热循环示例的核心命令如下，完整流程见 `examples/thermal-cycle/README.md`：
+
+```powershell
+cpdatakit validate examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json
+cpdatakit convert examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --output thermal-cycle.h5
+cpdatakit plot thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output temperature-vs-time.png
 ```
 
 对于字段名或单位不同的导出数据，可显式提供 mapping 文件：
@@ -153,4 +164,3 @@ window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
 Apache-2.0，依赖许可核查见
 [NOTICE](https://github.com/17636365690/cpdatakit/blob/main/NOTICE)，引用信息见
 [CITATION.cff](https://github.com/17636365690/cpdatakit/blob/main/CITATION.cff)。
-

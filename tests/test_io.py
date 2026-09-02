@@ -120,6 +120,48 @@ def test_hdf5_roundtrip_and_provenance(curve_csv: Path, tmp_path: Path) -> None:
         write_hdf5(dataset, output, schema, validation)
 
 
+def test_custom_profile_hdf5_round_trip(tmp_path: Path) -> None:
+    schema = make_profile_schema(
+        "thermal-cycle",
+        [
+            make_field_schema(
+                "time", "float", required=True, unit="s", minimum=0, index=True, unique=True
+            ),
+            make_field_schema("temperature", "float", required=True, unit="K"),
+        ],
+    )
+    dataset = Dataset(
+        pd.DataFrame({"time": [0.0, 60.0], "temperature": [298.15, 373.15]}),
+        {"units": {"time": "s", "temperature": "K"}},
+    )
+    output = tmp_path / "thermal-cycle.h5"
+
+    write_hdf5(dataset, output, schema, validate_dataset(dataset, schema))
+    loaded = load_hdf5(output)
+
+    assert loaded.metadata["profile"] == "thermal-cycle"
+    assert loaded.metadata["schema_snapshot"]["schema"]["profile"] == "thermal-cycle"
+    assert validate_dataset(loaded, schema).valid
+
+
+def test_custom_profile_hdf5_without_schema_snapshot_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "custom-without-snapshot.h5"
+    _write_minimal_cpdatakit_hdf5(path, {"profile": "thermal-cycle"})
+
+    with pytest.raises(DataReadError, match=r"custom profile.*schema snapshot"):
+        load_hdf5(path)
+
+
+def test_legacy_builtin_hdf5_without_schema_snapshot_remains_readable(tmp_path: Path) -> None:
+    path = tmp_path / "legacy-curve.h5"
+    _write_minimal_cpdatakit_hdf5(path)
+
+    loaded = load_hdf5(path)
+
+    assert loaded.metadata["profile"] == "curve"
+    assert "schema_snapshot" not in loaded.metadata
+
+
 def test_structurally_wrong_hdf5(tmp_path: Path) -> None:
     path = tmp_path / "wrong.h5"
     with h5py.File(path, "w") as handle:

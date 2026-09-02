@@ -12,7 +12,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from .adapters import DamaskDADF5Adapter
+from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import AdapterError, CPDataKitError, DataReadError, OutputExistsError
 from .io import _ensure_readable, _read_hdf5_metadata, iter_hdf5_chunks, load_dataset
 from .model import Dataset, ValidationResult
@@ -463,8 +463,21 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
             snapshot_summary["uri"] = _safe_uri(snapshot["uri"])
     result["hdf5"]["schema_snapshot"] = snapshot_summary
     result["record_count"] = record_count
+    snapshot_fields: dict[str, Mapping[str, Any]] = {}
+    if isinstance(snapshot, Mapping):
+        snapshot_schema = snapshot.get("schema")
+        if isinstance(snapshot_schema, Mapping):
+            raw_fields = snapshot_schema.get("fields", [])
+            if isinstance(raw_fields, list):
+                snapshot_fields = {
+                    item["name"]: item
+                    for item in raw_fields
+                    if isinstance(item, Mapping) and isinstance(item.get("name"), str)
+                }
     for field in fields:
-        if field["unit"] == "not available":
+        declaration = snapshot_fields.get(field["name"])
+        unit_required = declaration is None or declaration.get("dtype") in {"float", "integer"}
+        if field["unit"] == "not available" and unit_required:
             result["risks"]["structural"].append(
                 {
                     "code": "unit_not_declared",
@@ -586,6 +599,7 @@ def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
         provenance={},
         adapter={
             "name": "DamaskDADF5Adapter",
+            "registry_name": adapter.adapter_name,
             "format": "DAMASK DADF5",
             "format_version": f"{major}.{minor}",
             "increment": increment_name,
@@ -613,9 +627,10 @@ def inspect_hdf5_structure(path: str | Path) -> dict[str, Any]:
 
     input_path = Path(path)
     _ensure_readable(input_path)
+    detected_adapters = DEFAULT_ADAPTER_REGISTRY.detect(input_path)
     try:
         with h5py.File(input_path, "r") as handle:
-            if "DADF5_version_major" in handle.attrs or "DADF5_version_minor" in handle.attrs:
+            if DamaskDADF5Adapter in detected_adapters:
                 return _inspect_dadf5(handle, input_path)
             return _inspect_native_hdf5(handle, input_path)
     except (DataReadError, AdapterError):

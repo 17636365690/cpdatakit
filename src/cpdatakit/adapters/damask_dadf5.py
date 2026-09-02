@@ -70,6 +70,24 @@ class DamaskDADF5Adapter(DatasetAdapter):
     namespace, and h5py handles the file access within the adapter.
     """
 
+    adapter_name = "damask-dadf5"
+    format_name = "DAMASK DADF5"
+    capabilities = frozenset({"detect", "load"})
+
+    @classmethod
+    def detect(cls, path: Path) -> bool:
+        """Detect DADF5 root version markers without choosing a data selection."""
+        input_path = Path(path)
+        if input_path.suffix.lower() not in {".h5", ".hdf5"}:
+            return False
+        try:
+            with h5py.File(input_path, "r") as handle:
+                return (
+                    "DADF5_version_major" in handle.attrs or "DADF5_version_minor" in handle.attrs
+                )
+        except OSError:
+            return False
+
     def __init__(
         self,
         *,
@@ -230,6 +248,7 @@ class DamaskDADF5Adapter(DatasetAdapter):
             "field_mapping": mapping,
             "adapter": {
                 "name": "DamaskDADF5Adapter",
+                "registry_name": self.adapter_name,
                 "format": "DAMASK DADF5",
                 "increment": increment_name,
                 "kind": self.kind,

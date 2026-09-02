@@ -7,8 +7,9 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from .domains.crystal_plasticity import summarize_cp_identifiers
 from .model import Dataset, ValidationResult
-from .schema import ProfileSchema, load_schema
+from .schema import BUILTIN_PROFILES, ProfileSchema, load_schema
 from .validation import validate_dataset
 
 
@@ -35,6 +36,10 @@ def summarize_dataset(
         series = value.data[spec.name]
         missing[spec.name] = int(series.isna().sum())
         if spec.dtype in {"float", "integer"}:
+            if spec.shape:
+                infinite[spec.name] = "not available"
+                numeric[spec.name] = "not available"
+                continue
             values = pd.to_numeric(series, errors="coerce")
             finite = values[np.isfinite(values)]
             infinite[spec.name] = int((values.notna() & ~np.isfinite(values)).sum())
@@ -48,19 +53,9 @@ def summarize_dataset(
                 if not finite.empty
                 else "not available"
             )
-    return {
+    summary = {
         "record_count": len(value.data),
         "field_count": len(value.data.columns),
-        "unique_grains": (
-            int(value.data["grain_id"].nunique(dropna=True))
-            if "grain_id" in value.data
-            else "not available"
-        ),
-        "unique_phases": (
-            int(value.data["phase_id"].nunique(dropna=True))
-            if "phase_id" in value.data
-            else "not available"
-        ),
         "numeric_fields": numeric,
         "missing_values": missing,
         "infinite_values": infinite,
@@ -72,3 +67,6 @@ def summarize_dataset(
             "interpretation remains part of the domain workflow."
         ),
     }
+    if contract.profile in BUILTIN_PROFILES:
+        summary.update(summarize_cp_identifiers(value))
+    return summary

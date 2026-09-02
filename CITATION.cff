@@ -1,14 +1,16 @@
 cff-version: 1.2.0
 message: "If you use CPDataKit, please cite this software."
-title: "CPDataKit: Crystal Plasticity Data Quality Toolkit"
+title: "CPDataKit: Scientific and Engineering Data Contract Toolkit"
 type: software
-version: 0.4.0
-date-released: 2026-08-31
+version: 0.5.0
+date-released: 2026-09-02
 authors:
   - name: "CPDataKit contributors"
 license: Apache-2.0
 repository-code: "https://github.com/17636365690/cpdatakit"
 keywords:
+  - scientific data
+  - engineering data
   - crystal plasticity
   - materials data
   - data validation

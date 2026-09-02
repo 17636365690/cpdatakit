@@ -27,6 +27,7 @@ from .plotting import (
     plot_field2d,
     plot_histogram,
     plot_stress_strain,
+    plot_xy,
     save_figure,
 )
 from .reporting import build_report, write_report
@@ -54,7 +55,7 @@ def _common(parser: argparse.ArgumentParser) -> None:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cpdatakit",
-        description="Validate and process declared crystal-plasticity data structures.",
+        description="Validate and process declared scientific and engineering data contracts.",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument(
@@ -79,9 +80,11 @@ def _parser() -> argparse.ArgumentParser:
     plot.add_argument(
         "--kind",
         required=True,
-        choices=["stress-strain", "histogram", "grain-count", "phase-count", "field2d"],
+        choices=["stress-strain", "histogram", "grain-count", "phase-count", "field2d", "xy"],
     )
     plot.add_argument("--field", help="Declared numeric field for histogram")
+    plot.add_argument("--x", help="Declared scalar numeric x-axis field for xy")
+    plot.add_argument("--y", help="Declared scalar numeric y-axis field for xy")
     plot.add_argument("--output", required=True, type=Path)
     plot.add_argument("--force", action="store_true")
     inspect = commands.add_parser("inspect", help="Inspect a file and optionally check a schema")
@@ -199,6 +202,8 @@ def _run(args: argparse.Namespace) -> int:
         return _run_inspect(args)
     if args.command == "report":
         return _run_report(args)
+    if args.command == "plot" and args.kind == "xy" and (not args.x or not args.y):
+        raise CPDataKitError("--x and --y are required for xy")
     schema = load_schema(args.schema)
     dataset = load_dataset(args.data)
     if args.mapping is not None:
@@ -246,8 +251,10 @@ def _run(args: argparse.Namespace) -> int:
         fig, _ = plot_counts(dataset, schema, "grain_id")
     elif args.kind == "phase-count":
         fig, _ = plot_counts(dataset, schema, "phase_id")
-    else:
+    elif args.kind == "field2d":
         fig, _ = plot_field2d(dataset, schema)
+    else:
+        fig, _ = plot_xy(dataset, schema, args.x, args.y)
     try:
         save_figure(fig, args.output, force=args.force)
     finally:

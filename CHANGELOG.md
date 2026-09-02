@@ -4,6 +4,28 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-02
+
+### Added
+
+- External JSON schemas can use non-CP profile names throughout validation, normalization, HDF5,
+  inspection, reports, comparisons, and CLI workflows.
+- Added schema-driven x-y plotting and a complete deterministic thermal-cycle example.
+- Added backward-compatible adapter descriptors, format detection, and an in-process registry.
+
+### Changed
+
+- Position CPDataKit as a schema-first scientific and engineering data-contract tool, with crystal
+  plasticity retained as the first supported vertical.
+- Separate generic scalar statistics from CP-specific grain and phase identifier summaries while
+  preserving built-in profile output.
+- Require verified embedded schemas for non-built-in HDF5 profiles while retaining legacy built-in
+  CPDataKit HDF5 1.0 reads.
+
+### Fixed
+
+- Do not report a missing-unit structural risk for schema-declared string fields in HDF5 files.
+
 ## [0.4.0] - 2026-08-31
 
 ### Added
@@ -127,4 +149,3 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 - CSV, JSON records, and CPDataKit HDF5 I/O with provenance.
 - Structured validation, explicit normalization, descriptive summaries, plotting, CLI, and API.
 - Deterministic synthetic datasets, tests, documentation, and cross-platform CI.
-

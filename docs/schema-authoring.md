@@ -37,6 +37,27 @@ mapping. `schema_to_dict` and `schema_to_json` provide canonical serialization f
 version control. `write_schema` preserves an existing file. Pass `force=True` when replacement is
 intended.
 
+## External profile names
+
+External JSON schemas are not limited to `curve`, `point`, or `field2d`. Use a non-empty profile
+name and pass the schema path explicitly:
+
+```json
+{
+  "profile": "thermal-cycle",
+  "schema_version": "1.0",
+  "fields": [
+    {"name": "time", "dtype": "float", "shape": [], "unit": "s", "required": true},
+    {"name": "temperature", "dtype": "float", "shape": [], "unit": "K", "required": true}
+  ]
+}
+```
+
+The profile name does not grant fields or semantics. Declare every contract field, dtype, unit, and
+per-record shape. The legacy extension prefix remains available for adapter payload compatibility,
+but v0.5 does not broaden undeclared-field acceptance. The complete runnable example is under
+`examples/thermal-cycle/`.
+
 ## Canonical schema hash
 
 Use the compact form when you need to put a schema in an artifact or compare it later:

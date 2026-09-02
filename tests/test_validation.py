@@ -76,6 +76,26 @@ def test_custom_extension_and_undeclared(curve: Dataset) -> None:
     assert "undeclared_field" in codes(validate_dataset(curve, "curve"))
 
 
+def test_non_builtin_profile_enforces_declared_fields() -> None:
+    schema = {
+        "profile": "thermal-cycle",
+        "schema_version": "1.0",
+        "fields": [
+            {
+                "name": "temperature",
+                "dtype": "float",
+                "required": True,
+                "unit": "K",
+            }
+        ],
+    }
+    dataset = pd.DataFrame({"temperature": [300.0], "mystery": [1.0]})
+
+    result = validate_dataset(dataset, schema)
+
+    assert "undeclared_field" in codes(result)
+
+
 def test_point_indices_and_coordinates() -> None:
     dataset = Dataset(
         pd.DataFrame(

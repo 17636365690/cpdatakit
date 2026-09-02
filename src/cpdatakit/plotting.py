@@ -80,6 +80,40 @@ def plot_histogram(
     return _finish(fig, ax)
 
 
+def plot_xy(
+    dataset: Dataset,
+    schema: str | ProfileSchema,
+    x: str,
+    y: str,
+) -> tuple[Figure, Axes]:
+    """Plot two declared scalar numeric fields with schema-provided units."""
+    contract = load_schema(schema)
+    declared = contract.field_map()
+    for field in (x, y):
+        if field not in dataset.data or field not in declared:
+            raise CPDataKitError(f"XY plot field is absent or undeclared: {field}")
+        spec = declared[field]
+        if spec.dtype not in {"float", "integer"} or spec.shape:
+            raise CPDataKitError(f"XY plot field must be a declared scalar numeric field: {field}")
+    try:
+        x_values = np.asarray(dataset.data[x], dtype=float)
+        y_values = np.asarray(dataset.data[y], dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise CPDataKitError("XY plot fields must contain numeric values") from exc
+    finite = np.isfinite(x_values) & np.isfinite(y_values)
+    if not finite.any():
+        raise CPDataKitError("XY plot fields have no paired finite data")
+    fig, ax = plt.subplots(figsize=(7.2, 4.5))
+    ax.plot(x_values[finite], y_values[finite], color=_BLUE, label=y)
+    ax.set(
+        title=f"{y} vs {x}",
+        xlabel=f"{x} [{_unit(contract, x)}]",
+        ylabel=f"{y} [{_unit(contract, y)}]",
+    )
+    ax.legend(frameon=False)
+    return _finish(fig, ax)
+
+
 def plot_counts(dataset: Dataset, schema: str | ProfileSchema, field: str) -> tuple[Figure, Axes]:
     """Plot record counts for grain_id or phase_id."""
     load_schema(schema)

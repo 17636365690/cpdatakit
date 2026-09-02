@@ -95,4 +95,7 @@ jobs:
           wheel-env/bin/cpdatakit summary quickstart-smoke/synthetic_curve.csv --schema curve --json-output summary.json
           wheel-env/bin/cpdatakit convert quickstart-smoke/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Fixed-seed CI quickstart"
           wheel-env/bin/cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
+          wheel-env/bin/cpdatakit validate examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --json-output thermal-validation.json
+          wheel-env/bin/cpdatakit convert examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --output thermal-cycle.h5
+          wheel-env/bin/cpdatakit plot thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output temperature-vs-time.png
 
