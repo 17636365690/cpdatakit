@@ -1,0 +1,7 @@
+{
+  "version": "0.9.2",
+  "development_status": [
+    "Development Status :: 4 - Beta"
+  ],
+  "wheel": ".artifacts/followup-20260927/final-dist/cpdatakit-0.9.2-py3-none-any.whl"
+}

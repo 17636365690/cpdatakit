@@ -22,9 +22,7 @@ from .reporting import render_report_json
 from .schema_diff import diff_schemas, render_schema_diff_markdown
 
 _STATISTICS = ("min", "max", "mean", "std")
-_SCOPE_NOTE = (
-    "This comparison covers declared schema, validation, structure, and descriptive aggregates. "
-)
+_SCOPE_NOTE = "This comparison covers declared schema, validation, structure, and descriptive aggregates."  # noqa: E501  # fmt: skip
 
 
 def _require_report(value: object, side: str) -> Mapping[str, Any]:

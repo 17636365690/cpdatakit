@@ -1,0 +1,10 @@
+ CHANGELOG.md                                       | 10 +++++
+ .../2026-09-27-review-fixes/final-diff-check.txt   | 12 ++++++
+ pyproject.toml                                     |  2 +-
+ src/cpdatakit/_atomic.py                           | 21 ++++++-----
+ src/cpdatakit/comparison.py                        |  4 +-
+ src/cpdatakit/schema.py                            |  6 +++
+ tests/test_review_atomic_text.py                   | 44 ++++++++++++++++++++--
+ tests/test_review_missing_strings.py               | 38 ++++++++++++++++---
+ tests/test_v06_release_metadata.py                 |  6 +++
+ 9 files changed, 120 insertions(+), 23 deletions(-)

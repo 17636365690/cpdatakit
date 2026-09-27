@@ -1,0 +1,58 @@
+FFF.                                                                     [100%]
+================================== FAILURES ===================================
+_ test_schema_rejects_missing_text_declarations_with_field_and_action[factory] _
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1579/test_schema_rejects_missing_te0')
+entry = 'factory'
+
+    @pytest.mark.parametrize("entry", ["factory", "mapping", "json"])
+    def test_schema_rejects_missing_text_declarations_with_field_and_action(tmp_path, entry):
+        payload = {
+            "profile": "stages",
+            "schema_version": "1.0",
+            "fields": [{"name": "stage", "dtype": "string", "allow_missing": True}],
+        }
+>       with pytest.raises(SchemaError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SchemaError
+
+tests\test_followup_schema_missing_strings.py:18: Failed
+_ test_schema_rejects_missing_text_declarations_with_field_and_action[mapping] _
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1579/test_schema_rejects_missing_te1')
+entry = 'mapping'
+
+    @pytest.mark.parametrize("entry", ["factory", "mapping", "json"])
+    def test_schema_rejects_missing_text_declarations_with_field_and_action(tmp_path, entry):
+        payload = {
+            "profile": "stages",
+            "schema_version": "1.0",
+            "fields": [{"name": "stage", "dtype": "string", "allow_missing": True}],
+        }
+>       with pytest.raises(SchemaError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SchemaError
+
+tests\test_followup_schema_missing_strings.py:18: Failed
+__ test_schema_rejects_missing_text_declarations_with_field_and_action[json] __
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1579/test_schema_rejects_missing_te2')
+entry = 'json'
+
+    @pytest.mark.parametrize("entry", ["factory", "mapping", "json"])
+    def test_schema_rejects_missing_text_declarations_with_field_and_action(tmp_path, entry):
+        payload = {
+            "profile": "stages",
+            "schema_version": "1.0",
+            "fields": [{"name": "stage", "dtype": "string", "allow_missing": True}],
+        }
+>       with pytest.raises(SchemaError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SchemaError
+
+tests\test_followup_schema_missing_strings.py:18: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_followup_schema_missing_strings.py::test_schema_rejects_missing_text_declarations_with_field_and_action[factory]
+FAILED tests/test_followup_schema_missing_strings.py::test_schema_rejects_missing_text_declarations_with_field_and_action[mapping]
+FAILED tests/test_followup_schema_missing_strings.py::test_schema_rejects_missing_text_declarations_with_field_and_action[json]
+3 failed, 1 passed in 1.49s

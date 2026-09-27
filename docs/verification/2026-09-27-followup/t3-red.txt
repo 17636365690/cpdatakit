@@ -1,0 +1,34 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+_____ test_comparison_contents_has_exact_sentence_without_trailing_space ______
+
+    def test_comparison_contents_has_exact_sentence_without_trailing_space():
+        result = compare_reports({}, {})
+        expected = (
+            "This comparison covers declared schema, validation, structure, and descriptive aggregates."
+        )
+>       assert result["scope_note"] == expected
+E       AssertionError: assert 'This compari... aggregates. ' == 'This compari...e aggregates.'
+E
+E         Skipping 79 identical leading characters in diff, use -v to show
+E         - aggregates.
+E         + aggregates.
+E         ?            +
+
+tests\test_followup_cleanup.py:16: AssertionError
+_______ test_diff_check_evidence_records_command_exit_code_and_streams ________
+
+    def test_diff_check_evidence_records_command_exit_code_and_streams():
+        path = ROOT / "docs/verification/2026-09-27-review-fixes/final-diff-check.txt"
+        text = path.read_text(encoding="utf-8")
+>       assert text.strip(), "The diff verification evidence must contain the executed check result"
+E       AssertionError: The diff verification evidence must contain the executed check result
+E       assert ''
+E        +  where '' = <built-in method strip of str object at 0x00007FFC4B789CA0>()
+E        +    where <built-in method strip of str object at 0x00007FFC4B789CA0> = ''.strip
+
+tests\test_followup_cleanup.py:24: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_followup_cleanup.py::test_comparison_contents_has_exact_sentence_without_trailing_space
+FAILED tests/test_followup_cleanup.py::test_diff_check_evidence_records_command_exit_code_and_streams
+2 failed in 0.54s

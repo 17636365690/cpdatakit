@@ -1,0 +1,10 @@
+{
+  "checked_files": 147,
+  "changed_protected_files": [],
+  "changed_existing_document_files": [
+    "CHANGELOG.md",
+    "docs/verification/2026-09-27-review-fixes/final-diff-check.txt"
+  ],
+  "version": "0.9.2",
+  "head": "034f431e45a3403debcb2ad8a2d1522ae09e8a11"
+}

@@ -64,15 +64,18 @@ def write_text_atomic(target: str | Path, text: str, *, force: bool = False) -> 
         pass
     try:
         if previous is not None:
-            if os.name == "nt":
-                _copy_windows_dacl(target, staged)
-            else:
-                os.chown(staged, previous.st_uid, previous.st_gid)
-            staged.chmod(stat.S_IMODE(previous.st_mode))
-            if sys.platform.startswith("linux"):
-                for name in os.listxattr(target):
-                    if name == "system.posix_acl_access":
-                        os.setxattr(staged, name, os.getxattr(target, name))
+            try:
+                if os.name == "nt":
+                    _copy_windows_dacl(target, staged)
+                else:
+                    os.chown(staged, previous.st_uid, previous.st_gid)
+                staged.chmod(stat.S_IMODE(previous.st_mode))
+                if sys.platform.startswith("linux"):
+                    for name in os.listxattr(target):
+                        if name == "system.posix_acl_access":
+                            os.setxattr(staged, name, os.getxattr(target, name))
+            except OSError as exc:
+                logger.warning("Permission preservation failed for %s: %s", target, exc)
         staged.write_text(text, encoding="utf-8")
         return publish_file(staged, target, force=force)
     except BaseException:

@@ -106,6 +106,12 @@ def _validate_field(item: FieldSchema) -> None:
     ]
     if invalid_options:
         raise SchemaError(f"Field {item.name!r} options must be boolean: {sorted(invalid_options)}")
+    if item.dtype == "string" and item.allow_missing:
+        raise SchemaError(
+            f"Field {item.name!r}: string fields do not support allow_missing=True; "
+            "missing text is a validation error. Set allow_missing=False and provide "
+            "text values for each record."
+        )
     if not isinstance(item.shape, tuple) or any(
         not isinstance(size, int) or isinstance(size, bool) or size <= 0 for size in item.shape
     ):

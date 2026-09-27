@@ -4,6 +4,18 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-09-27
+
+### Changed
+
+- Mark the package development status as Beta in distribution metadata.
+- Reject string fields with `allow_missing=True` during schema validation, a backward-incompatible change for third-party schemas.
+
+### Fixed
+
+- Publish atomic text output with a warning when permission preservation raises an OS error.
+- Trim the comparison summary's trailing space and record the executed diff check and its result.
+
 ## [0.9.2] - 2026-09-27
 
 ### Added

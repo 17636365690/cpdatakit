@@ -1,9 +1,9 @@
 # 中文工作台与数据报告
 
-本页对应 v0.9.2 的中文项目页面；这套界面在 v0.9.0 引入。需要 Python 3.12 或更高版本：
+本页对应 v0.9.3 的中文项目页面；这套界面在 v0.9.0 引入。需要 Python 3.12 或更高版本：
 
 ```powershell
-python -m pip install "cpdatakit==0.9.2"
+python -m pip install "cpdatakit==0.9.3"
 cpdatakit ui --workspace ./cpdatakit-workspace
 ```
 

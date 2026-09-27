@@ -1,5 +1,6 @@
 """Text writers publish complete contents and preserve prior outputs on failure."""
 
+import logging
 import os
 import stat
 import subprocess
@@ -134,20 +135,55 @@ def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, w
     assert stat.S_IMODE(target.stat().st_mode) == previous_mode
 
 
-def test_permission_copy_failure_preserves_existing_output(tmp_path, monkeypatch, writer):
+@pytest.mark.parametrize("error_type", [PermissionError, OSError])
+def test_permission_copy_failure_publishes_content_and_warns(
+    tmp_path, monkeypatch, caplog, writer, error_type
+):
     import cpdatakit._atomic as atomic
 
     target = tmp_path / "output.txt"
     target.write_bytes(b"previous complete output")
+    reference = tmp_path / "expected.txt"
+    writer(reference)
+    expected = reference.read_bytes()
 
     def denied(*args):
-        raise PermissionError("injected permission copy failure")
+        raise error_type("injected permission copy failure")
 
     if os.name == "nt":
         monkeypatch.setattr(atomic, "_copy_windows_dacl", denied)
     else:
         monkeypatch.setattr(os, "chown", denied)
-    with pytest.raises((CPDataKitError, PermissionError), match="permission copy failure"):
-        writer(target, force=True)
+    with caplog.at_level(logging.WARNING, logger="cpdatakit._atomic"):
+        assert writer(target, force=True) == target
+    assert target.read_bytes() == expected
+    assert any(
+        record.levelno == logging.WARNING and "permission copy failure" in record.getMessage()
+        for record in caplog.records
+    )
+    assert list(tmp_path.glob(".output.txt.*")) == []
+
+
+def test_content_failure_after_permission_fallback_preserves_target(tmp_path, monkeypatch):
+    import cpdatakit._atomic as atomic
+
+    target = tmp_path / "output.txt"
+    target.write_bytes(b"previous complete output")
+    original = Path.write_text
+
+    def metadata_failure(*args):
+        raise PermissionError("injected permission copy failure")
+
+    def interrupted(path, text, *args, **kwargs):
+        original(path, "partial contents", *args, **kwargs)
+        raise OSError("injected content write failure")
+
+    if os.name == "nt":
+        monkeypatch.setattr(atomic, "_copy_windows_dacl", metadata_failure)
+    else:
+        monkeypatch.setattr(os, "chown", metadata_failure)
+    monkeypatch.setattr(Path, "write_text", interrupted)
+    with pytest.raises(OSError, match="content write failure"):
+        atomic.write_text_atomic(target, "new contents", force=True)
     assert target.read_bytes() == b"previous complete output"
     assert list(tmp_path.glob(".output.txt.*")) == []
