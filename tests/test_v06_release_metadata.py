@@ -13,6 +13,12 @@ from cpdatakit import __version__
 ROOT = Path(__file__).parents[1]
 
 
+def test_project_metadata_advertises_beta_development_status() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    statuses = [item for item in project["classifiers"] if item.startswith("Development Status ::")]
+    assert statuses == ["Development Status :: 4 - Beta"]
+
+
 @pytest.mark.parametrize(
     ("version", "accepted"),
     [("2.1.4", False), ("2.2.0", True), ("2.3.3", True), ("3.0.6", True), ("4.0.0", False)],

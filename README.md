@@ -74,16 +74,16 @@ units, and identifier semantics come from the explicit schema or mapping. See
 
 ## Install
 
-Install v0.9.2 from PyPI (Python 3.12 or later):
+Install v0.9.3 from PyPI (Python 3.12 or later):
 
 ```bash
-python -m pip install "cpdatakit==0.9.2"
+python -m pip install "cpdatakit==0.9.3"
 ```
 
 To install the matching GitHub release wheel:
 
 ```bash
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.2/cpdatakit-0.9.2-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.3/cpdatakit-0.9.3-py3-none-any.whl"
 ```
 
 Then run `cpdatakit ui` and follow the [Chinese workbench guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md).
@@ -144,7 +144,7 @@ The examples and tests cover these paths:
 ## Useful links
 
 - [PyPI package](https://pypi.org/project/cpdatakit/)
-- [v0.9.2 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.2)
+- [v0.9.3 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.3)
 - [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
 - [Quickstart](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
 - [Current workbench guide (Chinese)](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
@@ -333,6 +333,6 @@ licenses and review notes are in
 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE). Bundled examples use fixed-seed
 synthetic data, and public reference files remain available from their upstream records.
 
-See the [v0.9.2 release notes](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.2.md) and the
+See the [v0.9.3 release notes](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.3.md) and the
 [current workbench guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md). Historical validation records remain in
 [`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/).

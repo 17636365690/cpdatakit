@@ -1,0 +1,121 @@
+F.F.F.F.F...                                                             [100%]
+================================== FAILURES ===================================
+__________ test_missing_text_validation_and_writer_agree[None-True] ___________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1591/test_missing_text_validation_a0')
+allow_missing = True, missing = None, legacy_schema_acceptance = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(
+        tmp_path, allow_missing, missing, legacy_schema_acceptance
+    ):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_missing_strings.py:51: AssertionError
+________ test_missing_text_validation_and_writer_agree[missing1-True] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1591/test_missing_text_validation_a2')
+allow_missing = True, missing = <NA>, legacy_schema_acceptance = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(
+        tmp_path, allow_missing, missing, legacy_schema_acceptance
+    ):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_missing_strings.py:51: AssertionError
+___________ test_missing_text_validation_and_writer_agree[nan-True] ___________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1591/test_missing_text_validation_a4')
+allow_missing = True, missing = nan, legacy_schema_acceptance = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(
+        tmp_path, allow_missing, missing, legacy_schema_acceptance
+    ):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_missing_strings.py:51: AssertionError
+________ test_cli_missing_text_is_invalid_before_conversion[csv-True] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1591/test_cli_missing_text_is_inval0')
+allow_missing = True, suffix = 'csv', legacy_schema_acceptance = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("suffix", ["csv", "json"])
+    def test_cli_missing_text_is_invalid_before_conversion(
+        tmp_path, allow_missing, suffix, legacy_schema_acceptance
+    ):
+        source = tmp_path / f"stages.{suffix}"
+        source.write_text(
+            'stage\nheat\n""\n' if suffix == "csv" else '[{"stage":"heat"},{"stage":null}]',
+            encoding="utf-8",
+        )
+        schema = tmp_path / "schema.json"
+        schema.write_text(schema_to_json(_schema(allow_missing)), encoding="utf-8")
+        validation = tmp_path / "validation.json"
+>       assert (
+            main(["validate", str(source), "--schema", str(schema), "--json-output", str(validation)])
+            == 1
+        )
+E       AssertionError: assert 0 == 1
+E        +  where 0 = main(['validate', '<temporary-directory>\\pytest-of-test-user\\pytest-1591\\test_cli_missing_text_is_inval0\...\Users\\test-user\\AppData\\Local\\Temp\\pytest-of-test-user\\pytest-1591\\test_cli_missing_text_is_inval0\\validation.json'])
+
+tests\test_review_missing_strings.py:78: AssertionError
+________ test_cli_missing_text_is_invalid_before_conversion[json-True] ________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1591/test_cli_missing_text_is_inval2')
+allow_missing = True, suffix = 'json', legacy_schema_acceptance = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("suffix", ["csv", "json"])
+    def test_cli_missing_text_is_invalid_before_conversion(
+        tmp_path, allow_missing, suffix, legacy_schema_acceptance
+    ):
+        source = tmp_path / f"stages.{suffix}"
+        source.write_text(
+            'stage\nheat\n""\n' if suffix == "csv" else '[{"stage":"heat"},{"stage":null}]',
+            encoding="utf-8",
+        )
+        schema = tmp_path / "schema.json"
+        schema.write_text(schema_to_json(_schema(allow_missing)), encoding="utf-8")
+        validation = tmp_path / "validation.json"
+>       assert (
+            main(["validate", str(source), "--schema", str(schema), "--json-output", str(validation)])
+            == 1
+        )
+E       AssertionError: assert 0 == 1
+E        +  where 0 = main(['validate', '<temporary-directory>\\pytest-of-test-user\\pytest-1591\\test_cli_missing_text_is_inval2\...\Users\\test-user\\AppData\\Local\\Temp\\pytest-of-test-user\\pytest-1591\\test_cli_missing_text_is_inval2\\validation.json'])
+
+tests\test_review_missing_strings.py:78: AssertionError
+============================== warnings summary ===============================
+.venv\Lib\site-packages\_pytest\config\__init__.py:1345
+  <repository>\.venv\Lib\site-packages\_pytest\config\__init__.py:1345: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; platformdirs
+    self._mark_plugins_for_rewrite(hook, disable_autoload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[None-True]
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[missing1-True]
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[nan-True]
+FAILED tests/test_review_missing_strings.py::test_cli_missing_text_is_invalid_before_conversion[csv-True]
+FAILED tests/test_review_missing_strings.py::test_cli_missing_text_is_invalid_before_conversion[json-True]
+5 failed, 7 passed, 1 warning in 0.91s

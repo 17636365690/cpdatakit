@@ -53,16 +53,16 @@ v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和 Pa
 v0.6.0 要求 Python 3.12 或更高版本，因为 xarray 和 Zarr 已经高于 v0.5 的依赖下限。
 Python 3.10 和 3.11 用户继续使用已发布的 v0.5.x 兼容线。
 
-从 PyPI 安装 v0.9.2：
+从 PyPI 安装 v0.9.3：
 
 ```powershell
-python -m pip install "cpdatakit==0.9.2"
+python -m pip install "cpdatakit==0.9.3"
 ```
 
 也可以安装同版本的 GitHub release wheel：
 
 ```powershell
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.2/cpdatakit-0.9.2-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.3/cpdatakit-0.9.3-py3-none-any.whl"
 ```
 
 安装后运行 `cpdatakit ui`，按[工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)操作。
@@ -89,7 +89,7 @@ python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.9.2 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.2)
+- [v0.9.3 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.3)
 - [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
 - [五分钟快速教程](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
 - [当前中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
@@ -209,6 +209,6 @@ Apache-2.0，依赖许可核查见
 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE)，引用信息见
 [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/main/CITATION.cff)。
 
-本轮改动见 [v0.9.2 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.2.md)和
+本轮改动见 [v0.9.3 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.3.md)和
 [当前工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)。历史验证记录保留在
 [`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/)。
