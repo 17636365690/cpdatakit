@@ -1,0 +1,283 @@
+....................F.F.F.FF........FFFF                                 [100%]
+================================== FAILURES ===================================
+___________ test_zarr_load_rejects_real_directory_links[False-None] ___________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_zarr_load_rejects_real_di0')
+limits = None, root_link = False
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+        if limits is None:
+>           assert ZarrReader().load(path).data["value"].values.tolist() == [1, 2]
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_read_limits.py:82:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\formats\zarr.py:129: in load
+    _store_inventory(input_path, limits)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_zarr_load_rejects_real_di0/data.zarr')
+limits = None
+
+    def _store_inventory(path: Path, limits: ReadLimits | None) -> int:
+        """Count files and enforce the byte/link boundary in one bounded traversal."""
+        size = 0
+        entries = 0
+        if path.is_symlink() or path.is_junction():
+            raise DataReadError(
+                "Dataset directories must not contain symbolic links or directory links"
+            )
+        for item in path.rglob("*"):
+            if item.is_symlink() or item.is_junction():
+>               raise DataReadError(
+                    "Dataset directories must not contain symbolic links or directory links"
+                )
+E               cpdatakit.exceptions.DataReadError: Dataset directories must not contain symbolic links or directory links
+
+src\cpdatakit\formats\zarr.py:51: DataReadError
+___________ test_zarr_load_rejects_real_directory_links[True-None] ____________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_zarr_load_rejects_real_di2')
+limits = None, root_link = True
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+        if limits is None:
+>           assert ZarrReader().load(path).data["value"].values.tolist() == [1, 2]
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_read_limits.py:82:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\formats\zarr.py:129: in load
+    _store_inventory(input_path, limits)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_zarr_load_rejects_real_di2/alias.zarr')
+limits = None
+
+    def _store_inventory(path: Path, limits: ReadLimits | None) -> int:
+        """Count files and enforce the byte/link boundary in one bounded traversal."""
+        size = 0
+        entries = 0
+        if path.is_symlink() or path.is_junction():
+>           raise DataReadError(
+                "Dataset directories must not contain symbolic links or directory links"
+            )
+E           cpdatakit.exceptions.DataReadError: Dataset directories must not contain symbolic links or directory links
+
+src\cpdatakit\formats\zarr.py:46: DataReadError
+________ test_record_limit_checks_selected_variables[scalar-h5netcdf] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_record_limit_checks_selec0')
+backend = 'h5netcdf', first = 'scalar'
+
+    @pytest.mark.parametrize("backend", ["h5netcdf", "zarr"])
+    @pytest.mark.parametrize("first", ["scalar", "other_axis"])
+    def test_record_limit_checks_selected_variables(tmp_path, backend, first):
+        initial = xr.DataArray(1) if first == "scalar" else xr.DataArray([1], dims="short")
+        data = xr.Dataset({first: initial, "records": ("record", [0, 1, 2, 3, 4])})
+        path = tmp_path / ("values.zarr" if backend == "zarr" else "values.nc")
+        if backend == "zarr":
+            data.to_zarr(path, zarr_format=3, consolidated=False)
+            reader = ZarrReader()
+        else:
+            data.to_netcdf(path, engine=backend)
+            reader = NetCDFReader(engine=backend)
+>       with pytest.raises(DataReadError, match="record limit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_read_limits.py:100: Failed
+______ test_record_limit_checks_selected_variables[other_axis-h5netcdf] _______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_record_limit_checks_selec2')
+backend = 'h5netcdf', first = 'other_axis'
+
+    @pytest.mark.parametrize("backend", ["h5netcdf", "zarr"])
+    @pytest.mark.parametrize("first", ["scalar", "other_axis"])
+    def test_record_limit_checks_selected_variables(tmp_path, backend, first):
+        initial = xr.DataArray(1) if first == "scalar" else xr.DataArray([1], dims="short")
+        data = xr.Dataset({first: initial, "records": ("record", [0, 1, 2, 3, 4])})
+        path = tmp_path / ("values.zarr" if backend == "zarr" else "values.nc")
+        if backend == "zarr":
+            data.to_zarr(path, zarr_format=3, consolidated=False)
+            reader = ZarrReader()
+        else:
+            data.to_netcdf(path, engine=backend)
+            reader = NetCDFReader(engine=backend)
+>       with pytest.raises(DataReadError, match="record limit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_read_limits.py:100: Failed
+________ test_record_limit_checks_selected_variables[other_axis-zarr] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_record_limit_checks_selec3')
+backend = 'zarr', first = 'other_axis'
+
+    @pytest.mark.parametrize("backend", ["h5netcdf", "zarr"])
+    @pytest.mark.parametrize("first", ["scalar", "other_axis"])
+    def test_record_limit_checks_selected_variables(tmp_path, backend, first):
+        initial = xr.DataArray(1) if first == "scalar" else xr.DataArray([1], dims="short")
+        data = xr.Dataset({first: initial, "records": ("record", [0, 1, 2, 3, 4])})
+        path = tmp_path / ("values.zarr" if backend == "zarr" else "values.nc")
+        if backend == "zarr":
+            data.to_zarr(path, zarr_format=3, consolidated=False)
+            reader = ZarrReader()
+        else:
+            data.to_netcdf(path, engine=backend)
+            reader = NetCDFReader(engine=backend)
+        with pytest.raises(DataReadError, match="record limit"):
+            reader.load(path, selection=Selection(fields=("records",)), limits=ReadLimits(max_records=2))
+>       with pytest.raises(DataReadError, match="record limit"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_read_limits.py:102: Failed
+_______ test_invalid_unit_origins_are_rejected_before_publication[None] _______
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_0')
+origins = None
+
+    @pytest.mark.parametrize("origins", [None, [], {"time": "invented"}, {"time": ["declared"]}])
+    def test_invalid_unit_origins_are_rejected_before_publication(source, schema, tmp_path, origins):
+        from cpdatakit.exceptions import DataValidationError
+        from cpdatakit.model import ValidationResult
+
+        value = load_dataset(source)
+        value.metadata.update(units={"time": "s"}, units_source=origins)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_unit_sources.py:149: AssertionError
+_____ test_invalid_unit_origins_are_rejected_before_publication[origins1] _____
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_1/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_1')
+origins = []
+
+    @pytest.mark.parametrize("origins", [None, [], {"time": "invented"}, {"time": ["declared"]}])
+    def test_invalid_unit_origins_are_rejected_before_publication(source, schema, tmp_path, origins):
+        from cpdatakit.exceptions import DataValidationError
+        from cpdatakit.model import ValidationResult
+
+        value = load_dataset(source)
+        value.metadata.update(units={"time": "s"}, units_source=origins)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_unit_sources.py:149: AssertionError
+_____ test_invalid_unit_origins_are_rejected_before_publication[origins2] _____
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_2/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_2')
+origins = {'time': 'invented'}
+
+    @pytest.mark.parametrize("origins", [None, [], {"time": "invented"}, {"time": ["declared"]}])
+    def test_invalid_unit_origins_are_rejected_before_publication(source, schema, tmp_path, origins):
+        from cpdatakit.exceptions import DataValidationError
+        from cpdatakit.model import ValidationResult
+
+        value = load_dataset(source)
+        value.metadata.update(units={"time": "s"}, units_source=origins)
+        result = validate_dataset(value, schema)
+>       assert not result.valid
+E       assert not True
+E        +  where True = ValidationResult(errors=[], warnings=[]).valid
+
+tests\test_review_unit_sources.py:149: AssertionError
+_____ test_invalid_unit_origins_are_rejected_before_publication[origins3] _____
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_3/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_3')
+origins = {'time': ['declared']}
+
+    @pytest.mark.parametrize("origins", [None, [], {"time": "invented"}, {"time": ["declared"]}])
+    def test_invalid_unit_origins_are_rejected_before_publication(source, schema, tmp_path, origins):
+        from cpdatakit.exceptions import DataValidationError
+        from cpdatakit.model import ValidationResult
+
+        value = load_dataset(source)
+        value.metadata.update(units={"time": "s"}, units_source=origins)
+>       result = validate_dataset(value, schema)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_unit_sources.py:148:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\validation.py:464: in validate_dataset
+    _validate_frame(value, contract, result)
+src\cpdatakit\validation.py:329: in _validate_frame
+    _check_units(value, contract, result)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+dataset = Dataset(data=   time stage
+0     0  heat
+1     1  cool, metadata={'units': {'time': 's'}, 'units_source': {'time': ['d...dowsPath('<temporary-directory>/pytest-of-test-user/pytest-1534/test_invalid_unit_origins_are_3/source.csv'))
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+result = ValidationResult(errors=[], warnings=[])
+
+    def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResult) -> None:
+        units = dataset.metadata.get("units", {})
+        if not isinstance(units, dict):
+            result.errors.append(
+                _issue(
+                    "invalid_units_metadata",
+                    None,
+                    "Dataset units metadata must be an object mapping field names to units.",
+                    len(dataset.data),
+                )
+            )
+            return
+        for spec in schema.fields:
+            if spec.name not in dataset.data or not spec.unit:
+                continue
+            sources = dataset.metadata.get("units_source", {})
+            source = sources.get(spec.name) if isinstance(sources, dict) else None
+>           if spec.name not in units or source in {"assumed", "unknown"}:
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: unhashable type: 'list'
+
+src\cpdatakit\validation.py:297: TypeError
+=========================== short test summary info ===========================
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[True-None]
+FAILED tests/test_review_read_limits.py::test_record_limit_checks_selected_variables[scalar-h5netcdf]
+FAILED tests/test_review_read_limits.py::test_record_limit_checks_selected_variables[other_axis-h5netcdf]
+FAILED tests/test_review_read_limits.py::test_record_limit_checks_selected_variables[other_axis-zarr]
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_origins_are_rejected_before_publication[None]
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_origins_are_rejected_before_publication[origins1]
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_origins_are_rejected_before_publication[origins2]
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_origins_are_rejected_before_publication[origins3]
+9 failed, 31 passed in 4.18s

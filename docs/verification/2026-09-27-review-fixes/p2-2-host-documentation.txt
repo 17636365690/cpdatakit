@@ -1,0 +1,16 @@
+Before (6122189):
+- Check the `Host` header against the bound host and configured port. Reject unexpected hosts.
+
+After:
+- Check the hostname in the `Host` header against the bound host. The comparison uses the hostname
+  after parsing the optional port. Reject unexpected hosts.
+
+Unchanged implementation:
+def _host_name(raw_host: str) -> str:
+    value = raw_host.strip().lower()
+    if value.startswith("["):
+        closing = value.find("]")
+        return value[1:closing] if closing > 0 else value
+    if value.count(":") == 1:
+        return value.rsplit(":", 1)[0]
+    return value

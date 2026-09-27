@@ -173,13 +173,19 @@ class JobManager:
             result = function(state.cancel_event)
         except Exception as exc:
             if state.cancel_event.is_set():
+                message = None
+                if isinstance(exc, JobCancelled):
+                    logger.info("Job %s cancelled at checkpoint", state.record.id)
+                else:
+                    logger.exception("Job %s failed during cancellation", state.record.id)
+                    message = "Job failure during cancellation; see the local job log."
                 self._update(
                     state,
                     status=JobStatus.CANCELLED,
                     finished_at=_now(),
                     operation_log=("cancelled",),
                     result=None,
-                    error=None,
+                    error=message,
                 )
                 return
             if isinstance(exc, CPDataKitError):

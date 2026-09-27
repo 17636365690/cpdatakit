@@ -30,6 +30,25 @@ rows = ParquetReader().load(
 读取结果包含关联坐标、单位、JSON 元数据和源路径，所选数据会加载到内存。
 因此，内存须能容纳选择后的结果。
 
+`NetCDFReader.load`、`ZarrReader.load`、`ParquetReader.load` 和应用层 `load_value`
+接受 `limits=ReadLimits(max_records=..., max_bytes=...)`；默认 `None` 沿用原有加载规模。
+显式限额检查源文件或 Zarr store 的总字节数，以及所选非标量变量首维的源记录数，
+检查通过后再物化所选值；启用限额时，Zarr 加载会检查符号链接和目录链接，
+与已有预览检查保持一致。默认 `None` 保留既有链接处理。这里的字节数是源存储大小，
+解码后的数组、后端缓存和返回结果的内存由调用方按选区规划。
+应用层对 CSV/JSON/原生 HDF5 复用现有检查流程；CSV/JSON 的记录数检查发生在解析后。
+直接调用原生 `load_dataset` / `load_hdf5` / `load_hdf5_v2` 沿用各自的读取与选择参数。
+
+```python
+from cpdatakit.formats import ReadLimits
+
+value = NetCDFReader().load(
+    Path("temperature.nc"),
+    selection=Selection(fields=("temperature",), start=0, stop=100),
+    limits=ReadLimits(max_records=100_000, max_bytes=128 * 1024 * 1024),
+)
+```
+
 HDF5 2.0 的字段筛选按维度关联保留 `stage(time)` 等辅助坐标和标量坐标，
 并保留全局 JSON 属性。记录范围作用于 `fields` 中首个字段的首维。
 
@@ -42,18 +61,16 @@ HDF5 2.0 的字段筛选按维度关联保留 `stage(time)` 等辅助坐标和�
 再读取所需数组，并为返回结果恢复标签索引。数字坐标的结构检查和超限拒绝不读取
 数组载荷；单记录选择不读取整条坐标，Zarr 的实际读取量仍以存储块为单位。
 
-CF 时间类型还取决于时间值是否超出 `datetime64[ns]` 的范围。为了保留通常的
-`CFTimeIndex` 和 `.sel` 语义，对实际返回的 CF 时间字段会额外读取原轴首尾各一个值，
-用于类型推断；Zarr 会读取对应首尾块。合法结构检查在限额通过后才作这一有界探测，
-超限拒绝不作探测。因此，CF 时间选择不能视为严格的零选区外读取。
+CF 时间类型还取决于时间值是否超出 `datetime64[ns]` 的范围。对实际返回的 CF 时间字段，
+读取器会额外读取原轴首尾各一个值，用于推断 `CFTimeIndex` 和 `.sel` 使用的类型；
+Zarr 会读取对应首尾块。结构检查在限额通过后进行这一有界探测。
 原始整数在选择与物化期间保持原精度，随后统一执行 CF 掩码、缩放与时间解码，
-避免 `_FillValue` 使整数纳秒时间先转成浮点数而丢失精度，并保留 `NaT`。
+保留整数纳秒时间和 `NaT`。
 
-端点探测不能发现任意非单调轴内部超出时间范围的值。例如，首尾为 2000 年、内部
-为 1600 年时，选择 2000 年可能返回 `DatetimeIndex`，完整读取则返回 `CFTimeIndex`。
-选中的古日期仍自动解码为 cftime；若调用方要求与整轴完全相同的自动索引类型，
-应先完整 `reader.load(path)`，再对其 `.data` 执行 `.isel(...)`，并为整轴分配内存。
-读取器不会为推断未选中内部日期而扫描整轴。
+时间索引类型由端点和选中值共同决定。例如，首尾为 2000 年、内部为 1600 年时，
+选择 2000 年可能返回 `DatetimeIndex`，完整读取则返回 `CFTimeIndex`。
+选中的古日期自动解码为 cftime。需要整轴自动索引类型时，先完整 `reader.load(path)`，
+再对 `.data` 执行 `.isel(...)`，并为整轴分配内存。
 
 真实读取计数和字节证据见
 [2026-09-16 坐标读取记录](verification/2026-09-16-coordinate-reads.json)。

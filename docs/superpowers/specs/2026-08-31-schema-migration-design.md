@@ -18,10 +18,8 @@ unit, changed tensor order, or changed stress/strain measure as harmless text ed
 
 ## v0.4.0 first slice
 
-The first slice is pure schema comparison and compatibility classification. It does not rewrite raw
-records, infer units, infer tensor component order, or silently migrate a HDF5 envelope. A later
-slice may add an explicit migration manifest only after a real source/target schema-version pair is
-approved.
+The first slice provides schema comparison and compatibility classification. A later slice can add
+an explicit migration manifest based on an approved source/target schema-version pair.
 
 The proposed public function is:
 
@@ -87,7 +85,7 @@ The CLI proposal is:
 cpdatakit schema diff SOURCE TARGET [--format json|markdown] [--output PATH] [--force]
 ```
 
-The command writes only the diff; it does not alter either schema or any HDF5 file. JSON uses the
+The command writes the schema diff. JSON uses the
 project's sorted-key, `allow_nan=False` renderer. Markdown preserves the fixed field/change order.
 Existing output protection and status `0/2` semantics follow the current CLI contract; a breaking
 diff is a successful comparison result, not a parser failure.

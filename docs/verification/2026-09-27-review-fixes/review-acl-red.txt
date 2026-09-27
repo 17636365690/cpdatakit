@@ -1,0 +1,174 @@
+FFF                                                                      [100%]
+================================== FAILURES ===================================
+_______ test_permissions_are_preserved_before_content_write[inspection] _______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001597D583F50>
+writer = <function writer.<locals>.write at 0x000001597D6FCD60>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+            expected_acl = _saved_acl(target, tmp_path / "original.acl")
+        original = Path.write_text
+        observed = []
+
+        def checked_write(path, text, *args, **kwargs):
+            if path.parent == tmp_path and path.name.startswith(".output.txt."):
+                assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+                if os.name == "nt":
+                    assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+                observed.append(path)
+            return original(path, text, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", checked_write)
+>       writer(target, force=True)
+
+tests\test_review_atomic_text.py:123:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:20: in write
+    return write_inspection({"record_count": 3}, target, format="json", force=force)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\inspection.py:764: in write_inspection
+    write_text_atomic(target, rendered, force=force)
+src\cpdatakit\_atomic.py:74: in write_text_atomic
+    staged.write_text(text, encoding="utf-8")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved0/.output.txt.f9984ef0421446aca8d08da035bdbb4e.tmp')
+text = '{\n  "record_count": 3\n}\n', args = (), kwargs = {'encoding': 'utf-8'}
+
+    def checked_write(path, text, *args, **kwargs):
+        if path.parent == tmp_path and path.name.startswith(".output.txt."):
+            assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+            if os.name == "nt":
+>               assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+E               AssertionError: assert 'D:(A;ID;FA;;...A;ID;FA;;;OW)' == 'D:AI(A;;0x12...A;ID;FA;;;OW)'
+E
+E                 - D:AI(A;;0x1200a9;;;WD)(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+E                 ?   --------------------
+E                 + D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+
+tests\test_review_atomic_text.py:118: AssertionError
+_________ test_permissions_are_preserved_before_content_write[report] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001597D582180>
+writer = <function writer.<locals>.write at 0x000001597D7B93A0>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+            expected_acl = _saved_acl(target, tmp_path / "original.acl")
+        original = Path.write_text
+        observed = []
+
+        def checked_write(path, text, *args, **kwargs):
+            if path.parent == tmp_path and path.name.startswith(".output.txt."):
+                assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+                if os.name == "nt":
+                    assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+                observed.append(path)
+            return original(path, text, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", checked_write)
+>       writer(target, force=True)
+
+tests\test_review_atomic_text.py:123:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:22: in write
+    return write_report({"record_count": 3}, target, format="html", force=force)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\reporting.py:581: in write_report
+    write_text_atomic(target, rendered, force=force)
+src\cpdatakit\_atomic.py:74: in write_text_atomic
+    staged.write_text(text, encoding="utf-8")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved1/.output.txt.e8eea6a80c4742838909c8acb92594f8.tmp')
+text = '<!doctype html>\n<html lang="zh-CN">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-wid...Դ���������ʹ洢��Ϣ�����ڽ�һ���˶ԡ�</p>\n<pre>{\n  &quot;record_count&quot;: 3\n}</pre>\n</details></section></main></body>\n</html>\n'
+args = (), kwargs = {'encoding': 'utf-8'}
+
+    def checked_write(path, text, *args, **kwargs):
+        if path.parent == tmp_path and path.name.startswith(".output.txt."):
+            assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+            if os.name == "nt":
+>               assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+E               AssertionError: assert 'D:(A;ID;FA;;...A;ID;FA;;;OW)' == 'D:AI(A;;0x12...A;ID;FA;;;OW)'
+E
+E                 - D:AI(A;;0x1200a9;;;WD)(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+E                 ?   --------------------
+E                 + D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+
+tests\test_review_atomic_text.py:118: AssertionError
+_________ test_permissions_are_preserved_before_content_write[schema] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001597D7C5A30>
+writer = <function writer.<locals>.write at 0x000001597D7BAC00>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+            expected_acl = _saved_acl(target, tmp_path / "original.acl")
+        original = Path.write_text
+        observed = []
+
+        def checked_write(path, text, *args, **kwargs):
+            if path.parent == tmp_path and path.name.startswith(".output.txt."):
+                assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+                if os.name == "nt":
+                    assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+                observed.append(path)
+            return original(path, text, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", checked_write)
+>       writer(target, force=True)
+
+tests\test_review_atomic_text.py:123:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:23: in write
+    return write_schema(load_schema("curve"), target, force=force)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\schema.py:351: in write_schema
+    write_text_atomic(target, schema_to_json(schema), force=force)
+src\cpdatakit\_atomic.py:74: in write_text_atomic
+    staged.write_text(text, encoding="utf-8")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1538/test_permissions_are_preserved2/.output.txt.16b8891817724075b1891d7e3fc61b78.tmp')
+text = '{\n  "conventions": {\n    "orientation_representation": "must be declared when orientations are used",\n    "strain_...e": [],\n      "unique": false,\n      "unit": "s"\n    }\n  ],\n  "profile": "curve",\n  "schema_version": "1.0"\n}\n'
+args = (), kwargs = {'encoding': 'utf-8'}
+
+    def checked_write(path, text, *args, **kwargs):
+        if path.parent == tmp_path and path.name.startswith(".output.txt."):
+            assert stat.S_IMODE(path.stat().st_mode) == previous_mode
+            if os.name == "nt":
+>               assert _saved_acl(path, tmp_path / "staged.acl") == expected_acl
+E               AssertionError: assert 'D:(A;ID;FA;;...A;ID;FA;;;OW)' == 'D:AI(A;;0x12...A;ID;FA;;;OW)'
+E
+E                 - D:AI(A;;0x1200a9;;;WD)(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+E                 ?   --------------------
+E                 + D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;OW)
+
+tests\test_review_atomic_text.py:118: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[inspection]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[report]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[schema]
+3 failed, 16 deselected in 1.19s

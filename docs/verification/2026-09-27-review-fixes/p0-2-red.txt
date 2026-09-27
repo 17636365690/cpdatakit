@@ -1,0 +1,174 @@
+FFFFFFFF                                                                 [100%]
+================================== FAILURES ===================================
+_____________ test_undeclared_csv_unit_warns_without_invalidating _____________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_undeclared_csv_unit_warns0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+
+    def test_undeclared_csv_unit_warns_without_invalidating(source, schema):
+        result = validate_dataset(load_dataset(source), schema)
+        assert result.valid
+>       issue = next(item for item in result.warnings if item.code == "unit_not_declared")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       StopIteration
+
+tests\test_review_unit_sources.py:43: StopIteration
+___________________ test_declared_source_unit_is_preserved ____________________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_declared_source_unit_is_p0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_declared_source_unit_is_p0')
+
+    def test_declared_source_unit_is_preserved(source, schema, tmp_path):
+        value = load_dataset(source)
+        value.metadata["units"] = {"time": "ms"}
+        result = validate_dataset(value, schema)
+        assert result.valid
+        assert not any(item.code == "unit_not_declared" for item in result.warnings)
+        target = _write(value, tmp_path / "declared.h5", schema)
+        restored = load_hdf5(target)
+        assert restored.metadata["units"]["time"] == "ms"
+>       assert restored.metadata["units_source"]["time"] == "declared"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'units_source'
+
+tests\test_review_unit_sources.py:61: KeyError
+__________ test_assumed_units_remain_assumed_across_read_and_rewrite __________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_assumed_units_remain_assu0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_assumed_units_remain_assu0')
+
+    def test_assumed_units_remain_assumed_across_read_and_rewrite(source, schema, tmp_path):
+        target = _write(load_dataset(source), tmp_path / "assumed.h5", schema)
+        with h5py.File(target) as handle:
+            assert json.loads(handle.attrs["units_json"]) == {"stage": None, "time": "s"}
+>           assert json.loads(handle.attrs["units_source_json"]) == {
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                "stage": "unspecified", "time": "assumed"
+            }
+
+tests\test_review_unit_sources.py:69:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+h5py/_objects.pyx:54: in h5py._objects.with_phil.wrapper
+    ???
+h5py/_objects.pyx:55: in h5py._objects.with_phil.wrapper
+    ???
+.venv\Lib\site-packages\h5py\_hl\attrs.py:55: in __getitem__
+    attr = h5a.open(self._id, self._e(name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+h5py/_objects.pyx:54: in h5py._objects.with_phil.wrapper
+    ???
+h5py/_objects.pyx:55: in h5py._objects.with_phil.wrapper
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+>   ???
+E   KeyError: "Unable to synchronously open attribute (can't locate attribute: 'units_source_json')"
+
+h5py/h5a.pyx:79: KeyError
+_________ test_legacy_file_unit_origin_is_unknown_and_stays_readable __________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_legacy_file_unit_origin_i0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_legacy_file_unit_origin_i0')
+
+    def test_legacy_file_unit_origin_is_unknown_and_stays_readable(source, schema, tmp_path):
+        target = _write(load_dataset(source), tmp_path / "legacy.h5", schema)
+        with h5py.File(target, "r+") as handle:
+            if "units_source_json" in handle.attrs:
+                del handle.attrs["units_source_json"]
+        restored = load_hdf5(target)
+        assert restored.data["stage"].tolist() == ["heat", "cool"]
+        assert restored.metadata["units"] == {"stage": None, "time": "s"}
+>       assert restored.metadata["units_source"]["time"] == "unknown"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'units_source'
+
+tests\test_review_unit_sources.py:90: KeyError
+____________ test_invalid_unit_source_metadata_is_a_read_error[[]] ____________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_invalid_unit_source_metad0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_invalid_unit_source_metad0')
+payload = '[]'
+
+    @pytest.mark.parametrize("payload", ['[]', '{"time":"invented"}'])
+    def test_invalid_unit_source_metadata_is_a_read_error(source, schema, tmp_path, payload):
+        target = _write(load_dataset(source), tmp_path / "invalid.h5", schema)
+        with h5py.File(target, "r+") as handle:
+            handle.attrs["units_source_json"] = payload
+>       with pytest.raises(DataReadError, match="units_source"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_unit_sources.py:99: Failed
+___ test_invalid_unit_source_metadata_is_a_read_error[{"time":"invented"}] ____
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_invalid_unit_source_metad1/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_invalid_unit_source_metad1')
+payload = '{"time":"invented"}'
+
+    @pytest.mark.parametrize("payload", ['[]', '{"time":"invented"}'])
+    def test_invalid_unit_source_metadata_is_a_read_error(source, schema, tmp_path, payload):
+        target = _write(load_dataset(source), tmp_path / "invalid.h5", schema)
+        with h5py.File(target, "r+") as handle:
+            handle.attrs["units_source_json"] = payload
+>       with pytest.raises(DataReadError, match="units_source"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_unit_sources.py:99: Failed
+_________ test_inspection_and_reports_show_assumed_and_declared_units _________
+
+source = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_inspection_and_reports_sh0/source.csv')
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1504/test_inspection_and_reports_sh0')
+
+    def test_inspection_and_reports_show_assumed_and_declared_units(source, schema, tmp_path):
+        assumed = _write(load_dataset(source), tmp_path / "assumed.h5", schema)
+        value = load_dataset(source)
+        value.metadata["units"] = {"time": "s"}
+        declared = _write(value, tmp_path / "declared.h5", schema)
+        for path, origin in ((source, "assumed"), (assumed, "assumed"), (declared, "declared")):
+            inspection = inspect_dataset(path, schema=schema)
+            field = next(item for item in inspection["fields"] if item["name"] == "time")
+            assert field["unit"] == "s"
+>           assert field["unit_source"] == origin
+                   ^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'unit_source'
+
+tests\test_review_unit_sources.py:112: KeyError
+____ test_explicit_mapping_declares_units_and_rename_preserves_assumptions ____
+
+schema = ProfileSchema(profile='stages', schema_version='1.0', fields=(FieldSchema(name='time', dtype='float', required=False, ...one, maximum=None, index=False, unique=False, description='')), conventions=mappingproxy({}), extension_prefix='user_')
+
+    def test_explicit_mapping_declares_units_and_rename_preserves_assumptions(schema):
+        raw = Dataset(pd.DataFrame({"seconds": [0.0, 1.0], "stage": ["heat", "cool"]}))
+        explicit = normalize_dataset(raw, schema, [FieldMapping("seconds", "time", "s", "s")])
+        assert not any(
+            issue.code == "unit_not_declared" for issue in validate_dataset(explicit, schema).warnings
+        )
+        raw.metadata = {"units": {"seconds": "s"}, "units_source": {"seconds": "assumed"}}
+        renamed = normalize_dataset(raw, schema, [FieldMapping("seconds", "time")])
+>       assert renamed.metadata["units_source"] == {"time": "assumed"}
+E       AssertionError: assert {'seconds': 'assumed'} == {'time': 'assumed'}
+E
+E         Left contains 1 more item:
+E         {'seconds': 'assumed'}
+E         Right contains 1 more item:
+E         {'time': 'assumed'}
+E         Use -v to get more diff
+
+tests\test_review_unit_sources.py:134: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_review_unit_sources.py::test_undeclared_csv_unit_warns_without_invalidating
+FAILED tests/test_review_unit_sources.py::test_declared_source_unit_is_preserved
+FAILED tests/test_review_unit_sources.py::test_assumed_units_remain_assumed_across_read_and_rewrite
+FAILED tests/test_review_unit_sources.py::test_legacy_file_unit_origin_is_unknown_and_stays_readable
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_source_metadata_is_a_read_error[[]]
+FAILED tests/test_review_unit_sources.py::test_invalid_unit_source_metadata_is_a_read_error[{"time":"invented"}]
+FAILED tests/test_review_unit_sources.py::test_inspection_and_reports_show_assumed_and_declared_units
+FAILED tests/test_review_unit_sources.py::test_explicit_mapping_declares_units_and_rename_preserves_assumptions
+8 failed in 1.91s

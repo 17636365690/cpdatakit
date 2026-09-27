@@ -13,7 +13,8 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal
 
-from .exceptions import SchemaError
+from ._atomic import write_text_atomic
+from .exceptions import OutputExistsError, SchemaError
 
 SUPPORTED_SCHEMA_VERSION = "1.0"
 BUILTIN_PROFILES = frozenset({"curve", "point", "field2d"})
@@ -346,8 +347,10 @@ def write_schema(
     target = Path(output)
     if target.exists() and not force:
         raise SchemaError(f"Schema output already exists: {target}; pass force=True to replace it")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(schema_to_json(schema), encoding="utf-8")
+    try:
+        write_text_atomic(target, schema_to_json(schema), force=force)
+    except OutputExistsError as exc:
+        raise SchemaError(str(exc)) from exc
     return target
 
 

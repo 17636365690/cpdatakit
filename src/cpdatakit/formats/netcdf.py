@@ -12,7 +12,7 @@ from .._atomic import cleanup_staged_file, publish_file
 from ..data import ScientificDataset
 from ..exceptions import DataReadError, DataValidationError, OutputExistsError
 from ._metadata import scientific_for_write, scientific_metadata
-from ._selection import describe_xarray, materialize_cf_selection
+from ._selection import check_record_limit, describe_xarray, materialize_cf_selection
 from .base import CapabilityResult, DetectionResult, ReaderInfo, ReadLimits, Selection, WriterInfo
 
 _ENGINES = {"h5netcdf": "h5netcdf", "netcdf4": "netCDF4"}
@@ -109,10 +109,17 @@ class NetCDFReader:
             raise DataReadError(f"Cannot inspect NetCDF input {input_path}: {exc}") from exc
 
     def load(
-        self, path: Path, *, selection: Selection | None = None, context=None
+        self,
+        path: Path,
+        *,
+        selection: Selection | None = None,
+        limits: ReadLimits | None = None,
+        context=None,
     ) -> ScientificDataset:
         input_path = Path(path)
         _check_path(input_path)
+        if limits is not None:
+            _check_bytes(input_path, limits)
         xarray = _xarray()
         _backend(self.engine)
         try:
@@ -123,6 +130,7 @@ class NetCDFReader:
                 decode_times=False,
                 mask_and_scale=False,
             ) as opened:
+                check_record_limit(opened, limits, label="NetCDF", selection=selection)
                 dataset = materialize_cf_selection(
                     opened, selection, label="NetCDF", context=context
                 )

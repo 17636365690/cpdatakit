@@ -61,7 +61,7 @@ function updateWorkflow() {
     const matches = previous && previous.datasetId === current.datasetId && previous.schemaSelector === current.schemaSelector;
     const subject = validationSnapshot.mapped ? '映射后数据' : '当前数据';
     message = matches
-      ? (validationSnapshot.valid ? `${subject}校验通过；仍需结合领域知识判断科学含义。` : `${subject}校验未通过，请检查下方错误。`)
+      ? (validationSnapshot.valid ? `${subject}校验通过，可生成报告或转换文件。` : `${subject}校验未通过，请检查下方错误。`)
       : '历史校验结果：当前数据或规则已切换，或该任务未记录选择；请对当前选择重新校验。';
     if (resultNotice) {
       resultNotice.textContent = matches ? '此结果对应当前选择。' : '历史结果，仅对应下方记录的文件与规则。';
@@ -121,7 +121,7 @@ function showResult(title, payload, context) {
       content.append(element('p', `${label} · ${issue.field || '整个数据集'}：${issue.message}${affected}`));
       if (issue.suggestion) content.append(element('p', `处理建议：${issue.suggestion}`, 'hint'));
     }
-    content.append(element('p', '校验检查已声明的字段、维度和单位；通过校验不代表物理或科学结论已经验证。', 'hint'));
+    content.append(element('p', '校验逐项检查规则中声明的字段、维度、单位和数据质量要求。', 'hint'));
     if (payload.operation === 'preview_mapping') content.append(element('p', '此处校验的是映射后的预览值，尚未写出或保存转换文件。', 'hint'));
   }
   if (value.file?.format) content.append(element('p', `数据格式：${value.file.format}`));

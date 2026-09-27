@@ -13,11 +13,10 @@ only `load()` remain concrete. Optional class metadata is exposed through immuta
 values with a stable name, display format name, and capability labels. The default `detect()` returns
 `False`, so detection is opt-in.
 
-`AdapterRegistry` registers adapter classes, not instances. It can list descriptors, resolve a
-stable name to a class, and return every detector matching a path. Callers construct the resolved
-class themselves and supply format-specific scientific selections. Duplicate names are rejected.
-`DEFAULT_ADAPTER_REGISTRY` contains the bundled DAMASK DADF5 adapter. This v0.5 boundary is
-in-process only; it does not discover Python entry points or install plugins.
+`AdapterRegistry` registers adapter classes. It can list descriptors, resolve a stable name to a
+class, and return every detector matching a path. Callers construct the resolved class and supply
+format-specific scientific selections. Duplicate names are rejected.
+`DEFAULT_ADAPTER_REGISTRY` contains the bundled DAMASK DADF5 adapter and supports in-process registration.
 
 ```python
 from cpdatakit.adapters import DEFAULT_ADAPTER_REGISTRY
@@ -27,8 +26,8 @@ adapter = adapter_class(label="Taylor", datasets=["F", "P"])
 dataset = adapter.load("result.hdf5")
 ```
 
-Detection identifies a representation, not a valid or unambiguous scientific selection. A DADF5
-file with multiple labels is detected as DADF5 and still requires the caller to choose a label.
+Detection identifies a representation. A DADF5 file with multiple labels requires the caller
+to choose a label before loading.
 
 ## Acceptance checklist
 
@@ -56,9 +55,9 @@ testable Abaqus environment and a matching acceptance record.
 ## DAMASK DADF5 reader
 
 CPDataKit includes a documented read-only reader for selected DAMASK DADF5 results.
-The implementation uses h5py directly and keeps the DAMASK runtime outside the package. It supports
-DADF5 version 0.14 and 1.x, one explicit `increment`, `phase` or `homogenization` branch, one
-explicit label, one field group, and selected direct datasets such as `F`, `P`, or `O`.
+The implementation uses h5py directly. It supports DADF5 version 0.14 and 1.x, one explicit
+`increment`, `phase` or `homogenization` branch, one explicit label, one field group, and selected
+direct datasets such as `F`, `P`, or `O`.
 
 ```python
 from cpdatakit.adapters import DamaskDADF5Adapter

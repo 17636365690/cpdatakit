@@ -14,11 +14,12 @@ The host validation rule, path containment rule, and job cancellation rule are e
 the implementation and its tests.
 
 - Bind only to `127.0.0.1` by default. A caller must explicitly opt into another interface.
-- Check the `Host` header against the bound host and configured port. Reject unexpected hosts.
+- Check the hostname in the `Host` header against the bound host. The comparison uses the hostname
+  after parsing the optional port. Reject unexpected hosts.
 - Create a random session token when the UI starts. Store it in a SameSite, HttpOnly cookie and
   require it on state-changing requests.
 - Add a per-session CSRF token to forms and verify it for every state-changing route.
-- Do not load scripts, fonts, CSS, analytics, or API data from a CDN or remote endpoint.
+- Serve bundled scripts, fonts, and CSS locally.
 
 ## Workspace and file boundary
 
@@ -35,8 +36,8 @@ Path containment is checked after resolving every path.
 - Keep registered versions under the reserved `.artifacts` directory. Registration verifies the
   produced digest; changed download content is rejected. Recovery never replaces a detected
   concurrent output and retains the old backup with a recovery manifest.
-- Store source bytes by reference or copy according to the project setting. Catalog removal does not
-  remove source files unless the user selects a separate file-removal action.
+- Store source bytes by reference or copy according to the project setting. Catalog removal
+  preserves source files; a separate file-removal action handles source deletion.
 
 Single-file and Zarr uploads bind catalog registration to the identity and content digest captured
 from their private staging output. Registration checks the public target before and after the
@@ -47,19 +48,17 @@ public name is preserved. Inspect the response's `recovery` locations before ret
 retained item only to an unused destination. If writing a recovery record itself fails, the response
 sets `record_written` to false and supplies the available locations.
 
-The random staging and quarantine directories are trusted private paths for this operation. This
-protocol does not implement atomic compare-and-delete, and does not cover another same-permission
-process actively scanning and modifying private paths or continuing to write through a retained
-handle after quarantine. Failed cleanup of private staging after successful registration is logged;
-it does not turn the completed upload into a failed operation.
+The operation owns its random staging and quarantine directories. Failed cleanup of private
+staging after successful registration is logged, and the completed upload retains its result.
 
 ## Jobs and cancellation
 
 Job cancellation is cooperative and must leave the workspace in a readable state.
 
 The in-process job manager records an operation ID, start/end times, status, input/output basenames,
-and sanitized errors. Job cancellation reaches the owning reader or writer and leaves no partial
-artifact. Solver processes are outside v0.6, so the UI does not execute arbitrary commands yet.
+and sanitized errors. Job cancellation reaches the owning reader or writer and preserves complete
+artifacts. A failure during cancellation retains CANCELLED status, an error summary, and a local log;
+a normal checkpoint cancellation has an empty error field.
 
 The workbench admits a job only after its catalog row exists. Failed admission cancels the worker
 and releases its gate. Completed results are persisted before memory retirement. Default limits

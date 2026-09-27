@@ -1,0 +1,16 @@
+{
+  "baseline": "6122189",
+  "baseline_allowed_equals_loop_fields": true,
+  "baseline_condition_can_be_true": false,
+  "current_fields_equal_baseline": true,
+  "current_fields": [
+    "source_description",
+    "converted_at_utc",
+    "cpdatakit_version",
+    "python_version",
+    "operation_log",
+    "input_filename",
+    "input_sha256"
+  ],
+  "evidence_kind": "AST comparison and runtime projection regression; no behavior change expected"
+}

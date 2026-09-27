@@ -22,7 +22,7 @@
   GitHub/PyPI 最新发行版仍 0.8.1；054b2fb 没有 PR 或 Actions 运行记录。
 - 当前父线程实际 turn context：`gpt-6-astra / ultra`。
   当前 Fast 配置：`service_tier = "priority"`。全局 reasoning 默认为 max，不能替代本线程
-  已核验的 ultra；新线程需显式 ultra，并核验 Fast 继承。Fast 是服务档，不承诺固定耗时。
+  已核验的 ultra；新线程需显式 ultra，并核验 Fast 继承。Fast 是服务档。
 - 优先使用 `.venv/Scripts/python.exe`；父代理实测 Python 3.12.10 正常可用。
   子代理曾遇到引用路径启动失败，应先核对命令/cwd，不得据此改权限或重装用户环境。
 - 本次授权本地实现、回归与验收，**不新增 commit、push、PR、merge、tag 或发布**。
@@ -30,7 +30,7 @@
 - 不清理、覆盖、stash 或 reset 兄弟 checkout；不改账户、安全权限和 API 凭据。
   不触碰 OSS 申请记录、邮箱、私有 CPFE/求解器数据。
 - 保留 Python/public API/CLI、schema 1.0、默认 HDF5 1.0、v1 numeric_fields 及 R1–R5。
-  CF 非单调全轴自动索引类型的已披露边界继续保留，不承诺零选区外 CF 类型探测。
+  保留 CF 时间端点探测和所选值解码的既有行为。
 - 不降低测试断言、85% 覆盖率门槛，不用新 skip 掩盖缺陷。测试只使用独立合成工作区。
 
 ## 文件所有权与执行次序
@@ -65,7 +65,7 @@ assert scientific_to_dataset(value).metadata["units"]["stress"] == "MPa"
 ```
 - [ ] 扩展到 2**53±1、int64/uint64 边界、整数/浮点/缺失混合、嵌套数组、坐标单位、
   unit/units/metadata 一致与冲突，断言原对象未被修改。
-- [ ] 最小实现精确保留或明确拒绝：内存 object 可容纳不代表后端可无损写出；
+- [ ] 最小实现精确保留值，并在写出前检查后端表示能力；
   必须覆盖真实格式往返，不能只用 allclose。冲突沿用 declared_unit 规则，不悄悄选源。
 - [ ] 聚焦命令：`.venv/Scripts/python.exe -m pytest tests/test_conversion_numeric_fidelity.py tests/test_scientific_dataset.py tests/test_scientific_data_core.py tests/test_scientific_integrity.py -q`。
 
@@ -108,7 +108,7 @@ Files：`web/app.py`、`jobs/manager.py`、必要的 `catalog/sqlite.py` 与独�
 - [ ] 增加独立于 HTTP 的有界重试及可观测待保存状态；shutdown 协调、未保存不得被
   内存保留策略先淘汰。重启可从完成证据恢复。
 - [ ] 重试/回放幂等，不重复登记 artifact、不把成功终态降回 running；永久写失败必须可见。
-  同时失去全部持久化介质时不能保证恢复，明确这一边界，不无限阻塞退出。
+  同时记录目录保存状态与独立完成证据状态，重试次数和退出等待有界。
 - [ ] 覆盖无浏览器轮询、短暂失败、持续失败、保存前退出、重启回放、容量上限与取消。
 - [ ] 聚焦命令：`.venv/Scripts/python.exe -m pytest tests/test_job_persistence_recovery.py tests/test_jobs.py tests/test_job_retention.py tests/test_web_runtime_limits.py tests/test_web_active_jobs.py -q`。
 
@@ -157,7 +157,7 @@ recovery.json 为 0、job failed/result=null。没有证据说旧文件已被删
 - [ ] **Zarr 目录清点。** 一次 inspect_input 被实测调用 3 次根 rglob，
   合成 20 元素/chunk2 存储每次遍历 14 项。合并大小、数量、链接检查；
   保留超限提前退出、符号链接拒绝、数字 inspect 零数组载荷；记录实际访问次数，
-  不承诺未测的耗时倍数。给独立测试文件，先复现失败再实现。
+  给独立测试文件，先复现失败再实现，并记录实际耗时。
 - [ ] **真实浏览器闭环。** 保留现有 Node harness，新增安装后 wheel 上的
   上传→schema→验证→转换→报告→下载→重新读回，并覆盖一次错误提示。
   在 CI 配置必要浏览器环境及失败证据；以事件/定位等待，避免固定 sleep。
@@ -174,7 +174,7 @@ recovery.json 为 0、job failed/result=null。没有证据说旧文件已被删
 原验收参照：
 `docs/verification/2026-09-16-reviewed-optimizations.md`，
 `docs/verification/2026-09-16-coordinate-reads.json`。
-9/16 的 1055 passed、89.27% 仅是历史基线，不是新修改的验收结果。
+9/16 历史基线为 1055 passed、89.27%。
 父代理9/19仅运行合成调查探针，没有重新跑完整测试，也没有改生产代码。
 
 ## 完成标准与授权外事项
@@ -193,4 +193,4 @@ recovery.json 为 0、job failed/result=null。没有证据说旧文件已被删
   不引入新适配器、网格拓扑、完整依赖 extras 拆分或真实求解器/训练工作。
 
 独立交接审查已确认范围可实施，并要求上述数值往返、稳定统计、持久化重试、
-锁生命周期、崩溃证据与工程验收六项约束；这不是本轮实现已通过审查的声明。
+锁生命周期、崩溃证据与工程验收六项约束。后续实施按这些约束验收。

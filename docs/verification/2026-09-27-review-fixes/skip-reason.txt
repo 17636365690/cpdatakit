@@ -1,0 +1,4 @@
+.s                                                                       [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_batch_recovery.py:76: symbolic link creation unavailable
+1 passed, 1 skipped, 20 deselected in 0.74s

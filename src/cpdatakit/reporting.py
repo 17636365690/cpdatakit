@@ -9,6 +9,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
+from ._atomic import write_text_atomic
 from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import CPDataKitError, OutputExistsError
 from .inspection import inspect_dataset, sanitize_for_output
@@ -17,10 +18,7 @@ from .schema import ProfileSchema, load_schema, schema_to_dict
 from .statistics import summarize_dataset
 from .validation import validate_dataset
 
-SCOPE_NOTE = (
-    "Validation reports declared format constraints; physical or scientific interpretation "
-    "remains part of the domain workflow."
-)
+SCOPE_NOTE = "Validation checks declared structure, fields, units, and data-quality rules."
 
 
 def _has_non_finite(value: object) -> bool:
@@ -124,8 +122,8 @@ def render_report_markdown(report: Mapping[str, Any]) -> str:
         [
             "## Fields",
             "",
-            "| Field | Dtype | Shape | Unit | Missing | Description |",
-            "| --- | --- | --- | --- | --- | --- |",
+            "| Field | Dtype | Shape | Unit | Unit source | Missing | Description |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     if isinstance(fields, list) and fields:
@@ -140,6 +138,7 @@ def render_report_markdown(report: Mapping[str, Any]) -> str:
                         _cell(field.get("dtype")),
                         _shape(field.get("shape", [])),
                         _cell(field.get("unit")),
+                        _cell(field.get("unit_source", "unknown")),
                         _cell(field.get("missing_count")),
                         _cell(field.get("description")),
                     )
@@ -147,7 +146,7 @@ def render_report_markdown(report: Mapping[str, Any]) -> str:
                 + " |"
             )
     else:
-        lines.append("| (none) | | | | | |")
+        lines.append("| (none) | | | | | | |")
     lines.extend(
         [
             "",
@@ -408,6 +407,7 @@ def render_report_html(report: Mapping[str, Any]) -> str:
                 item.get("dtype"),
                 item.get("shape"),
                 item.get("unit") if item.get("unit") is not None else "未声明",
+                item.get("unit_source", "unknown"),
                 item.get("missing_count"),
                 item.get("description"),
             ]
@@ -476,7 +476,7 @@ def render_report_html(report: Mapping[str, Any]) -> str:
         '<p class="muted">先查看检查结论，再核对字段、数值统计和来源记录。</p></header>',  # noqa: RUF001
         f'<section class="overview {tone}" aria-label="检查概览">',
         _html_definition_list(summary),
-        '<p class="muted">通过表示符合已声明的数据规则；科学与物理解释需结合具体研究。</p>',  # noqa: RUF001
+        '<p class="muted">通过表示数据符合所选规则，检查明细见下方。</p>',  # noqa: RUF001
         "</section><section><h2>数据与规则</h2>",
         _html_definition_list(
             {
@@ -489,23 +489,24 @@ def render_report_html(report: Mapping[str, Any]) -> str:
         ),
         '<p class="muted">数据规则（schema）声明字段、类型、单位和形状。'  # noqa: RUF001
         "记录数沿用文件检查结果，多维数据还应结合字段形状阅读。</p>",  # noqa: RUF001
-        _html_table("字段信息", ["字段", "类型", "形状", "单位", "缺失", "说明"], field_rows),
-        '<p class="muted">“未声明”表示报告没有提供可确定的单位，不等于无量纲；'  # noqa: RUF001
-        "无量纲单位保留原声明，如 1 或 dimensionless。</p>",  # noqa: RUF001
+        _html_table(
+            "字段信息", ["字段", "类型", "形状", "单位", "单位来源", "缺失", "说明"], field_rows
+        ),
+        '<p class="muted">单位来源区分来源声明、schema 假定和历史未知。'
+        "无量纲单位保留明确声明，如 1 或 dimensionless。</p>",  # noqa: RUF001
         "</section><section><h2>检查发现</h2><h3>错误</h3>",
         _html_issue_table(errors, "错误明细"),
         "<h3>警告</h3>",
         _html_issue_table(warnings, "警告明细"),
         "</section><section><h2>数值统计</h2>",
-        '<p class="muted">数量按表格记录或数组元素计，包含缺失项，不代表独立样品数。'  # noqa: RUF001
-        "极值、均值和已有标准差沿用有限数值的统计结果；未提供的统计不补零。</p>",  # noqa: RUF001
+        '<p class="muted">数量按表格记录或数组元素计，包含缺失项。'  # noqa: RUF001
+        "极值、均值和已有标准差来自有限数值；缺少的统计标为未提供。</p>",  # noqa: RUF001
         _html_statistics(report),
         "</section><section><h2>数据来源与处理</h2>",
         _html_provenance(report.get("provenance")),
-        '<p class="muted">来源与哈希来自已有记录；本报告没有重新执行上游实验或求解器。</p>',  # noqa: RUF001
-        "</section><section><h2>适用范围</h2>",
-        '<p class="scope">本报告检查所选规则中的结构、字段、单位和数据质量要求。'
-        "验证通过不代表物理结论或模型预测已经得到验证。</p>",
+        '<p class="muted">来源与哈希沿用输入文件和处理记录。</p>',
+        "</section><section><h2>检查内容</h2>",
+        '<p class="scope">本报告检查所选规则中的结构、字段、单位和数据质量要求。</p>',
         f'<p class="muted">{_html_value(report.get("scope_note", SCOPE_NOTE))}</p>',
         "</section><section><details><summary>完整报告数据（JSON）</summary>",  # noqa: RUF001
         '<p class="muted">保留已有规则、统计、来源、适配器和存储信息，便于进一步核对。</p>',  # noqa: RUF001
@@ -577,8 +578,7 @@ def write_report(
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass --force to replace it")
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(rendered, encoding="utf-8")
+        write_text_atomic(target, rendered, force=force)
     except OSError as exc:
         raise CPDataKitError(f"Cannot write report output {target}: {exc}") from exc
     return target

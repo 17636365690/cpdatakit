@@ -8,7 +8,6 @@ coordinates, and a string stage coordinate. Every value follows the recorded for
 273.15 + 10*time_index + 2*y_index + x_index
 ```
 
-The JSON is a contract fixture, not an input accepted by the v0.5 tabular reader. The later v0.6
-format adapters will write and read equivalent HDF5 2.0, NetCDF, and Zarr 3 artifacts. The existing
-thermal-cycle table remains the lossless tabular conversion case. The malformed files document why
-an ambiguous record axis or object-valued array must fail instead of being flattened.
+The JSON is a contract fixture. The v0.6 format adapters write and read equivalent HDF5 2.0,
+NetCDF, and Zarr 3 artifacts. The thermal-cycle table provides a lossless tabular conversion case.
+The malformed files exercise record-axis and array-dtype validation.

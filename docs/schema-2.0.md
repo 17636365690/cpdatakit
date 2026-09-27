@@ -17,10 +17,10 @@ the time/stage contract, spatial coordinates, and temperature declaration.
 
 ## Composition
 
-`extends` resolves one base schema. `includes` adds named fragments. Resolution is local and follows
-the source manifest in declaration order. A resolver rejects cycles, duplicate dimensions/
+`extends` resolves one base schema. `includes` adds named fragments. Resolution uses local files
+and follows the source manifest in declaration order. A resolver rejects cycles, duplicate dimensions/
 coordinates/variables, incompatible overrides, schema-version mismatches, missing files, and
-ambiguous paths before it reads data. HTTP references are outside the default resolver.
+ambiguous paths before it reads data.
 
 The resolved contract is canonicalized with sorted object keys and stable array order. The source
 manifest is part of the audit record, while the resolved contract is the input to the schema hash.
@@ -29,6 +29,5 @@ byte-identical.
 
 ## Migration boundary
 
-Schema 1.0 data are not silently promoted to 2.0. A future migration manifest will name the source
-and target hashes, dimension/coordinate operations, unit choices, and any dropped or added values.
-Lossy flattening and inferred physical meaning are errors.
+A migration manifest names the source and target hashes, dimension/coordinate operations,
+unit choices, and any dropped or added values. The schema records physical conventions explicitly.

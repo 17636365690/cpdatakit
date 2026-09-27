@@ -115,7 +115,9 @@ class DatasetReader(Protocol):
     def inspect(self, path: Path, *, limits: ReadLimits) -> Any:
         """Inspect structure without unbounded materialization."""
 
-    def load(self, path: Path, *, selection: Selection | None = None) -> DataValue:
+    def load(
+        self, path: Path, *, selection: Selection | None = None, limits: ReadLimits | None = None
+    ) -> DataValue:
         """Load a selected data value."""
 
 

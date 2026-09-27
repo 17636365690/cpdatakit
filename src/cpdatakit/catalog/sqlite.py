@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -114,10 +115,24 @@ class SQLiteCatalog:
         self.workspace = Path(workspace)
 
     def _connect(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.database)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
+        connection = None
+        try:
+            connection = sqlite3.connect(self.database, timeout=30.0)
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+        except sqlite3.DatabaseError as exc:
+            if connection is not None:
+                connection.close()
+            raise CatalogError(f"Cannot connect to catalog: {exc}") from exc
         return connection
+
+    @contextmanager
+    def _read_connection(self):
+        try:
+            with closing(self._connect()) as connection:
+                yield connection
+        except sqlite3.DatabaseError as exc:
+            raise CatalogError(f"Cannot read catalog: {exc}") from exc
 
     def _backup_path(self) -> Path:
         candidate = self.database.with_name(self.database.name + ".bak")
@@ -239,6 +254,7 @@ class SQLiteCatalog:
         connection = self._connect()
         try:
             self._migrate(connection)
+            connection.execute("PRAGMA journal_mode = WAL")
         except sqlite3.DatabaseError as exc:
             raise CatalogError(f"Cannot initialize catalog: {exc}") from exc
         finally:
@@ -281,25 +297,19 @@ class SQLiteCatalog:
             connection.close()
 
     def get_project(self, project_id: int) -> ProjectRecord:
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             row = connection.execute(
                 "SELECT id, name, workspace FROM projects WHERE id = ?", (project_id,)
             ).fetchone()
-        finally:
-            connection.close()
         if row is None:
             raise CatalogError(f"Project does not exist: {project_id}")
         return ProjectRecord(int(row["id"]), row["name"], row["workspace"])
 
     def list_projects(self) -> tuple[ProjectRecord, ...]:
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             rows = connection.execute(
                 "SELECT id, name, workspace FROM projects ORDER BY id"
             ).fetchall()
-        finally:
-            connection.close()
         return tuple(ProjectRecord(int(row["id"]), row["name"], row["workspace"]) for row in rows)
 
     def register_dataset(
@@ -341,15 +351,12 @@ class SQLiteCatalog:
     ) -> tuple[DatasetRecord, ...]:
         clause, paging = _page_clause(limit, offset, newest_first)
         self.get_project(project_id)
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             rows = connection.execute(
                 "SELECT id, project_id, relative_path, sha256, metadata_json "
                 "FROM datasets WHERE project_id = ?" + clause,
                 (project_id, *paging),
             ).fetchall()
-        finally:
-            connection.close()
         return tuple(
             DatasetRecord(
                 int(row["id"]),
@@ -408,15 +415,12 @@ class SQLiteCatalog:
     ) -> tuple[ArtifactRecord, ...]:
         clause, paging = _page_clause(limit, offset, newest_first)
         self.get_project(project_id)
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             rows = connection.execute(
                 "SELECT id, project_id, relative_path, kind, sha256, metadata_json "
                 "FROM artifacts WHERE project_id = ?" + clause,
                 (project_id, *paging),
             ).fetchall()
-        finally:
-            connection.close()
         return tuple(
             ArtifactRecord(
                 int(row["id"]),
@@ -481,15 +485,12 @@ class SQLiteCatalog:
     ) -> tuple[SchemaRecord, ...]:
         clause, paging = _page_clause(limit, offset, newest_first)
         self.get_project(project_id)
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             rows = connection.execute(
                 "SELECT id, project_id, name, version, relative_path, sha256, metadata_json "
                 "FROM schemas WHERE project_id = ?" + clause,
                 (project_id, *paging),
             ).fetchall()
-        finally:
-            connection.close()
         return tuple(
             SchemaRecord(
                 int(row["id"]),
@@ -557,16 +558,17 @@ class SQLiteCatalog:
         return self.get_job(job_id)
 
     def get_job(self, job_id: str) -> CatalogJobRecord:
-        connection = self._connect()
-        try:
-            row = connection.execute(
-                "SELECT id, project_id, operation, status, started_at, finished_at, "
-                "input_filename, "
-                "output_filename, operation_log_json, error, result_json FROM jobs WHERE id = ?",
-                (job_id,),
-            ).fetchone()
-        finally:
-            connection.close()
+        with self._read_connection() as connection:
+            return self._read_job(connection, job_id)
+
+    @staticmethod
+    def _read_job(connection: sqlite3.Connection, job_id: str) -> CatalogJobRecord:
+        row = connection.execute(
+            "SELECT id, project_id, operation, status, started_at, finished_at, "
+            "input_filename, "
+            "output_filename, operation_log_json, error, result_json FROM jobs WHERE id = ?",
+            (job_id,),
+        ).fetchone()
         if row is None:
             raise CatalogError(f"Job does not exist: {job_id}")
         return CatalogJobRecord(
@@ -597,16 +599,13 @@ class SQLiteCatalog:
         clause, paging = _page_clause(limit, offset, newest_first, column="rowid")
         result_column = "result_json" if include_result else "NULL AS result_json"
         self.get_project(project_id)
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             rows = connection.execute(
                 "SELECT id, project_id, operation, status, started_at, finished_at, "
                 f"input_filename, output_filename, operation_log_json, error, {result_column} "
                 "FROM jobs WHERE project_id = ?" + clause,
                 (project_id, *paging),
             ).fetchall()
-        finally:
-            connection.close()
         return tuple(
             CatalogJobRecord(
                 row["id"],
@@ -635,13 +634,14 @@ class SQLiteCatalog:
         error: str | None = None,
         result: Any = _UNSET,
     ) -> CatalogJobRecord:
-        current = self.get_job(job_id)
         if not isinstance(status, str) or not status.strip():
             raise CatalogError("Job status must be non-empty")
-        log = current.operation_log if operation_log is None else tuple(operation_log)
         result_text = _result_json(result) if result is not _UNSET else None
         connection = self._connect()
         try:
+            connection.execute("BEGIN IMMEDIATE")
+            current = self._read_job(connection, job_id)
+            log = current.operation_log if operation_log is None else tuple(operation_log)
             connection.execute(
                 "UPDATE jobs SET status = ?, started_at = ?, finished_at = ?, "
                 "operation_log_json = ?, error = ?, result_json = COALESCE(?, result_json) "
@@ -656,13 +656,17 @@ class SQLiteCatalog:
                     job_id,
                 ),
             )
+            updated = self._read_job(connection, job_id)
             connection.commit()
         except sqlite3.DatabaseError as exc:
             connection.rollback()
             raise CatalogError(f"Cannot update job: {exc}") from exc
+        except BaseException:
+            connection.rollback()
+            raise
         finally:
             connection.close()
-        return self.get_job(job_id)
+        return updated
 
     def delete_dataset(self, dataset_id: int) -> None:
         connection = self._connect()
@@ -676,11 +680,8 @@ class SQLiteCatalog:
             connection.close()
 
     def _get_resource(self, table: str, record_id: int) -> sqlite3.Row:
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             row = connection.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
-        finally:
-            connection.close()
         if row is None:
             raise CatalogError(
                 f"{table.removesuffix('s').capitalize()} does not exist: {record_id}"
@@ -726,12 +727,9 @@ class SQLiteCatalog:
     def count_resources(self, project_id: int) -> dict[str, int]:
         """Count each resource table for one project without materializing records."""
         self.get_project(project_id)
-        connection = self._connect()
-        try:
+        with self._read_connection() as connection:
             tables = ("datasets", "artifacts", "schemas", "jobs")
             query = " UNION ALL ".join(
                 f"SELECT '{table}', COUNT(*) FROM {table} WHERE project_id = ?" for table in tables
             )
             return {row[0]: int(row[1]) for row in connection.execute(query, (project_id,) * 4)}
-        finally:
-            connection.close()

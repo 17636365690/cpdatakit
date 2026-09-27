@@ -21,6 +21,5 @@ cpdatakit compare thermal-cycle-output/report-a.json thermal-cycle-output/report
 cpdatakit plot thermal-cycle-output/thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output thermal-cycle-output/temperature-vs-time.png
 ```
 
-The HDF5 file embeds the canonical schema and SHA-256 digest. Validation and comparison establish
-declared structural conformance and aggregate equality only; they do not establish thermal-model or
-physical correctness.
+The HDF5 file embeds the canonical schema and SHA-256 digest. Validation and comparison
+check declared structural conformance and aggregate equality.

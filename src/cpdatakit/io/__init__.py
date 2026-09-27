@@ -148,6 +148,19 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
         "provenance": _required_json_object(handle, "provenance_json", path),
         "validation_summary": _required_json_object(handle, "validation_summary_json", path),
     }
+    sources = (
+        _required_json_object(handle, "units_source_json", path)
+        if "units_source_json" in handle.attrs
+        else {}
+    )
+    if any(
+        value not in ("declared", "assumed", "unknown", "unspecified") for value in sources.values()
+    ):
+        raise DataReadError(f"Invalid HDF5 units_source_json origin: {path}")
+    metadata["units_source"] = {
+        name: sources.get(name, "unknown" if unit else "unspecified")
+        for name, unit in metadata["units"].items()
+    }
     snapshot = _read_schema_snapshot(handle, path, profile, schema_version)
     if snapshot is not None:
         metadata["schema_snapshot"] = snapshot
@@ -413,6 +426,25 @@ def write_hdf5(
     target.parent.mkdir(parents=True, exist_ok=True)
     declared_units = {item.name: item.unit for item in schema.fields if item.name in dataset.data}
     units = {**declared_units, **dataset.metadata.get("units", {})}
+    source_units = dataset.metadata.get("units", {})
+    previous_sources = dataset.metadata.get("units_source", {})
+    if not isinstance(previous_sources, dict) or any(
+        source not in ("declared", "assumed", "unknown", "unspecified")
+        for source in previous_sources.values()
+    ):
+        raise DataValidationError(
+            "Invalid units_source: use declared, assumed, unknown or unspecified"
+        )
+    units_source = {
+        name: (
+            previous_sources.get(name, "declared")
+            if source_units.get(name)
+            else "assumed"
+            if unit
+            else "unspecified"
+        )
+        for name, unit in units.items()
+    }
     stored_mapping = (
         field_mapping if field_mapping is not None else dataset.metadata.get("field_mapping", {})
     )
@@ -436,6 +468,7 @@ def write_hdf5(
             if schema_uri is not None:
                 handle.attrs["schema_uri"] = schema_uri
             handle.attrs["units_json"] = json.dumps(units, sort_keys=True)
+            handle.attrs["units_source_json"] = json.dumps(units_source, sort_keys=True)
             handle.attrs["field_mapping_json"] = json.dumps(stored_mapping, sort_keys=True)
             handle.attrs["provenance_json"] = json.dumps(provenance, sort_keys=True)
             handle.attrs["validation_summary_json"] = json.dumps(

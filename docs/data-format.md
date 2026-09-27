@@ -14,10 +14,10 @@ entry contains `name`, `aliases`, `required`, `dtype`, per-record `shape`, `role
 `allow_missing`, range/index constraints, and a description. A profile also carries conventions
 and an extension prefix. Readers support schema version `1.0`.
 
-An external JSON schema may use any non-empty profile name. Bare names such as `curve` resolve only
-bundled schemas; pass a JSON path for an external profile. Generalization does not relax field
-declaration: fields must be declared or use the schema's existing explicit extension prefix, and
-numeric fields must declare units and shapes. CPDataKit does not infer scientific meaning.
+An external JSON schema may use any non-empty profile name. Bare names such as `curve` resolve
+bundled schemas; pass a JSON path for an external profile. Fields are declared explicitly or use
+the schema's extension prefix. Numeric fields declare units and shapes; schemas and mappings
+record the scientific conventions used by the workflow.
 
 Aliases document accepted source names and take effect through an explicit `FieldMapping`. Custom
 fields are fully declared in a custom schema or begin with `user_`.
@@ -50,8 +50,10 @@ migrate newer versions through an explicit schema update.
 
 ## Unit and convention rules
 
-CSV and JSON take units from the selected schema. A `Dataset` or CPDataKit HDF5 may carry explicit
-per-field units, which must be dimensionally compatible with schema units. Pint applies the
+CSV and JSON use schema units as assumptions when source units are absent. Validation adds a
+`unit_not_declared` warning for each such field and keeps `valid=True` when there are no errors.
+A `Dataset` or CPDataKit HDF5 may carry explicit per-field units, which must be dimensionally
+compatible with schema units. The effective unit stays with its original numeric values. Pint applies the
 conversions declared in the schema and mapping, including both scale and offset for affine units
 such as degrees Celsius.
 For a declared vector, matrix, or tensor, an explicit mapping applies Pint to each numeric element
@@ -59,6 +61,20 @@ and keeps the per-record shape and trailing dimensions. Ragged arrays, wrong sha
 strings, complex values, and incompatible units are rejected. Mappings include both input and
 output units. Producers declare stress/strain measures, tensor component order,
 orientation representation, and identifier semantics through the schema and mapping when relevant.
+
+HDF5 1.0 keeps the effective units in `units_json` and adds optional `units_source_json`, a mapping
+from field name to `declared` (source metadata or explicit mapping), `assumed` (schema default),
+`unknown` (historical unit with no recorded origin), or `unspecified` (a field without a unit).
+For example, a CSV containing `time,stage` can produce `units_json={"time":"s","stage":null}`
+and `units_source_json={"time":"assumed","stage":"unspecified"}`. Re-reading and rewriting
+preserve these origins. A legacy file with no origin map remains readable and uses `unknown`
+for its recorded units. The extra optional attribute is backward compatible with format 1.0.
+Inspection, reports, and comparisons expose field-level `unit_source` values.
+
+String fields require a text value for every record. Missing text produces `missing_string_value`
+when `allow_missing=True`, or the existing `missing_value` error when `allow_missing=False`.
+Fill the missing entries or remove the incomplete records before validation and HDF5 conversion.
+Numeric fields retain their schema-declared missing-value policy.
 
 ## In-memory stability
 
@@ -94,11 +110,9 @@ files that lack these additive attributes remain readable. A snapshot must conta
 attributes. The writer rejects empty datasets because the HDF5 table contract requires a non-zero
 record count and the current reader refuses empty tables.
 
-For backward compatibility, a legacy HDF5 1.0 file using built-in `curve`, `point`, or `field2d` may
-omit the schema snapshot. A non-built-in profile must include a verified canonical `schema_json` and
-matching `schema_sha256`; without them the reader cannot establish the custom contract and fails
-closed. This rule adds no required root attribute to legacy built-in files and does not change
-`format_version=1.0`.
+A legacy HDF5 1.0 file using built-in `curve`, `point`, or `field2d` may omit the schema snapshot.
+A custom profile includes verified canonical `schema_json` and matching `schema_sha256`.
+Both cases retain `format_version=1.0`.
 
 `write_hdf5()` writes validated results by default. To record an invalid validation result, pass
 `allow_invalid=True`. HDF5 writes use a same-directory temporary file and replace the target after
@@ -127,11 +141,10 @@ rules.
 
 `build_report()` adds the selected schema profile/version, `validation.errors`,
 `validation.warnings`, descriptive statistics, provenance, adapter information, HDF5 chunk details,
-and a scope note describing declared conformance separately from physical or scientific
-interpretation. JSON uses sorted keys. Markdown keeps fixed headings and field order. HTML is
-static, escaped, and ready for offline printing. Reports contain aggregate metadata while source
-records remain in the source dataset. Provenance keeps a basename and may include a digest.
-Credential-like values are redacted.
+and a description of the checks performed. JSON uses sorted keys. Markdown keeps fixed headings
+and field order. HTML is static, escaped, and ready for offline printing. Reports contain aggregate
+metadata while source records remain in the source dataset. Provenance keeps a basename and may
+include a digest. Credential-like values are redacted.
 
 The CLI forms are:
 

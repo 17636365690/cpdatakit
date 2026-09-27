@@ -12,6 +12,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from ._atomic import write_text_atomic
 from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import AdapterError, CPDataKitError, DataReadError, OutputExistsError
 from .io import _ensure_readable, _read_hdf5_metadata, iter_hdf5_chunks, load_dataset
@@ -176,6 +177,7 @@ def _series_field_info(
     series: pd.Series,
     *,
     unit: str = "not available",
+    unit_source: str | None = None,
     description: str = "",
     chunks: list[int] | None = None,
 ) -> dict[str, Any]:
@@ -196,6 +198,7 @@ def _series_field_info(
         "shape": [len(series), *record_shape],
         "record_shape": record_shape,
         "unit": _safe_text(unit),
+        "unit_source": unit_source or ("declared" if unit != "not available" else "unspecified"),
         "missing_count": _missing_count(values),
         "description": _safe_text(description),
         "chunks": chunks,
@@ -219,15 +222,6 @@ def _portable_provenance(
     source_description: str = "input file",
 ) -> dict[str, object]:
     source = raw if isinstance(raw, Mapping) else {}
-    allowed = {
-        "source_description",
-        "converted_at_utc",
-        "cpdatakit_version",
-        "python_version",
-        "operation_log",
-        "input_filename",
-        "input_sha256",
-    }
     result: dict[str, object] = {}
     for key in (
         "source_description",
@@ -238,8 +232,6 @@ def _portable_provenance(
         "input_filename",
         "input_sha256",
     ):
-        if key not in allowed:
-            continue
         if key not in source:
             continue
         if key == "input_filename":
@@ -299,6 +291,7 @@ def _inspect_frame(
             name,
             series,
             unit=_unit_value(units, str(name)),
+            unit_source=metadata.get("units_source", {}).get(str(name)),
             description=_field_description(mapping, str(name)),
         )
         for name, series in dataset.data.items()
@@ -328,6 +321,7 @@ def _attach_schema(
             continue
         if item["unit"] == "not available" and spec.unit is not None:
             item["unit"] = _safe_text(spec.unit)
+            item["unit_source"] = "assumed"
         if not item["description"] and spec.description:
             item["description"] = _safe_text(spec.description)
     result["schema"] = {
@@ -428,6 +422,7 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
             "shape": list(dataset.shape),
             "record_shape": list(dataset.shape[1:]),
             "unit": _unit_value(units, name),
+            "unit_source": metadata["units_source"].get(name, "unspecified"),
             "missing_count": missing_count,
             "description": description,
             "chunks": chunk_shape,
@@ -696,6 +691,7 @@ def render_inspection_text(result: Mapping[str, Any]) -> str:
         lines.append(
             f"  - {_safe_text(field.get('name'))}: dtype={_safe_text(field.get('dtype'))}, "
             f"shape={shape}, unit={_safe_text(field.get('unit'))}, "
+            f"unit_source={_safe_text(field.get('unit_source', 'unknown'))}, "
             f"missing={_safe_text(field.get('missing_count'))}"
         )
     hdf5 = result.get("hdf5", {})
@@ -765,8 +761,7 @@ def write_inspection(
     if target.exists() and not force:
         raise OutputExistsError(f"Output already exists: {target}; pass --force to replace it")
     try:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(rendered, encoding="utf-8")
+        write_text_atomic(target, rendered, force=force)
     except OSError as exc:
         raise CPDataKitError(f"Cannot write inspection output {target}: {exc}") from exc
     return target

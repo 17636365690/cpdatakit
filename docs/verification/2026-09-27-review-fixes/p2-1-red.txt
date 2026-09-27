@@ -1,0 +1,66 @@
+FF.                                                                      [100%]
+================================== FAILURES ===================================
+______ test_cancelled_job_retains_failure_diagnostic_and_logs[failure0] _______
+
+caplog = <_pytest.logging.LogCaptureFixture object at 0x000002B135DD87A0>
+failure = ValueError('broken payload')
+
+    @pytest.mark.parametrize("failure", [ValueError("broken payload"), DataReadError("broken input")])
+    def test_cancelled_job_retains_failure_diagnostic_and_logs(caplog, failure):
+        manager = JobManager(max_workers=1)
+        started = threading.Event()
+        release = threading.Event()
+
+        def work(cancel):
+            started.set()
+            release.wait(5)
+            assert cancel.is_set()
+            raise failure
+
+        try:
+            with caplog.at_level(logging.ERROR, logger="cpdatakit.jobs.manager"):
+                handle = manager.submit("failing-cancellation", work)
+                assert started.wait(5)
+                assert manager.cancel(handle.id)
+                release.set()
+                record = manager.wait(handle.id, timeout=5)
+            assert record.status == JobStatus.CANCELLED
+>           assert record.error is not None
+E           AssertionError: assert None is not None
+E            +  where None = JobRecord(id='fd0124c1f27e4ad2a03c2b9df6274cd2', operation='failing-cancellation', status=<JobStatus.CANCELLED: 'cance..., input_filename=None, output_filename=None, operation_log=('queued', 'running', 'cancelled'), result=None, error=None).error
+
+tests\test_review_cancellation.py:33: AssertionError
+______ test_cancelled_job_retains_failure_diagnostic_and_logs[failure1] _______
+
+caplog = <_pytest.logging.LogCaptureFixture object at 0x000002B135E00CB0>
+failure = DataReadError('broken input')
+
+    @pytest.mark.parametrize("failure", [ValueError("broken payload"), DataReadError("broken input")])
+    def test_cancelled_job_retains_failure_diagnostic_and_logs(caplog, failure):
+        manager = JobManager(max_workers=1)
+        started = threading.Event()
+        release = threading.Event()
+
+        def work(cancel):
+            started.set()
+            release.wait(5)
+            assert cancel.is_set()
+            raise failure
+
+        try:
+            with caplog.at_level(logging.ERROR, logger="cpdatakit.jobs.manager"):
+                handle = manager.submit("failing-cancellation", work)
+                assert started.wait(5)
+                assert manager.cancel(handle.id)
+                release.set()
+                record = manager.wait(handle.id, timeout=5)
+            assert record.status == JobStatus.CANCELLED
+>           assert record.error is not None
+E           AssertionError: assert None is not None
+E            +  where None = JobRecord(id='4acf684b22ef47fca8e773f1343c7acd', operation='failing-cancellation', status=<JobStatus.CANCELLED: 'cance..., input_filename=None, output_filename=None, operation_log=('queued', 'running', 'cancelled'), result=None, error=None).error
+
+tests\test_review_cancellation.py:33: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_review_cancellation.py::test_cancelled_job_retains_failure_diagnostic_and_logs[failure0]
+FAILED tests/test_review_cancellation.py::test_cancelled_job_retains_failure_diagnostic_and_logs[failure1]
+2 failed, 1 passed in 0.50s

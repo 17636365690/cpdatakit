@@ -281,8 +281,7 @@ def test_report_markdown_has_stable_sections_and_field_order(curve: Dataset) -> 
     assert rendered.index("## Fields") < rendered.index("## Validation")
     assert rendered.index("| step |") < rendered.index("| strain |")
     assert (
-        "Validation reports declared format constraints; physical or scientific interpretation remains part of the domain workflow."
-        in rendered
+        "Validation checks declared structure, fields, units, and data-quality rules." in rendered
     )
 ~~~
 
@@ -396,7 +395,7 @@ Keep the renderer pure. Run the JSON renderer test and make it pass before addin
 
 - [ ] Step 2: Implement canonical report assembly
 
-build_report() must load and validate the requested schema, use inspect_dataset(path, schema=contract) for file and structure details, load CSV/JSON through load_dataset(), load native HDF5 through its existing reader, and load DADF5 through DamaskDADF5Adapter(). It then runs validate_dataset(dataset, contract) and summarize_dataset(dataset, contract, validation=result). Put result.to_dict() under validation, schema_to_dict(contract) under schema, and the summary under statistics. Keep the exact scope note: validation conformance is reported separately from physical or scientific interpretation. Build the report even when validation is invalid.
+build_report() must load and validate the requested schema, use inspect_dataset(path, schema=contract) for file and structure details, load CSV/JSON through load_dataset(), load native HDF5 through its existing reader, and load DADF5 through DamaskDADF5Adapter(). It then runs validate_dataset(dataset, contract) and summarize_dataset(dataset, contract, validation=result). Put result.to_dict() under validation, schema_to_dict(contract) under schema, and the summary under statistics. Describe the declared checks in scope_note. Build the report even when validation is invalid.
 
 - [ ] Step 3: Run JSON payload tests and verify green
 
@@ -593,7 +592,7 @@ Explain inspect schema optionality, report format choices, --force, and statuses
 
 - [ ] Step 2: Extend quickstart
 
-Add a conversion-to-inspection/report flow, including offline reports and a scope note that separates declared validation from physical or scientific interpretation.
+Add a conversion-to-inspection/report flow, including offline reports and a description of the declared checks.
 
 - [ ] Step 3: Document data-format and architecture boundaries
 

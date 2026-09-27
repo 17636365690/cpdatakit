@@ -60,8 +60,7 @@ def _axis(value, name):
 def plot_scientific_slice(request: SliceRequest, *, context=None):
     """Export one plane, preserving fixed dimensions in the reader selection.
 
-    This checks the selected plane's representation, not the physical validity of
-    the entire dataset. Units come from input declarations and are never inferred.
+    Checks the selected plane's representation and uses units declared in the input.
     """
     source, target = Path(request.data), Path(request.output)
     provenance = {"operation": "plot_scientific_slice", "input_filename": source.name}

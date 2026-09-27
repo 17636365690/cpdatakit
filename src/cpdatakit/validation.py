@@ -97,7 +97,22 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
                 spec.name,
                 "Field contains missing values.",
                 missing.sum(),
-                "Provide values or explicitly permit missing values in the schema.",
+                (
+                    "Fill missing entries with meaningful text or remove incomplete records."
+                    if spec.dtype == "string"
+                    else "Provide values or explicitly permit missing values in the schema."
+                ),
+            )
+        )
+    elif spec.dtype == "string" and missing.any():
+        result.errors.append(
+            _issue(
+                "missing_string_value",
+                spec.name,
+                f"Field {spec.name!r} contains missing text; string fields require text values.",
+                missing.sum(),
+                "Fill missing entries with meaningful text or remove the incomplete records "
+                "before validation and conversion.",
             )
         )
     if spec.shape:
@@ -268,6 +283,21 @@ def _check_field(frame: pd.DataFrame, spec: FieldSchema, result: ValidationResul
 
 def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResult) -> None:
     units = dataset.metadata.get("units", {})
+    sources = dataset.metadata.get("units_source", {})
+    if not isinstance(sources, dict) or any(
+        source not in ("declared", "assumed", "unknown", "unspecified")
+        for source in sources.values()
+    ):
+        result.errors.append(
+            _issue(
+                "invalid_units_source",
+                None,
+                "Dataset units_source must map fields to "
+                "declared, assumed, unknown, or unspecified.",
+                len(dataset.data),
+            )
+        )
+        return
     if not isinstance(units, dict):
         result.errors.append(
             _issue(
@@ -281,6 +311,19 @@ def _check_units(dataset: Dataset, schema: ProfileSchema, result: ValidationResu
     for spec in schema.fields:
         if spec.name not in dataset.data or not spec.unit:
             continue
+        source = sources.get(spec.name)
+        if spec.name not in units or source in {"assumed", "unknown"}:
+            result.warnings.append(
+                _issue(
+                    "unit_not_declared",
+                    spec.name,
+                    f"Field {spec.name!r} has no confirmed source unit; "
+                    f"using {units.get(spec.name, spec.unit)!r} for validation.",
+                    len(dataset.data),
+                    "Confirm the source unit in dataset metadata or an explicit unit mapping.",
+                    severity="warning",
+                )
+            )
         supplied = units.get(spec.name, spec.unit)
         try:
             if not isinstance(supplied, str) or not supplied.strip():

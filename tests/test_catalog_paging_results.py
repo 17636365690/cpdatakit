@@ -252,17 +252,27 @@ def test_omitted_update_result_does_not_revert_a_concurrent_result_write(tmp_pat
     catalog.register_job(
         project.id, job_id="result", operation="validate", status="running", result={"old": True}
     )
-    original = catalog.get_job
+    original = catalog._connect
     concurrent = True
 
-    def interleaved_read(job_id):
-        nonlocal concurrent
-        record = original(job_id)
-        if concurrent:
-            concurrent = False
-            with sqlite3.connect(catalog.database) as writer:
-                writer.execute("UPDATE jobs SET result_json=? WHERE id=?", ('{"new":true}', job_id))
-        return record
+    def interleaved_connection():
+        connection = original()
 
-    monkeypatch.setattr(catalog, "get_job", interleaved_read)
+        def before_write(statement):
+            nonlocal concurrent
+            if concurrent and (
+                statement.startswith("BEGIN IMMEDIATE") or statement.startswith("UPDATE jobs")
+            ):
+                concurrent = False
+                with sqlite3.connect(catalog.database) as writer:
+                    writer.execute(
+                        "UPDATE jobs SET result_json=? WHERE id=?", ('{"new":true}', "result")
+                    )
+
+        connection.set_trace_callback(before_write)
+        return connection
+
+    monkeypatch.setattr(catalog, "_connect", interleaved_connection)
     assert catalog.update_job("result", status="succeeded").result == {"new": True}
+    assert concurrent is False
+    assert catalog.get_job("result").result == {"new": True}

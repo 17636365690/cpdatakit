@@ -1,7 +1,7 @@
 # Application service boundary
 
-The v0.6 application service boundary is additive to the v0.5 package surface and does not change
-schema 1.0, HDF5 1.0, or the existing command names.
+The v0.6 application service layer extends the v0.5 package surface while preserving
+schema 1.0, HDF5 1.0, and the existing command names.
 
 ## Implemented core contract
 
@@ -30,7 +30,7 @@ for tabular data and HDF5 2.0 for scientific data. Artifact paths are relative t
 Paths outside it are shown as `[outside-workspace]`.
 
 Tabular plots use the units stored in the dataset. For legacy inputs with no unit metadata, labels
-use the selected schema's declarations. Plotting does not change numeric values; use an explicit
+use the selected schema's declarations. Plots retain the input numeric values; use an explicit
 mapping when a different output unit is needed. A mapping's input unit must agree with the stored
 source unit, including scale and offset; equivalent unit aliases are accepted.
 

@@ -3,6 +3,9 @@
 CPDataKit 是面向科学和工程数据的 Python 工具，通过 schema 定义字段规则，完成验证、标准化
 和审计。项目最初用于晶体塑性工作流。
 
+v0.9.2 修正缺失文本校验、单位来源记录、加载限额、并发任务更新和原子文件发布，
+并保留取消期间的异常诊断。说明文档和界面直接介绍已有能力。
+
 v0.9.1 是维护版本：schema 上传失败时返回固定提示，避免暴露内部异常细节；
 pandas 依赖范围扩展为 `>=2.2,<4`，允许使用 pandas 3。
 
@@ -17,9 +20,8 @@ v0.8.0 新增选择性读取、多维热图、schema 草案、映射预览和可
 v0.8.1 改进数据完整性、批处理中断恢复、多维报告比较和工作台响应，
 并限制任务驻留内存，按需加载资源与历史详情。
 
-> **Alpha 版本：** 验证报告说明记录是否符合所选 schema，物理结果需要结合领域方法解释。
-> 合成示例使用固定随机种子，原始公开数据保留在上游来源。KupferDigital 集成随附按
-> CC-BY-4.0 署名的处理后数据。
+合成示例使用固定随机种子，原始公开数据保留在上游来源。KupferDigital 集成随附按
+CC-BY-4.0 署名的处理后数据。
 
 ## 什么时候用
 
@@ -37,7 +39,10 @@ diff 与离线报告比较。schema 显式声明字段、类型、shape、
 显式提供。DAMASK DADF5 只读适配器在文件中存在一个明确选择时，也能完成检查和报告。
 Writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
 CPDataKit 会把它记录为由调用方管理的 provenance。
-v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和仅限表格的 Parquet
+CSV/JSON 缺少来源单位时，校验会以 schema 单位作为假定并给出 `unit_not_declared` 警告；
+只有警告时结果仍有效。HDF5 保留原有单位键，并用 `units_source_json` 区分来源声明、
+schema 假定和历史未知；检查、报告和比较均显示单位来源。
+v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和 Parquet 表格
 适配器，所有 N 维数据和能力检查都保持显式。
 
 ## 安装与快速开始
@@ -48,16 +53,16 @@ v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和仅
 v0.6.0 要求 Python 3.12 或更高版本，因为 xarray 和 Zarr 已经高于 v0.5 的依赖下限。
 Python 3.10 和 3.11 用户继续使用已发布的 v0.5.x 兼容线。
 
-从 PyPI 安装 v0.9.1：
+从 PyPI 安装 v0.9.2：
 
 ```powershell
-python -m pip install "cpdatakit==0.9.1"
+python -m pip install "cpdatakit==0.9.2"
 ```
 
 也可以安装同版本的 GitHub release wheel：
 
 ```powershell
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.1/cpdatakit-0.9.1-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.2/cpdatakit-0.9.2-py3-none-any.whl"
 ```
 
 安装后运行 `cpdatakit ui`，按[工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)操作。
@@ -84,7 +89,7 @@ python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.9.1 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.1)
+- [v0.9.2 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.2)
 - [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
 - [五分钟快速教程](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
 - [当前中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
@@ -131,7 +136,7 @@ cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h
 cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
 ```
 
-结果分为 identical、backward-compatible 和 breaking。这个命令只读。记录迁移和 HDF5 重写另行处理。
+结果分为 identical、backward-compatible 和 breaking，生成两份 schema 的差异报告。
 
 启动本地工作台（默认绑定 loopback 并打开浏览器）：
 
@@ -152,16 +157,15 @@ cpdatakit compare left-report.json right-report.json --output comparison-bundle
 ```
 
 bundle 包含 JSON、Markdown、HTML 和带成员 hash 的 manifest。比较内容包括声明的 schema、验证结果、
-结构和标量统计。原始张量记录和物理等价性需要另行分析。
+结构、单位来源和标量统计。
 
 `inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
 HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
 HTML，也支持 `--format markdown` 和 `--format json`。HTML 顶部显示校验状态与数量，
-随后列出字段、统计表和来源摘要；完整元数据可以展开。未知统计标记为未提供，未声明单位
-不会当作无量纲。JSON 与 Markdown 沿用原有结构，原始记录继续保留在输入数据中。
+随后列出字段、统计表和来源摘要；完整元数据可以展开。未知统计标记为未提供；
+无量纲单位沿用明确声明的 `1` 或 `dimensionless`。JSON 与 Markdown 沿用原有结构，原始记录继续保留在输入数据中。
 替换已有输出时显式传入 `--force`。处理成功且没有验证错误时退出码为 `0`；
-验证错误，或 `inspect` 发现声明的结构/缺失值风险时为 `1`。只有 warning 的结果仍会被报告，
-但不会让结果失效。参数、schema、读取和输出错误为 `2`。验证结果描述声明的结构检查，物理或科学判断结合领域方法完成。使用 `cpdatakit --help`
+验证错误，或 `inspect` 发现声明的结构/缺失值风险时为 `1`。只有 warning 的结果仍会被报告，并保持有效。参数、schema、读取和输出错误为 `2`。验证结果逐项列出所声明规则的检查结果。使用 `cpdatakit --help`
 查看完整帮助。
 
 ## Python API
@@ -205,6 +209,6 @@ Apache-2.0，依赖许可核查见
 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE)，引用信息见
 [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/main/CITATION.cff)。
 
-本轮改动见 [v0.9.1 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.1.md)和
+本轮改动见 [v0.9.2 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.2.md)和
 [当前工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)。历史验证记录保留在
 [`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/)。

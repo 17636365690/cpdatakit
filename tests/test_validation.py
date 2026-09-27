@@ -18,10 +18,9 @@ def test_valid_curve(curve: Dataset) -> None:
     assert validate_dataset(curve, "curve").valid
 
 
-def test_validation_scope_note_describes_domain_workflow(curve: Dataset) -> None:
+def test_validation_scope_note_describes_declared_checks(curve: Dataset) -> None:
     assert validate_dataset(curve, "curve").to_dict()["scope_note"] == (
-        "Validation reports declared format constraints; physical or scientific interpretation "
-        "remains part of the domain workflow."
+        "Validation checks declared structure, fields, units, and data-quality rules."
     )
 
 

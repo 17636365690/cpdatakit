@@ -1,0 +1,1099 @@
+FFFFFFFFFFFFFFFFFFFFFFFF..                                               [100%]
+================================== FAILURES ===================================
+_____ test_all_reads_translate_database_errors[connect-get_project-args0] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2811F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F281E50>
+method = 'get_project', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+____ test_all_reads_translate_database_errors[connect-list_projects-args1] ____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F281E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F282360>
+method = 'list_projects', args = (), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:296: in list_projects
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+____ test_all_reads_translate_database_errors[connect-list_datasets-args2] ____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2825D0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F283170>
+method = 'list_datasets', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:343: in list_datasets
+    self.get_project(project_id)
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+___ test_all_reads_translate_database_errors[connect-list_artifacts-args3] ____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F283290>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F283D10>
+method = 'list_artifacts', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:410: in list_artifacts
+    self.get_project(project_id)
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+____ test_all_reads_translate_database_errors[connect-list_schemas-args4] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F328200>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32B950>
+method = 'list_schemas', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:483: in list_schemas
+    self.get_project(project_id)
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+_______ test_all_reads_translate_database_errors[connect-get_job-args5] _______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32BC20>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F329430>
+method = 'get_job', args = ('work',), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:560: in get_job
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+______ test_all_reads_translate_database_errors[connect-list_jobs-args6] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F283710>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F283530>
+method = 'list_jobs', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:599: in list_jobs
+    self.get_project(project_id)
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+_____ test_all_reads_translate_database_errors[connect-get_dataset-args7] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2835F0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F282B40>
+method = 'get_dataset', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:692: in get_dataset
+    row = self._get_resource("datasets", dataset_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\catalog\sqlite.py:679: in _get_resource
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+____ test_all_reads_translate_database_errors[connect-get_artifact-args8] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32BA40>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32B1A0>
+method = 'get_artifact', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:703: in get_artifact
+    row = self._get_resource("artifacts", artifact_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\catalog\sqlite.py:679: in _get_resource
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+_____ test_all_reads_translate_database_errors[connect-get_schema-args9] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32BCB0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F328E00>
+method = 'get_schema', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:715: in get_schema
+    row = self._get_resource("schemas", schema_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\cpdatakit\catalog\sqlite.py:679: in _get_resource
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+__ test_all_reads_translate_database_errors[connect-count_resources-args10] ___
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F328F50>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32A390>
+method = 'count_resources', args = (1,), phase = 'connect'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:728: in count_resources
+    self.get_project(project_id)
+src\cpdatakit\catalog\sqlite.py:284: in get_project
+    connection = self._connect()
+                 ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def failed_connection():
+        if phase == "connect":
+>           raise sqlite3.DatabaseError("injected database failure")
+E           sqlite3.DatabaseError: injected database failure
+
+tests\test_review_catalog.py:37: DatabaseError
+______ test_all_reads_translate_database_errors[query-get_project-args0] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32A6C0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32B920>
+method = 'get_project', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32A6C0>
+project_id = 1
+
+    def get_project(self, project_id: int) -> ProjectRecord:
+        connection = self._connect()
+        try:
+>           row = connection.execute(
+                "SELECT id, name, workspace FROM projects WHERE id = ?", (project_id,)
+            ).fetchone()
+E           sqlite3.DatabaseError: access to projects.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:286: DatabaseError
+_____ test_all_reads_translate_database_errors[query-list_projects-args1] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32AA50>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32AF30>
+method = 'list_projects', args = (), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32AA50>
+
+    def list_projects(self) -> tuple[ProjectRecord, ...]:
+        connection = self._connect()
+        try:
+>           rows = connection.execute(
+                "SELECT id, name, workspace FROM projects ORDER BY id"
+            ).fetchall()
+E           sqlite3.DatabaseError: access to projects.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:298: DatabaseError
+_____ test_all_reads_translate_database_errors[query-list_datasets-args2] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F215D30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F2167E0>
+method = 'list_datasets', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F215D30>
+project_id = 1, limit = None, offset = 0, newest_first = False
+
+    def list_datasets(
+        self,
+        project_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        newest_first: bool = False,
+    ) -> tuple[DatasetRecord, ...]:
+        clause, paging = _page_clause(limit, offset, newest_first)
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+>           rows = connection.execute(
+                "SELECT id, project_id, relative_path, sha256, metadata_json "
+                "FROM datasets WHERE project_id = ?" + clause,
+                (project_id, *paging),
+            ).fetchall()
+E           sqlite3.DatabaseError: access to datasets.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:346: DatabaseError
+____ test_all_reads_translate_database_errors[query-list_artifacts-args3] _____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2414C0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F240B90>
+method = 'list_artifacts', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2414C0>
+project_id = 1, limit = None, offset = 0, newest_first = False
+
+    def list_artifacts(
+        self,
+        project_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        newest_first: bool = False,
+    ) -> tuple[ArtifactRecord, ...]:
+        clause, paging = _page_clause(limit, offset, newest_first)
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+>           rows = connection.execute(
+                "SELECT id, project_id, relative_path, kind, sha256, metadata_json "
+                "FROM artifacts WHERE project_id = ?" + clause,
+                (project_id, *paging),
+            ).fetchall()
+E           sqlite3.DatabaseError: access to artifacts.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:413: DatabaseError
+_____ test_all_reads_translate_database_errors[query-list_schemas-args4] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F240E00>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F243800>
+method = 'list_schemas', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F240E00>
+project_id = 1, limit = None, offset = 0, newest_first = False
+
+    def list_schemas(
+        self,
+        project_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        newest_first: bool = False,
+    ) -> tuple[SchemaRecord, ...]:
+        clause, paging = _page_clause(limit, offset, newest_first)
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+>           rows = connection.execute(
+                "SELECT id, project_id, name, version, relative_path, sha256, metadata_json "
+                "FROM schemas WHERE project_id = ?" + clause,
+                (project_id, *paging),
+            ).fetchall()
+E           sqlite3.DatabaseError: access to schemas.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:486: DatabaseError
+________ test_all_reads_translate_database_errors[query-get_job-args5] ________
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F329460>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F328890>
+method = 'get_job', args = ('work',), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F329460>
+job_id = 'work'
+
+    def get_job(self, job_id: str) -> CatalogJobRecord:
+        connection = self._connect()
+        try:
+>           row = connection.execute(
+                "SELECT id, project_id, operation, status, started_at, finished_at, "
+                "input_filename, "
+                "output_filename, operation_log_json, error, result_json FROM jobs WHERE id = ?",
+                (job_id,),
+            ).fetchone()
+E           sqlite3.DatabaseError: access to jobs.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:562: DatabaseError
+_______ test_all_reads_translate_database_errors[query-list_jobs-args6] _______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32A240>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F328710>
+method = 'list_jobs', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32A240>
+project_id = 1, limit = None, offset = 0, newest_first = False
+include_result = True
+
+    def list_jobs(
+        self,
+        project_id: int,
+        *,
+        limit: int | None = None,
+        offset: int = 0,
+        newest_first: bool = False,
+        include_result: bool = True,
+    ) -> tuple[CatalogJobRecord, ...]:
+        if not isinstance(include_result, bool):
+            raise CatalogError("include_result must be a boolean")
+        clause, paging = _page_clause(limit, offset, newest_first, column="rowid")
+        result_column = "result_json" if include_result else "NULL AS result_json"
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+>           rows = connection.execute(
+                "SELECT id, project_id, operation, status, started_at, finished_at, "
+                f"input_filename, output_filename, operation_log_json, error, {result_column} "
+                "FROM jobs WHERE project_id = ?" + clause,
+                (project_id, *paging),
+            ).fetchall()
+E           sqlite3.DatabaseError: access to jobs.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:602: DatabaseError
+______ test_all_reads_translate_database_errors[query-get_dataset-args7] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F282A20>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F282F90>
+method = 'get_dataset', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:692: in get_dataset
+    row = self._get_resource("datasets", dataset_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F282A20>
+table = 'datasets', record_id = 1
+
+    def _get_resource(self, table: str, record_id: int) -> sqlite3.Row:
+        connection = self._connect()
+        try:
+>           row = connection.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.DatabaseError: access to datasets.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:681: DatabaseError
+_____ test_all_reads_translate_database_errors[query-get_artifact-args8] ______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32BEC0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F32BD70>
+method = 'get_artifact', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:703: in get_artifact
+    row = self._get_resource("artifacts", artifact_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F32BEC0>
+table = 'artifacts', record_id = 1
+
+    def _get_resource(self, table: str, record_id: int) -> sqlite3.Row:
+        connection = self._connect()
+        try:
+>           row = connection.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.DatabaseError: access to artifacts.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:681: DatabaseError
+______ test_all_reads_translate_database_errors[query-get_schema-args9] _______
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2436B0>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F243920>
+method = 'get_schema', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\cpdatakit\catalog\sqlite.py:715: in get_schema
+    row = self._get_resource("schemas", schema_id)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F2436B0>
+table = 'schemas', record_id = 1
+
+    def _get_resource(self, table: str, record_id: int) -> sqlite3.Row:
+        connection = self._connect()
+        try:
+>           row = connection.execute(f"SELECT * FROM {table} WHERE id = ?", (record_id,)).fetchone()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.DatabaseError: access to schemas.id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:681: DatabaseError
+___ test_all_reads_translate_database_errors[query-count_resources-args10] ____
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F215D30>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F216B70>
+method = 'count_resources', args = (1,), phase = 'query'
+
+    @pytest.mark.parametrize("method, args", READS)
+    @pytest.mark.parametrize("phase", ["connect", "query"])
+    def test_all_reads_translate_database_errors(catalog, monkeypatch, method, args, phase):
+        original = catalog._connect
+
+        def failed_connection():
+            if phase == "connect":
+                raise sqlite3.DatabaseError("injected database failure")
+            connection = original()
+            # A real SQLite authorizer rejects reads at the execution boundary.
+            resource = method.removeprefix("get_").removeprefix("list_")
+            table = "datasets" if method == "count_resources" else resource.rstrip("s") + "s"
+            connection.set_authorizer(
+                lambda action, name, *args: sqlite3.SQLITE_DENY
+                if action == sqlite3.SQLITE_READ and name == table else sqlite3.SQLITE_OK
+            )
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", failed_connection)
+        with pytest.raises(CatalogError) as caught:
+>           getattr(catalog, method)(*args)
+
+tests\test_review_catalog.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F215D30>
+project_id = 1
+
+    def count_resources(self, project_id: int) -> dict[str, int]:
+        """Count each resource table for one project without materializing records."""
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+            tables = ("datasets", "artifacts", "schemas", "jobs")
+            query = " UNION ALL ".join(
+                f"SELECT '{table}', COUNT(*) FROM {table} WHERE project_id = ?" for table in tables
+            )
+>           return {row[0]: int(row[1]) for row in connection.execute(query, (project_id,) * 4)}
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.DatabaseError: access to datasets.project_id is prohibited
+
+src\cpdatakit\catalog\sqlite.py:735: DatabaseError
+____________ test_connections_enable_wal_and_wait_for_busy_writers ____________
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F283260>
+
+    def test_connections_enable_wal_and_wait_for_busy_writers(catalog):
+        connection = catalog._connect()
+        try:
+>           assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+E           AssertionError: assert 'delete' == 'wal'
+E
+E             - wal
+E             + delete
+
+tests\test_review_catalog.py:57: AssertionError
+____________ test_two_real_threads_preserve_independent_job_fields ____________
+
+catalog = <cpdatakit.catalog.sqlite.SQLiteCatalog object at 0x000002250F383E90>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002250F3834A0>
+
+    def test_two_real_threads_preserve_independent_job_fields(catalog, monkeypatch):
+        original = catalog._connect
+        ready = {name: threading.Event() for name in ("catalog-test_0", "catalog-test_1")}
+        release = threading.Event()
+        paused = set()
+
+        def traced_connection():
+            connection = original()
+
+            def trace(statement):
+                name = threading.current_thread().name
+                if name not in ready or name in paused:
+                    return
+                sql = statement.upper()
+                if sql.startswith("BEGIN IMMEDIATE") or sql.startswith("UPDATE JOBS"):
+                    paused.add(name)
+                    ready[name].set()
+                    release.wait(10)
+
+            connection.set_trace_callback(trace)
+            return connection
+
+        monkeypatch.setattr(catalog, "_connect", traced_connection)
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="catalog-test") as executor:
+            first = executor.submit(
+                catalog.update_job, "work", status="running", started_at="start",
+                operation_log=("progress",),
+            )
+            second = executor.submit(
+                catalog.update_job, "work", status="running", finished_at="finish", result={"rows": 2}
+            )
+            try:
+                assert all(event.wait(5) for event in ready.values())
+            finally:
+                release.set()
+            first.result(timeout=10)
+            second.result(timeout=10)
+        stored = catalog.get_job("work")
+>       assert stored.started_at == "start"
+E       AssertionError: assert None == 'start'
+E        +  where None = CatalogJobRecord(id='work', project_id=1, operation='inspect', status='running', started_at=None, finished_at='finish', input_filename=None, output_filename=None, operation_log=(), error=None, result={'rows': 2}).started_at
+
+tests\test_review_catalog.py:102: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-get_project-args0]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-list_projects-args1]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-list_datasets-args2]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-list_artifacts-args3]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-list_schemas-args4]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-get_job-args5]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-list_jobs-args6]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-get_dataset-args7]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-get_artifact-args8]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-get_schema-args9]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[connect-count_resources-args10]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-get_project-args0]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-list_projects-args1]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-list_datasets-args2]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-list_artifacts-args3]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-list_schemas-args4]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-get_job-args5]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-list_jobs-args6]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-get_dataset-args7]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-get_artifact-args8]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-get_schema-args9]
+FAILED tests/test_review_catalog.py::test_all_reads_translate_database_errors[query-count_resources-args10]
+FAILED tests/test_review_catalog.py::test_connections_enable_wal_and_wait_for_busy_writers
+FAILED tests/test_review_catalog.py::test_two_real_threads_preserve_independent_job_fields
+24 failed, 2 passed in 1.73s

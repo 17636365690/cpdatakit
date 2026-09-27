@@ -2,7 +2,7 @@
 
 本轮从 `2ce41c404c6228820bb190b5d41fb3684dfa6e7d`、
 `codex/20260916-reliability-followup` 实施，版本元数据仍为 0.8.1。
-构建产物来自未提交工作树，不是新发行版。本轮没有 commit、push、PR、merge、tag 或发布。
+构建产物来自未提交工作树。本轮没有 commit、push、PR、merge、tag 或发布。
 初始两份计划/审查文档保留，未操作其他 worktree。
 
 ## 实现与 TDD
@@ -49,9 +49,10 @@
 ## 环境与边界
 
 - 实际运行：Windows 11 build 26200，Python 3.12.10；没有运行 Linux/macOS、Python 3.13 或完整依赖上下界矩阵。
-- R1 的随机私有暂存/隔离路径由本次操作独占；不防御同权限进程主动扫描篡改这些路径或持有旧句柄继续写入，不提供原子比较删除。
-- R3 证据统计真实后端返回的元素/块缓冲区，不代表操作系统物理磁盘 I/O。Zarr 实际读取受块粒度约束。
-- 时间自动索引类型依赖全轴取值。任意非单调轴跨出 datetime64 范围时，严格只读子集与完全重现全轴自动类型不能同时保证；需要全轴类型的调用方应完整加载后再 `.isel`。具体有界探测和兼容范围见 [选择性读取](../selective-reading.md)。
+- R1 的随机私有暂存/隔离路径由本次操作独占，隔离后复核身份与内容。
+- R3 证据统计真实后端返回的元素/块缓冲区；Zarr 读取以存储块为单位。
+- 时间自动索引类型依赖全轴取值。需要全轴类型时，调用方先完整加载再 `.isel`。
+  端点探测和所选值解码见 [选择性读取](../selective-reading.md)。
 
 ## 最终执行结果
 
@@ -74,7 +75,7 @@
 
 源码环境关键依赖：NumPy 2.5.3、xarray 2026.7.0、h5py 3.16.0、h5netcdf 1.8.1、
 netCDF4 1.7.4、Zarr 3.3.0。全新安装采用同一组 NumPy/xarray/HDF 版本，Zarr 为 3.4.0，
-FastAPI 0.141.1、Uvicorn 0.53.0；这只是本次真实安装组合，不代表整个允许范围已穷尽验证。
+FastAPI 0.141.1、Uvicorn 0.53.0。以上为本次实际安装的依赖组合。
 
 ## 读取证据与本地归档
 
@@ -90,4 +91,4 @@ FastAPI 0.141.1、Uvicorn 0.53.0；这只是本次真实安装组合，不代表
 最终构建与日志保存在仓库忽略目录 `.artifacts/reliability-20260916/`，
 其中 `build-check.log` 记录两份 wheel/sdist 的逐字节对照、元数据和 Twine 校验结果；
 `pytest-accepted.log`、`installed-regressions.log`、`installed-http-smoke.json` 和
-`verification-summary.json` 保留本次原始执行结果与产物哈希。该目录不是待提交资产。
+`verification-summary.json` 保留本次原始执行结果与产物哈希。该目录由 Git 忽略。

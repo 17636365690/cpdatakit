@@ -96,9 +96,10 @@ def test_lower_rejects_ranges_in_candidate_input(tmp_path):
 
 def test_matrix_rejects_silent_installed_version_drift():
     module = _load_matrix_module()
-    with pytest.raises(ValueError, match="numpy"):
+    with pytest.raises(ValueError, match="numpy") as caught:
         module.verify_installed(["numpy==2.0.0"], {"numpy": "2.1.0"})
-    module.verify_installed(["Jinja2==3.1.0"], {"jinja2": "3.1.0"})
+    assert "numpy==2.0.0" in str(caught.value)
+    assert module.verify_installed(["Jinja2==3.1.0"], {"jinja2": "3.1.0"}) is None
 
 
 def test_matrix_rejects_failed_probe_operations():
@@ -156,7 +157,11 @@ def test_probe_completeness_uses_frozen_candidate_list(tmp_path):
             for name in ("netcdf:h5netcdf", "netcdf:netcdf4", "zarr:v3", "parquet", "fastapi:httpx")
         },
     }
-    _load_matrix_module().verify_probe(payload, candidates=candidates)
+    module = _load_matrix_module()
+    assert module.verify_probe(payload, candidates=candidates) is None
+    payload["dependencies"].pop("fixture")
+    with pytest.raises(ValueError, match="incomplete"):
+        module.verify_probe(payload, candidates=candidates)
 
 
 def test_installed_module_accepts_normalized_environment_path(tmp_path):
@@ -166,7 +171,10 @@ def test_installed_module_accepts_normalized_environment_path(tmp_path):
     module.write_text("")
     (tmp_path / "alias-parent").mkdir()
     alias = tmp_path / "alias-parent/../venv"
-    _load_matrix_module().verify_environment_module(module, alias)
+    matrix = _load_matrix_module()
+    assert matrix.verify_environment_module(module, alias) is None
+    with pytest.raises(ValueError, match="outside installed environment"):
+        matrix.verify_environment_module(tmp_path / "outside.py", alias)
 
 
 def test_installed_module_rejects_source_outside_environment(tmp_path):
@@ -195,4 +203,10 @@ def test_installed_module_accepts_symlink_alias(tmp_path):
         )
     else:
         alias.symlink_to(environment, target_is_directory=True)
-    _load_matrix_module().verify_environment_module(module, alias)
+    matrix = _load_matrix_module()
+    assert matrix.verify_environment_module(module, alias) is None
+    assert (
+        matrix.verify_environment_module(alias / "lib/cpdatakit/__init__.py", environment) is None
+    )
+    with pytest.raises(ValueError, match="outside installed environment"):
+        matrix.verify_environment_module(tmp_path / "outside.py", alias)

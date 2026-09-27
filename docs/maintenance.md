@@ -1,6 +1,6 @@
 # Maintenance
 
-The release documented by this checkout is v0.9.1. Keep `pyproject.toml`, `_version.py` and `CITATION.cff` aligned
+The release documented by this checkout is v0.9.2. Keep `pyproject.toml`, `_version.py` and `CITATION.cff` aligned
 with the current release. For each authorized release, update the version metadata, `CHANGELOG.md`,
 and `CITATION.cff` together, then run every check below before publishing.
 
@@ -10,7 +10,7 @@ maintenance line until a separate maintenance decision is made.
 The dependency workflow runs wheel-only lower/latest probes on Ubuntu, macOS, and Windows for
 Python 3.12 and 3.13. The current combinations are documented in `docs/v0.8-dependencies.md`;
 the scripts retain their original v0.6 names. Historical Windows/Linux probe evidence remains in
-`docs/v0.6-dependency-probe.md`. Local checks do not establish that the hosted matrix has passed.
+`docs/v0.6-dependency-probe.md`. Hosted runs provide the cross-platform matrix results.
 
 ## Exact release checklist
 
@@ -19,9 +19,8 @@ the scripts retain their original v0.6 names. Historical Windows/Linux probe evi
 the package metadata.
 Also keep the current [Chinese workbench guide](workbench-guide.md) aligned with the release pin
 and the actual template labels. Historical workbench guides retain their original version context.
-Keep historical release notes, plans and verification records unchanged. This offline gate
-does not require an unpublished candidate to exist on PyPI; verify registry availability and
-distribution hashes after an authorized publication.
+Preserve dates, commands and measured results in historical records. The offline gate checks
+local release metadata; verify registry availability and distribution hashes after publication.
 
 1. Run the full supported-Python test matrix: Ubuntu, macOS, and Windows, each with Python 3.12
    and 3.13, installing `.[dev]` and running `pytest`. The separate `minimum-dependencies` CI job
@@ -85,8 +84,7 @@ distribution hashes after an authorized publication.
    Confirm pending-persistence notices and interrupted-output recovery remain accessible. Inspect
    the offline HTML report at desktop and narrow widths and in print: overview counts, numeric
    precision, unknown units, statistics tables, provenance summaries, and expandable full metadata.
-   Keep JSON/Markdown report contracts and the source data unchanged. Local browser evidence does
-   not replace the cross-platform CI matrix or establish physical validity.
+   Keep JSON/Markdown report contracts and the source data unchanged. Record local browser results and cross-platform CI results with their own execution environments.
 
 Review schema changes as public API. Backward-compatible additions may remain in 1.x. Changes to
 meaning, units, requiredness, or conventions require a new schema version. Security reports follow

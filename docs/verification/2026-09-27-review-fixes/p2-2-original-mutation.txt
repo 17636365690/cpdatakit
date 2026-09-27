@@ -1,0 +1,23 @@
+F....F                                                                   [100%]
+================================== FAILURES ===================================
+_____________ test_matrix_rejects_silent_installed_version_drift ______________
+
+    def test_matrix_rejects_silent_installed_version_drift():
+        module = _load_matrix_module()
+>       with pytest.raises(ValueError, match="numpy") as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_v06_dependency_matrix.py:99: Failed
+__________________ test_fetch_verifier_rejects_wrong_digest ___________________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1531/test_fetch_verifier_rejects_wr0')
+
+>   ???
+E   Failed: DID NOT RAISE ValueError
+
+tests\test_surfalex_public_reference_case.py:177: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_v06_dependency_matrix.py::test_matrix_rejects_silent_installed_version_drift
+FAILED tests/test_surfalex_public_reference_case.py::test_fetch_verifier_rejects_wrong_digest
+2 failed, 4 passed in 0.50s
