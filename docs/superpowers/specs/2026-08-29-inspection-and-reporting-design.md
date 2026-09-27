@@ -66,7 +66,7 @@ file, schema, record_count, fields, validation, statistics,
 provenance, adapter, hdf5, scope_note
 ```
 
-`schema` contains the profile, version, field contract, conventions, and extension prefix using `schema_to_dict()`. `fields` combines structural inspection with schema descriptions and declared units. `validation` is the existing errors/warnings representation. `statistics` is the existing `summarize_dataset()` output. `scope_note` distinguishes validation conformance from physical or scientific interpretation.
+`schema` contains the profile, version, field contract, conventions, and extension prefix using `schema_to_dict()`. `fields` combines structural inspection with schema descriptions and declared units. `validation` is the existing errors/warnings representation. `statistics` is the existing `summarize_dataset()` output. `scope_note` describes the declared validation checks.
 
 JSON uses `json.dumps(..., indent=2, sort_keys=True, allow_nan=False)` and ends with one newline. Markdown uses fixed headings, fixed table columns, input field order, and deterministic scalar formatting. HTML uses a static stylesheet only; it has no external resources, JavaScript, or network dependency and is suitable for browser printing.
 

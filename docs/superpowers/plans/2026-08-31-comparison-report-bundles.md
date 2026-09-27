@@ -12,7 +12,7 @@ Spec: docs/superpowers/specs/2026-08-31-comparison-report-bundles-design.md
 
 ## Global Constraints
 
-- The first slice consumes existing JSON report payloads; it does not compare raw records or claim physical equivalence.
+- The first slice consumes existing JSON report payloads and compares their aggregates.
 - Reuse render_report_json(), render_report_markdown(), render_report_html(), sanitization, and diff_schemas().
 - Compare only scalar numeric statistics already present in reports; shaped/unavailable values remain explicitly unavailable.
 - Keep validation errors/warnings side by side and preserve deterministic field/order semantics.
@@ -149,8 +149,7 @@ Interfaces:
 
 - [ ] Step 3: Document scope and offline guarantees
 
-  Add copyable commands and state that bundles compare declared schema/validation/aggregate metrics;
-  they do not certify physical correctness or compare raw tensor records.
+  Add copyable commands and describe schema, validation, and aggregate metrics in the bundle.
 
 ### Task 5: Verify and hand off comparison bundles
 

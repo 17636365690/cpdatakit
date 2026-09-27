@@ -1,0 +1,151 @@
+........................................................FFF............  [100%]
+================================== FAILURES ===================================
+_______ test_permissions_are_preserved_before_content_write[inspection] _______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1537/test_permissions_are_preserved0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000280883E4620>
+writer = <function writer.<locals>.write at 0x000002808849BBA0>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x00000280883E4410>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+_________ test_permissions_are_preserved_before_content_write[report] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1537/test_permissions_are_preserved1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000280C85D25A0>
+writer = <function writer.<locals>.write at 0x00000280C8657920>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x00000280C85D2000>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+_________ test_permissions_are_preserved_before_content_write[schema] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1537/test_permissions_are_preserved2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000280C85D1E20>
+writer = <function writer.<locals>.write at 0x00000280C86579C0>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x00000280C85D2930>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+============================== warnings summary ===============================
+tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+  <repository>\.venv\Lib\site-packages\zarr\core\group.py:3413: ZarrUserWarning: Object at linked is not recognized as a component of a Zarr hierarchy.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[inspection]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[report]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[schema]
+3 failed, 68 passed, 1 warning in 2.10s

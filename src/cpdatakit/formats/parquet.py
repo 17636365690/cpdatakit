@@ -87,9 +87,18 @@ class ParquetReader:
         except (OSError, ValueError, TypeError) as exc:
             raise DataReadError(f"Cannot inspect Parquet input {input_path}: {exc}") from exc
 
-    def load(self, path: Path, *, selection: Selection | None = None, context=None) -> Dataset:
+    def load(
+        self,
+        path: Path,
+        *,
+        selection: Selection | None = None,
+        limits: ReadLimits | None = None,
+        context=None,
+    ) -> Dataset:
         input_path = Path(path)
         _check_path(input_path)
+        if limits is not None and input_path.stat().st_size > limits.max_bytes:
+            raise DataReadError("Parquet input exceeds the configured byte limit")
         arrow = _pyarrow()
         try:
             if selection and selection.indexers:
@@ -97,6 +106,8 @@ class ParquetReader:
             fields = list(selection.fields) if selection and selection.fields else None
             parquet = importlib.import_module("pyarrow.parquet")
             with parquet.ParquetFile(input_path) as file:
+                if limits is not None and file.metadata.num_rows > limits.max_records:
+                    raise DataReadError("Parquet input exceeds the configured record limit")
                 if fields and (unknown := set(fields) - set(file.schema_arrow.names)):
                     raise DataReadError(f"Unknown Parquet selection fields: {sorted(unknown)}")
                 bounded = selection and (selection.start is not None or selection.stop is not None)

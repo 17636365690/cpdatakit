@@ -74,8 +74,7 @@ without a schema diff and migration design.
 - Solver processes never use `shell=True`. Commands are argument arrays, working directories are
   explicit, environment inheritance is filtered, and cancellation terminates the owned process
   tree.
-- The project does not ship proprietary libraries, credentials, solver binaries, or third-party
-  model weights without redistribution rights.
+- Bundled third-party assets require redistribution rights and recorded attribution.
 
 ## 4. Shared application architecture
 
@@ -141,7 +140,7 @@ Initial screens are:
 8. Capability screen listing available readers, adapters, solvers, and optional providers.
 
 Long imports, conversions, and reports run through an in-process job manager. The UI polls a job
-resource and can cancel work. v0.6 does not claim crash-resistant distributed execution. Each job
+resource and can cancel work. Each job
 records start/end time, status, operation log, input/output basenames, and sanitized errors.
 
 ### 5.2 Local catalog
@@ -228,9 +227,8 @@ is written only for `ScientificDataset` or a caller's explicit v2 request.
 | Zarr | yes | yes | `ScientificDataset` | local stores first; remote stores require explicit filesystem configuration |
 | Parquet | yes | yes | `Dataset` | tabular fields; nested fixed-shape values only when Arrow schema is lossless |
 
-Writers expose capability checks before creating output. Parquet does not accept arbitrary
-N-dimensional data. NetCDF encoding limitations return errors naming the unsupported dtype,
-attribute, or variable.
+Writers check representation before creating output. Parquet writes tabular values. NetCDF errors
+identify the dtype, attribute, or variable that requires attention.
 
 ### 5.7 Registry and plugins
 
@@ -294,8 +292,7 @@ validation status.
 
 Inference only proposes changes. The user reviews and accepts a generated schema or mapping before
 normalization/conversion. Every proposal records candidates considered, confidence, evidence, and
-unresolved ambiguity. Unit compatibility can rank candidates. It cannot establish physical
-equivalence by itself.
+unresolved ambiguity. Unit compatibility can rank candidates.
 
 Deterministic explanation templates work offline. AI providers are optional plugins with local and
 remote implementations. Provider calls receive sanitized aggregate artifacts by default, never raw
@@ -311,8 +308,8 @@ platforms, environment allowlist, timeout behavior, and result adapter. `SolverJ
 resolved executable, arguments, working directory, timestamps, exit code, captured logs, output
 hashes, and cancellation state.
 
-The generic runner executes local processes only in the first release. It does not interpret solver
-science. Docker or scheduler backends implement the same job interface later. The UI shows the exact
+The generic runner executes local processes. Docker or scheduler backends implement the same job
+interface later. The UI shows the exact
 command and workspace before execution and requires confirmation.
 
 ### 8.2 Abaqus ODB
@@ -375,13 +372,3 @@ Automated literal scans flag excessive em dashes, curly quotes, banned filler ph
 openers in prose files. Maintainer review checks factual drift after rewriting. Code, fixtures,
 canonical JSON, generated manifests, and test expectations are excluded unless they contain a
 user-facing sentence whose wording is intentionally part of the product.
-
-## 11. Program non-goals
-
-- Bundling proprietary solver runtimes or bypassing their licenses.
-- Making physical claims without a named check, assumptions, evidence, and versioned method.
-- Automatically applying inferred schema, unit, tensor, orientation, or semantic changes.
-- Sending user data to a remote AI or cloud service without an explicit destination and action.
-- Requiring team infrastructure for local use.
-- Replacing `cpdatakit` package/import names during v0.6-v0.9.
-- Treating one release as a single all-or-nothing rewrite.

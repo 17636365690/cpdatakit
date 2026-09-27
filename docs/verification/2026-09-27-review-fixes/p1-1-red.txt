@@ -1,0 +1,468 @@
+FFFFFFFFFFFFFFFFFFFFFFFF                                                 [100%]
+================================== FAILURES ===================================
+__ test_over_limit_load_raises_data_read_error[h5netcdf-limits0-byte-reader] __
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da0/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67DB37620>)
+entry = 'reader', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[h5netcdf-limits0-byte-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da1/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F1EBD10>)
+entry = 'application', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[h5netcdf-limits1-record-reader] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da2/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F1EB560>)
+entry = 'reader', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[h5netcdf-limits1-record-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da3/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F271B80>)
+entry = 'application', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+__ test_over_limit_load_raises_data_read_error[netcdf4-limits0-byte-reader] ___
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da4/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67EFD6E10>)
+entry = 'reader', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[netcdf4-limits0-byte-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da5/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F2935C0>)
+entry = 'application', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[netcdf4-limits1-record-reader] __
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da6/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F2A9490>)
+entry = 'reader', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[netcdf4-limits1-record-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da7/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F2AA540>)
+entry = 'application', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+____ test_over_limit_load_raises_data_read_error[zarr-limits0-byte-reader] ____
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da8/data.zarr'), <cpdatakit.formats.zarr.ZarrReader object at 0x000001B67A9E08F0>)
+entry = 'reader', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: ZarrReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[zarr-limits0-byte-application] __
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da9/data.zarr'), <cpdatakit.formats.zarr.ZarrReader object at 0x000001B67F2AA660>)
+entry = 'application', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+___ test_over_limit_load_raises_data_read_error[zarr-limits1-record-reader] ___
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da10/data.zarr'), <cpdatakit.formats.zarr.ZarrReader object at 0x000001B67F2A9E20>)
+entry = 'reader', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: ZarrReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[zarr-limits1-record-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da11/data.zarr'), <cpdatakit.formats.zarr.ZarrReader object at 0x000001B67F2A9E80>)
+entry = 'application', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+__ test_over_limit_load_raises_data_read_error[parquet-limits0-byte-reader] ___
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da12/data.parquet'), <cpdatakit.formats.parquet.ParquetReader object at 0x000001B67DAE2C30>)
+entry = 'reader', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: ParquetReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[parquet-limits0-byte-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da13/data.parquet'), <cpdatakit.formats.parquet.ParquetReader object at 0x000001B60201FBC0>)
+entry = 'application', limits = ReadLimits(max_records=10000, max_bytes=1)
+label = 'byte'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[parquet-limits1-record-reader] __
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da14/data.parquet'), <cpdatakit.formats.parquet.ParquetReader object at 0x000001B60201F2C0>)
+entry = 'reader', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: ParquetReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_ test_over_limit_load_raises_data_read_error[parquet-limits1-record-application] _
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_over_limit_load_raises_da15/data.parquet'), <cpdatakit.formats.parquet.ParquetReader object at 0x000001B60204C830>)
+entry = 'application', limits = ReadLimits(max_records=2, max_bytes=67108864)
+label = 'record'
+
+    @pytest.mark.parametrize("entry", ["reader", "application"])
+    @pytest.mark.parametrize(
+        "limits, label", [(ReadLimits(max_bytes=1), "byte"), (ReadLimits(max_records=2), "record")]
+    )
+    def test_over_limit_load_raises_data_read_error(external_input, entry, limits, label):
+        path, reader = external_input
+        loader = reader.load if entry == "reader" else load_value
+        with pytest.raises(DataReadError, match=f"configured {label} limit"):
+>           loader(path, limits=limits)
+E           TypeError: load_value() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:44: TypeError
+_____ test_limits_none_and_sufficient_limits_preserve_selection[h5netcdf] _____
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_limits_none_and_sufficien0/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B60201CCE0>)
+
+    def test_limits_none_and_sufficient_limits_preserve_selection(external_input):
+        path, reader = external_input
+        for limits in (None, ReadLimits(max_records=5)):
+>           value = reader.load(path, selection=Selection(start=1, stop=3), limits=limits)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:50: TypeError
+_____ test_limits_none_and_sufficient_limits_preserve_selection[netcdf4] ______
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_limits_none_and_sufficien1/data.nc'), <cpdatakit.formats.netcdf.NetCDFReader object at 0x000001B67F2A8E30>)
+
+    def test_limits_none_and_sufficient_limits_preserve_selection(external_input):
+        path, reader = external_input
+        for limits in (None, ReadLimits(max_records=5)):
+>           value = reader.load(path, selection=Selection(start=1, stop=3), limits=limits)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: NetCDFReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:50: TypeError
+_______ test_limits_none_and_sufficient_limits_preserve_selection[zarr] _______
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_limits_none_and_sufficien2/data.zarr'), <cpdatakit.formats.zarr.ZarrReader object at 0x000001B60201DC40>)
+
+    def test_limits_none_and_sufficient_limits_preserve_selection(external_input):
+        path, reader = external_input
+        for limits in (None, ReadLimits(max_records=5)):
+>           value = reader.load(path, selection=Selection(start=1, stop=3), limits=limits)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: ZarrReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:50: TypeError
+_____ test_limits_none_and_sufficient_limits_preserve_selection[parquet] ______
+
+external_input = (WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_limits_none_and_sufficien3/data.parquet'), <cpdatakit.formats.parquet.ParquetReader object at 0x000001B60204F800>)
+
+    def test_limits_none_and_sufficient_limits_preserve_selection(external_input):
+        path, reader = external_input
+        for limits in (None, ReadLimits(max_records=5)):
+>           value = reader.load(path, selection=Selection(start=1, stop=3), limits=limits)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: ParquetReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:50: TypeError
+___________ test_zarr_load_rejects_real_directory_links[False-None] ___________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_zarr_load_rejects_real_di0')
+limits = None, root_link = False
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+>       with pytest.raises(DataReadError, match="symbolic links|directory links"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_read_limits.py:81: Failed
+_________ test_zarr_load_rejects_real_directory_links[False-limits1] __________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_zarr_load_rejects_real_di1')
+limits = ReadLimits(max_records=10000, max_bytes=67108864), root_link = False
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+        with pytest.raises(DataReadError, match="symbolic links|directory links"):
+            if limits is None:
+                ZarrReader().load(path)
+            else:
+>               ZarrReader().load(path, limits=limits)
+E               TypeError: ZarrReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:85: TypeError
+___________ test_zarr_load_rejects_real_directory_links[True-None] ____________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_zarr_load_rejects_real_di2')
+limits = None, root_link = True
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+>       with pytest.raises(DataReadError, match="symbolic links|directory links"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_read_limits.py:81: Failed
+__________ test_zarr_load_rejects_real_directory_links[True-limits1] __________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1510/test_zarr_load_rejects_real_di3')
+limits = ReadLimits(max_records=10000, max_bytes=67108864), root_link = True
+
+    @pytest.mark.parametrize("limits", [None, ReadLimits()])
+    @pytest.mark.parametrize("root_link", [False, True])
+    def test_zarr_load_rejects_real_directory_links(tmp_path, limits, root_link):
+        store = tmp_path / "data.zarr"
+        xr.Dataset({"value": ("record", [1, 2])}).to_zarr(store, consolidated=False, zarr_format=3)
+        if root_link:
+            path = tmp_path / "alias.zarr"
+            _directory_link(path, store)
+        else:
+            path = store
+            outside = tmp_path / "outside"
+            outside.mkdir()
+            _directory_link(store / "linked", outside)
+        with pytest.raises(DataReadError, match="symbolic links|directory links"):
+            if limits is None:
+                ZarrReader().load(path)
+            else:
+>               ZarrReader().load(path, limits=limits)
+E               TypeError: ZarrReader.load() got an unexpected keyword argument 'limits'
+
+tests\test_review_read_limits.py:85: TypeError
+============================== warnings summary ===============================
+tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+  <repository>\.venv\Lib\site-packages\zarr\core\group.py:3413: ZarrUserWarning: Object at linked is not recognized as a component of a Zarr hierarchy.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[h5netcdf-limits0-byte-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[h5netcdf-limits0-byte-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[h5netcdf-limits1-record-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[h5netcdf-limits1-record-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[netcdf4-limits0-byte-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[netcdf4-limits0-byte-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[netcdf4-limits1-record-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[netcdf4-limits1-record-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[zarr-limits0-byte-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[zarr-limits0-byte-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[zarr-limits1-record-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[zarr-limits1-record-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[parquet-limits0-byte-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[parquet-limits0-byte-application]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[parquet-limits1-record-reader]
+FAILED tests/test_review_read_limits.py::test_over_limit_load_raises_data_read_error[parquet-limits1-record-application]
+FAILED tests/test_review_read_limits.py::test_limits_none_and_sufficient_limits_preserve_selection[h5netcdf]
+FAILED tests/test_review_read_limits.py::test_limits_none_and_sufficient_limits_preserve_selection[netcdf4]
+FAILED tests/test_review_read_limits.py::test_limits_none_and_sufficient_limits_preserve_selection[zarr]
+FAILED tests/test_review_read_limits.py::test_limits_none_and_sufficient_limits_preserve_selection[parquet]
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-limits1]
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[True-None]
+FAILED tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[True-limits1]
+24 failed, 1 warning in 1.31s

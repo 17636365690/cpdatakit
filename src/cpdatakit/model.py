@@ -54,7 +54,6 @@ class ValidationResult:
             "errors": [asdict(item) for item in self.errors],
             "warnings": [asdict(item) for item in self.warnings],
             "scope_note": (
-                "Validation reports declared format constraints; physical or scientific "
-                "interpretation remains part of the domain workflow."
+                "Validation checks declared structure, fields, units, and data-quality rules."
             ),
         }

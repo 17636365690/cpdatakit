@@ -1,0 +1,217 @@
+................FFF.F.F.F......                                          [100%]
+================================== FAILURES ===================================
+_______ test_permissions_are_preserved_before_content_write[inspection] _______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_permissions_are_preserved0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000017F958DFD40>
+writer = <function writer.<locals>.write at 0x0000017F958E7240>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x0000017F958DF230>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+_________ test_permissions_are_preserved_before_content_write[report] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_permissions_are_preserved1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000017F958DDC40>
+writer = <function writer.<locals>.write at 0x0000017F9594B920>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x0000017F958DE0F0>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+_________ test_permissions_are_preserved_before_content_write[schema] _________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_permissions_are_preserved2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000017F958DCEC0>
+writer = <function writer.<locals>.write at 0x0000017F958E7880>
+
+    def test_permissions_are_preserved_before_content_write(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        target.write_bytes(b"previous complete output")
+        target.chmod(0o600)
+        previous_mode = stat.S_IMODE(target.stat().st_mode)
+        if os.name == "nt":
+            subprocess.run(["icacls", str(target), "/grant", "*S-1-1-0:(RX)"],
+                           capture_output=True, check=True)
+>           expected_acl = _saved_acl(target, tmp_path / "original.acl")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_review_atomic_text.py:110:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_review_atomic_text.py:99: in _saved_acl
+    return destination.read_text(encoding="utf-16").splitlines()[1]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<python-runtime>\Lib\pathlib.py:1028: in read_text
+    return f.read()
+           ^^^^^^^^
+<frozen codecs>:322: in decode
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <encodings.utf_16.IncrementalDecoder object at 0x0000017F958DDF40>
+input = b'o\x00u\x00t\x00p\x00u\x00t\x00.\x00t\x00x\x00t\x00\r\x00\n\x00D\x00:\x00A\x00I\x00(\x00A\x00;\x00;\x000\x00x\x001\x0...0A\x00;\x00;\x00;\x00B\x00A\x00)\x00(\x00A\x00;\x00I\x00D\x00;\x00F\x00A\x00;\x00;\x00;\x00O\x00W\x00)\x00\r\x00\n\x00'
+errors = 'strict', final = True
+
+    def _buffer_decode(self, input, errors, final):
+        if self.decoder is None:
+            (output, consumed, byteorder) = \
+                codecs.utf_16_ex_decode(input, errors, 0, final)
+            if byteorder == -1:
+                self.decoder = codecs.utf_16_le_decode
+            elif byteorder == 1:
+                self.decoder = codecs.utf_16_be_decode
+            elif consumed >= 2:
+>               raise UnicodeError("UTF-16 stream does not start with BOM")
+E               UnicodeError: UTF-16 stream does not start with BOM
+
+<python-runtime>\Lib\encodings\utf_16.py:67: UnicodeError
+__________ test_missing_text_validation_and_writer_agree[None-False] __________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_missing_text_validation_a1')
+allow_missing = False, missing = None
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(tmp_path, allow_missing, missing):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+        assert not result.valid
+        issue = next(issue for issue in result.errors if issue.field == "stage")
+        assert issue.affected_records == 1
+        assert issue.suggestion
+>       assert "permit missing" not in issue.suggestion
+E       AssertionError: assert 'permit missing' not in 'Provide val... the schema.'
+E
+E         'permit missing' is contained here:
+E           Provide values or explicitly permit missing values in the schema.
+E         ?                              ++++++++++++++
+
+tests\test_review_missing_strings.py:33: AssertionError
+________ test_missing_text_validation_and_writer_agree[missing1-False] ________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_missing_text_validation_a3')
+allow_missing = False, missing = <NA>
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(tmp_path, allow_missing, missing):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+        assert not result.valid
+        issue = next(issue for issue in result.errors if issue.field == "stage")
+        assert issue.affected_records == 1
+        assert issue.suggestion
+>       assert "permit missing" not in issue.suggestion
+E       AssertionError: assert 'permit missing' not in 'Provide val... the schema.'
+E
+E         'permit missing' is contained here:
+E           Provide values or explicitly permit missing values in the schema.
+E         ?                              ++++++++++++++
+
+tests\test_review_missing_strings.py:33: AssertionError
+__________ test_missing_text_validation_and_writer_agree[nan-False] ___________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1535/test_missing_text_validation_a5')
+allow_missing = False, missing = nan
+
+    @pytest.mark.parametrize("allow_missing", [True, False])
+    @pytest.mark.parametrize("missing", [None, pd.NA, np.nan])
+    def test_missing_text_validation_and_writer_agree(tmp_path, allow_missing, missing):
+        value = Dataset(pd.DataFrame({"stage": pd.Series(["heat", missing], dtype=object)}))
+        schema = _schema(allow_missing)
+        result = validate_dataset(value, schema)
+        assert not result.valid
+        issue = next(issue for issue in result.errors if issue.field == "stage")
+        assert issue.affected_records == 1
+        assert issue.suggestion
+>       assert "permit missing" not in issue.suggestion
+E       AssertionError: assert 'permit missing' not in 'Provide val... the schema.'
+E
+E         'permit missing' is contained here:
+E           Provide values or explicitly permit missing values in the schema.
+E         ?                              ++++++++++++++
+
+tests\test_review_missing_strings.py:33: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[inspection]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[report]
+FAILED tests/test_review_atomic_text.py::test_permissions_are_preserved_before_content_write[schema]
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[None-False]
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[missing1-False]
+FAILED tests/test_review_missing_strings.py::test_missing_text_validation_and_writer_agree[nan-False]
+6 failed, 25 passed in 1.31s

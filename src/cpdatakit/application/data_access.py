@@ -98,13 +98,19 @@ def is_hdf5_v2(path: Path) -> bool:
 
 
 def load_value(
-    path: Path, *, selection: Selection | None = None, context=None
+    path: Path,
+    *,
+    selection: Selection | None = None,
+    limits: ReadLimits | None = None,
+    context=None,
 ) -> Dataset | ScientificDataset:
     if context is not None:
         context.checkpoint("load")
     reader = reader_for(path)
     if reader is not None:
-        return reader.load(path, selection=selection, context=context)
+        return reader.load(path, selection=selection, limits=limits, context=context)
+    if limits is not None:
+        inspect_input(path, None, limits)
     if is_hdf5_v2(path):
         return load_hdf5_v2(path, selection=selection)
     if selection is not None:

@@ -12,7 +12,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from ..exceptions import AdapterError
+from ..exceptions import AdapterError, DataReadError
 from ..model import Dataset
 from ..provenance import build_provenance
 from .base import DatasetAdapter
@@ -85,8 +85,8 @@ class DamaskDADF5Adapter(DatasetAdapter):
                 return (
                     "DADF5_version_major" in handle.attrs or "DADF5_version_minor" in handle.attrs
                 )
-        except OSError:
-            return False
+        except OSError as exc:
+            raise DataReadError(f"Cannot read HDF5 input {input_path}: {exc}") from exc
 
     def __init__(
         self,

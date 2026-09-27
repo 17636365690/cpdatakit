@@ -1,7 +1,7 @@
 # CPDataKit HDF5 2.0
 
 HDF5 2.0 is the storage envelope for `ScientificDataset`. It stores named dimensions,
-coordinates, and variables directly. It does not first flatten an N-dimensional value into a table.
+coordinates, and variables directly.
 
 ## Layout
 
@@ -37,9 +37,8 @@ unsupported values fail before replacing an output. Older files without this opt
 read with empty global attributes.
 
 `write_hdf5_v2(..., force=False, allow_invalid=False)` validates dimensions, dtype, units and
-values before writing. Units must be declared on the arrays or in dataset metadata. The writer
-does not assign schema units to unannotated values. It computes a fresh validation summary instead
-of trusting a supplied summary. Invalid values are rejected by default; `allow_invalid=True`
+values before writing. Units are declared on the arrays or in dataset metadata. The writer
+computes a fresh validation summary. Invalid values are rejected by default; `allow_invalid=True`
 permits representable invalid data and records the actual errors. Structural and serialization
 requirements still apply. `ConvertRequest.allow_invalid` forwards the same choice.
 
@@ -50,6 +49,6 @@ the record axis. A v2 reader never weakens the v1 reader's required metadata che
 
 ## Version dispatch and migration
 
-The root `format_version` selects the reader. HDF5 1.0 stays the tabular reader. A v1-to-v2 change is
-an explicit migration with source/target schema and format hashes. It can add named dimensions or
-coordinates only when the operation is lossless. Physical meaning and record axes are never inferred.
+The root `format_version` selects the reader. HDF5 1.0 uses the tabular reader. A v1-to-v2 change
+is an explicit migration with source/target schema and format hashes, named dimensions, coordinate
+operations, scientific conventions, and record axes.

@@ -1,0 +1,262 @@
+FFFFFFFFF.......                                                         [100%]
+================================== FAILURES ===================================
+___ test_interrupted_text_write_preserves_complete_target[inspection-False] ___
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6779B290>
+writer = <function writer.<locals>.write at 0x0000023A67920680>
+existing = False
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+            assert target.read_bytes() == b"previous complete output"
+        else:
+>           assert not target.exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr0/output.txt').exists
+
+tests\test_review_atomic_text.py:45: AssertionError
+___ test_interrupted_text_write_preserves_complete_target[inspection-True] ____
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6779B6E0>
+writer = <function writer.<locals>.write at 0x0000023A67903560>, existing = True
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+>           assert target.read_bytes() == b"previous complete output"
+E           AssertionError: assert b'partial output' == b'previous complete output'
+E
+E             At index 1 diff: b'a' != b'r'
+E             Use -v to get more diff
+
+tests\test_review_atomic_text.py:43: AssertionError
+_____ test_interrupted_text_write_preserves_complete_target[report-False] _____
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6779B560>
+writer = <function writer.<locals>.write at 0x0000023A679D94E0>
+existing = False
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+            assert target.read_bytes() == b"previous complete output"
+        else:
+>           assert not target.exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr2/output.txt').exists
+
+tests\test_review_atomic_text.py:45: AssertionError
+_____ test_interrupted_text_write_preserves_complete_target[report-True] ______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6799D280>
+writer = <function writer.<locals>.write at 0x0000023A679D9620>, existing = True
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+>           assert target.read_bytes() == b"previous complete output"
+E           AssertionError: assert b'partial output' == b'previous complete output'
+E
+E             At index 1 diff: b'a' != b'r'
+E             Use -v to get more diff
+
+tests\test_review_atomic_text.py:43: AssertionError
+_____ test_interrupted_text_write_preserves_complete_target[schema-False] _____
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A67799AF0>
+writer = <function writer.<locals>.write at 0x0000023A67903240>
+existing = False
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+            assert target.read_bytes() == b"previous complete output"
+        else:
+>           assert not target.exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr4/output.txt').exists
+
+tests\test_review_atomic_text.py:45: AssertionError
+_____ test_interrupted_text_write_preserves_complete_target[schema-True] ______
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_interrupted_text_write_pr5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6799EB70>
+writer = <function writer.<locals>.write at 0x0000023A679DBE20>, existing = True
+
+    @pytest.mark.parametrize("existing", [False, True])
+    def test_interrupted_text_write_preserves_complete_target(tmp_path, monkeypatch, writer, existing):
+        target = tmp_path / "output.txt"
+        if existing:
+            target.write_bytes(b"previous complete output")
+        original = Path.write_text
+
+        def interrupted(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                original(path, "partial output", *args, **kwargs)
+                raise OSError("injected interrupted write")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", interrupted)
+        with pytest.raises((CPDataKitError, OSError), match="interrupted write"):
+            writer(target, force=existing)
+        if existing:
+>           assert target.read_bytes() == b"previous complete output"
+E           AssertionError: assert b'partial output' == b'previous complete output'
+E
+E             At index 1 diff: b'a' != b'r'
+E             Use -v to get more diff
+
+tests\test_review_atomic_text.py:43: AssertionError
+____________ test_concurrent_text_target_is_preserved[inspection] _____________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_concurrent_text_target_is0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6799F590>
+writer = <function writer.<locals>.write at 0x0000023A679F8220>
+
+    def test_concurrent_text_target_is_preserved(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        original = Path.write_text
+
+        def competing(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                target.write_bytes(b"concurrent complete output")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", competing)
+>       with pytest.raises(CPDataKitError, match="already exists"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CPDataKitError
+
+tests\test_review_atomic_text.py:59: Failed
+______________ test_concurrent_text_target_is_preserved[report] _______________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_concurrent_text_target_is1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A6799CA70>
+writer = <function writer.<locals>.write at 0x0000023A679F89A0>
+
+    def test_concurrent_text_target_is_preserved(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        original = Path.write_text
+
+        def competing(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                target.write_bytes(b"concurrent complete output")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", competing)
+>       with pytest.raises(CPDataKitError, match="already exists"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CPDataKitError
+
+tests\test_review_atomic_text.py:59: Failed
+______________ test_concurrent_text_target_is_preserved[schema] _______________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1520/test_concurrent_text_target_is2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023A67A109E0>
+writer = <function writer.<locals>.write at 0x0000023A679F85E0>
+
+    def test_concurrent_text_target_is_preserved(tmp_path, monkeypatch, writer):
+        target = tmp_path / "output.txt"
+        original = Path.write_text
+
+        def competing(path, data, *args, **kwargs):
+            if path.parent == tmp_path:
+                target.write_bytes(b"concurrent complete output")
+            return original(path, data, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "write_text", competing)
+>       with pytest.raises(CPDataKitError, match="already exists"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE CPDataKitError
+
+tests\test_review_atomic_text.py:59: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[inspection-False]
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[inspection-True]
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[report-False]
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[report-True]
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[schema-False]
+FAILED tests/test_review_atomic_text.py::test_interrupted_text_write_preserves_complete_target[schema-True]
+FAILED tests/test_review_atomic_text.py::test_concurrent_text_target_is_preserved[inspection]
+FAILED tests/test_review_atomic_text.py::test_concurrent_text_target_is_preserved[report]
+FAILED tests/test_review_atomic_text.py::test_concurrent_text_target_is_preserved[schema]
+9 failed, 7 passed in 0.61s

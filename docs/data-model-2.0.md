@@ -52,10 +52,9 @@ which dimension represents records.
 
 ## Ownership and lifecycle
 
-`ScientificDataset` owns metadata and the source reference. Backend file handles do not escape a
-reader method. Lazy arrays may be exposed only after the reader documents lifetime ownership and
-copy behavior. A copy must isolate mutable metadata while preserving logical values and source
-identity.
+`ScientificDataset` owns metadata and the source reference. Readers close backend file handles
+before returning. Lazy arrays require documented lifetime ownership and copy behavior. A copy
+isolates mutable metadata while preserving logical values and source identity.
 
 ## Storage boundary
 
@@ -63,6 +62,4 @@ HDF5 1.0 remains the tabular interchange format. HDF5 2.0, NetCDF, and Zarr stor
 coordinates, variables, and attributes without translating them into a table first. Parquet remains
 tabular and accepts only scalar or lossless fixed-shape Arrow values.
 
-Structural validation checks declared shape, dtype, dimension references, units, and metadata. It
-does not decide whether a temperature field is physically plausible or whether two fields are
-scientifically equivalent.
+Structural validation checks declared shape, dtype, dimension references, units, and metadata.

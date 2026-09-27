@@ -25,9 +25,7 @@ Ruff, Hatchling/build.
 - Preserve `Dataset`, `DatasetAdapter.load()`, `curve`, `point`, `field2d`, existing CLI syntax and
   exit codes, CPDataKit HDF5 `format_version=1.0`, legacy built-in HDF5 reads, DAMASK behavior, and
   the `cpdatakit` import path.
-- Validation reports only declared structural conformance and never physical correctness.
-- Do not add xarray, mesh models, new bulk formats, GUI/cloud/database features, physical inference,
-  AI interpretation, Abaqus runtime support, solver execution, or dynamic plugin discovery.
+- Validation reports declared structural conformance.
 - Every behavior change follows RED (expected failure), GREEN (minimal implementation), and focused
   regression verification before the next behavior.
 - Replace each template commit step with `git diff --check` and a scoped `git status`; no commits.
@@ -177,7 +175,7 @@ Ruff, Hatchling/build.
 
 **Interfaces:**
 - Documents: scientific/engineering schema-first core, CP first vertical, HDF5 snapshot rule,
-  adapter registry, thermal-cycle commands, validation scope, and explicit non-goals.
+  adapter registry, thermal-cycle commands, validation checks, and supported workflows.
 
 - [ ] Update project description and keywords without changing package name or version.
 - [ ] Update English/Chinese positioning while retaining the existing CP quickstart.

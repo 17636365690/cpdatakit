@@ -4,6 +4,33 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-09-27
+
+### Added
+
+- Record declared, schema-assumed, and historical unknown unit origins in optional HDF5 1.0
+  metadata and expose them in inspection, reports, and comparison bundles.
+- Accept optional `ReadLimits` on NetCDF, Zarr, Parquet and application loading paths.
+
+### Changed
+
+- Describe supported workflows directly throughout documentation, examples, and interface copy.
+- Give catalog connections an explicit busy timeout and persist catalog databases in WAL mode.
+- Strengthen six validation tests with returned-result assertions and rejection cases.
+
+### Fixed
+
+- Diagnose missing string values during validation before HDF5 conversion, including schemas
+  with `allow_missing=True`; report absent source units as warnings while preserving validity.
+- Apply source-size and record limits before external-format materialization and reject linked
+  Zarr directory entries on loading.
+- Translate catalog read failures to `CatalogError` and merge job updates in a single transaction.
+- Publish reports, inspection artifacts, and schema JSON atomically, preserving complete existing
+  outputs, file modes, and platform newlines.
+- Preserve a diagnostic and local exception log for job failures during cancellation.
+- Propagate DAMASK HDF5 open failures with their cause, simplify the provenance field projection,
+  and align local UI host-check documentation with hostname parsing.
+
 ## [0.9.1] - 2026-09-22
 
 ### Fixed

@@ -3,7 +3,7 @@
 This run uses deterministic synthetic data. It validates a declared crystal-plasticity curve,
 writes an HDF5 file with provenance, and renders a stress-strain plot.
 
-For the current v0.9.1 Chinese interface, start with the [workbench guide](workbench-guide.md).
+For the current v0.9.2 Chinese interface, start with the [workbench guide](workbench-guide.md).
 See [multidimensional viewing, schema drafting and batch conversion](post-v07-workflows.md)
 for advanced workflows. The command-line walkthrough below uses the current release.
 
@@ -30,13 +30,13 @@ source .venv/bin/activate
 Install the current release from PyPI:
 
 ```bash
-python -m pip install "cpdatakit==0.9.1"
+python -m pip install "cpdatakit==0.9.2"
 ```
 
-For a pinned GitHub v0.9.1 release wheel, use:
+For a pinned GitHub v0.9.2 release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.1/cpdatakit-0.9.1-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.2/cpdatakit-0.9.2-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example
@@ -80,9 +80,8 @@ values, HDF5 chunks, provenance, adapter details, and structural risks. The repo
 profile/version, validation errors and warnings, descriptive statistics, and scope note. Open
 `report.html` in a browser or print it in an offline environment. The Chinese HTML overview presents
 counts, field and statistics tables, and provenance summaries; full metadata remains expandable.
-Unknown values are not filled with zero, and undeclared units are not treated as dimensionless.
-Existing output stays in place; pass `--force` when replacement is intended. The report describes
-declared structural checks. Use domain methods to interpret physical and scientific results.
+Unknown values retain an unavailable marker, and dimensionless units use an explicit declaration.
+Existing output stays in place; pass `--force` when replacement is intended. The report lists the declared structural checks.
 
 ## 6. Plot the declared curve
 
@@ -91,8 +90,7 @@ cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-stra
 ```
 
 At this point, the directory contains `validation.json`, `summary.json`, `curve.h5`, and
-`stress-strain.png`. CPDataKit checks the declared data contract. Use domain-specific methods to
-assess physical correctness.
+`stress-strain.png`. CPDataKit checks the declared data contract.
 
 ## 7. Open the local workbench
 

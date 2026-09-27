@@ -167,6 +167,7 @@ def normalize_dataset(
 
     result = dataset.copy()
     units = dict(result.metadata.get("units", {}))
+    unit_sources = dict(result.metadata.get("units_source", {}))
     mapping_log: dict[str, dict[str, str | None]] = {}
     for item in items:
         series = result.data[item.source]
@@ -199,12 +200,15 @@ def normalize_dataset(
                 output_unit=item.output_unit,
             )
             units[item.target] = item.output_unit
+            unit_sources[item.target] = "declared"
         elif item.source in units:
             units[item.target] = units[item.source]
+            unit_sources[item.target] = unit_sources.get(item.source, "declared")
         result.data[item.target] = series
         if item.target != item.source:
             result.data = result.data.drop(columns=[item.source])
             units.pop(item.source, None)
+            unit_sources.pop(item.source, None)
         mapping_log[item.source] = {
             "target": item.target,
             "input_unit": item.input_unit,
@@ -215,11 +219,13 @@ def normalize_dataset(
         keep = [item.name for item in contract.fields if item.name in result.data]
         result.data = result.data.loc[:, keep]
         units = {key: value for key, value in units.items() if key in keep}
+        unit_sources = {key: value for key, value in unit_sources.items() if key in keep}
     result.metadata.update(
         {
             "profile": contract.profile,
             "schema_version": contract.schema_version,
             "units": units,
+            "units_source": unit_sources,
             "field_mapping": mapping_log,
         }
     )

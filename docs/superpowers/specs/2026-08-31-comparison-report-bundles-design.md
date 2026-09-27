@@ -11,10 +11,8 @@ credential-like values out of the bundle.
 
 ## v0.4.0 first slice
 
-The first slice compares two already-built aggregate report payloads. It does not claim physical
-equivalence, does not compare raw tensor values, and does not make timing or statistical
-significance claims. A later large-file path can compare bounded dataset summaries after an explicit
-performance design.
+The first slice compares two already-built aggregate report payloads. A later large-file path
+can compare bounded dataset summaries after an explicit performance design.
 
 The proposed public function is:
 
@@ -100,7 +98,7 @@ are reused rather than forked.
 - The bundle writer checks the target before creating it and requires `force=True` to replace an
   existing directory. Partial member writes are cleaned up on failure.
 - The scope note states that the bundle compares declared structure, validation, and descriptive
-  aggregates only; it is not a physical or scientific correctness certificate.
+  aggregates.
 
 ## Testing and compatibility
 

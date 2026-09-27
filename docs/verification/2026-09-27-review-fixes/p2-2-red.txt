@@ -1,0 +1,36 @@
+FF..                                                                     [100%]
+================================== FAILURES ===================================
+_____________ test_damask_detection_preserves_corrupt_file_cause ______________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1526/test_damask_detection_preserve0')
+
+    def test_damask_detection_preserves_corrupt_file_cause(tmp_path):
+        path = tmp_path / "broken.hdf5"
+        path.write_bytes(b"corrupted HDF5 payload")
+>       with pytest.raises(DataReadError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_small_fixes.py:14: Failed
+____________ test_damask_detection_preserves_open_permission_error ____________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1526/test_damask_detection_preserve1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023907274170>
+
+    def test_damask_detection_preserves_open_permission_error(tmp_path, monkeypatch):
+        path = tmp_path / "unreadable.hdf5"
+        failure = PermissionError("permission denied by injected open failure")
+
+        def denied(*args, **kwargs):
+            raise failure
+
+        monkeypatch.setattr(h5py, "File", denied)
+>       with pytest.raises(DataReadError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE DataReadError
+
+tests\test_review_small_fixes.py:29: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_review_small_fixes.py::test_damask_detection_preserves_corrupt_file_cause
+FAILED tests/test_review_small_fixes.py::test_damask_detection_preserves_open_permission_error
+2 failed, 2 passed in 0.52s

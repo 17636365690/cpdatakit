@@ -24,7 +24,6 @@ from .schema_diff import diff_schemas, render_schema_diff_markdown
 _STATISTICS = ("min", "max", "mean", "std")
 _SCOPE_NOTE = (
     "This comparison covers declared schema, validation, structure, and descriptive aggregates. "
-    "Physical and scientific equivalence require separate analysis."
 )
 
 
@@ -43,6 +42,17 @@ def _field_names(report: Mapping[str, Any]) -> list[str]:
         for item in fields
         if isinstance(item, Mapping) and isinstance(item.get("name"), str)
     ]
+
+
+def _field_units(report: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    fields = report.get("fields", [])
+    if not isinstance(fields, list):
+        return {}
+    return {
+        item["name"]: {"unit": item.get("unit"), "source": item.get("unit_source", "unknown")}
+        for item in fields
+        if isinstance(item, Mapping) and isinstance(item.get("name"), str)
+    }
 
 
 def _schema_summary(schema: object, digest: object) -> object:
@@ -230,6 +240,7 @@ def compare_reports(left: Mapping[str, Any], right: Mapping[str, Any]) -> dict[s
             "left": left_report.get("validation", {}),
             "right": right_report.get("validation", {}),
         },
+        "units": {"left": _field_units(left_report), "right": _field_units(right_report)},
         "statistics": (
             compare_scientific_statistics(left_report, right_report)
             if _is_scientific_report(left_report) or _is_scientific_report(right_report)
@@ -272,6 +283,14 @@ def render_comparison_markdown(comparison: Mapping[str, Any]) -> str:
             f"| {side} | {item.get('valid', 'not available')} | "
             f"{len(item.get('errors', []))} | {len(item.get('warnings', []))} |"
         )
+    lines.extend(
+        ["", "## Units", "", "| Side | Field | Unit | Source |", "| --- | --- | --- | --- |"]
+    )
+    for side in ("left", "right"):
+        for name, unit in value.get("units", {}).get(side, {}).items():
+            cells = [side, name, unit.get("unit"), unit.get("source")]
+            cells = [str(cell).replace("|", "\\|").replace("\n", " ") for cell in cells]
+            lines.append("| " + " | ".join(cells) + " |")
     lines.extend(
         [
             "",
@@ -326,7 +345,7 @@ def render_comparison_markdown(comparison: Mapping[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "## Scope",
+            "## Comparison contents",
             "",
             str(value.get("scope_note", _SCOPE_NOTE)),
             "",

@@ -1,0 +1,46 @@
+E501 Line too long (101 > 100)
+  --> src\cpdatakit\formats\zarr.py:46:101
+   |
+44 |     entries = 0
+45 |     if path.is_symlink() or path.is_junction():
+46 |         raise DataReadError("Dataset directories must not contain symbolic links or directory links")
+   |                                                                                                     ^
+47 |     for item in path.rglob("*"):
+48 |         if item.is_symlink() or item.is_junction():
+   |
+
+E501 Line too long (105 > 100)
+  --> src\cpdatakit\formats\zarr.py:49:101
+   |
+47 |     for item in path.rglob("*"):
+48 |         if item.is_symlink() or item.is_junction():
+49 |             raise DataReadError("Dataset directories must not contain symbolic links or directory links")
+   |                                                                                                     ^^^^^
+50 |         if item.is_file():
+51 |             entries += 1
+   |
+
+RUF043 Pattern passed to `match=` contains metacharacters but is neither escaped nor raw
+  --> tests\test_review_read_limits.py:81:45
+   |
+79 |         outside.mkdir()
+80 |         _directory_link(store / "linked", outside)
+81 |     with pytest.raises(DataReadError, match="symbolic links|directory links"):
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+82 |         if limits is None:
+83 |             ZarrReader().load(path)
+   |
+help: Use a raw string or `re.escape()` to make the intention explicit
+
+E501 Line too long (101 > 100)
+   --> tests\test_v06_dependency_matrix.py:208:101
+    |
+206 |     matrix = _load_matrix_module()
+207 |     assert matrix.verify_environment_module(module, alias) is None
+208 |     assert matrix.verify_environment_module(alias / "lib/cpdatakit/__init__.py", environment) is None
+    |                                                                                                     ^
+209 |     with pytest.raises(ValueError, match="outside installed environment"):
+210 |         matrix.verify_environment_module(tmp_path / "outside.py", alias)
+    |
+
+Found 7 errors (3 fixed, 4 remaining).

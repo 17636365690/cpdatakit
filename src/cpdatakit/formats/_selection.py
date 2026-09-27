@@ -8,6 +8,19 @@ from ._metadata import METADATA_KEY, decode_metadata
 from .base import Selection
 
 
+def check_record_limit(dataset, limits, *, label, selection=None):
+    """Check the source record axis before loading any selected values."""
+    if limits is None:
+        return
+    fields = selection.fields if selection and selection.fields else tuple(dataset.data_vars)
+    count = max(
+        (dataset[name].shape[0] for name in fields if name in dataset and dataset[name].dims),
+        default=0,
+    )
+    if count > limits.max_records:
+        raise DataReadError(f"{label} input exceeds the configured record limit")
+
+
 def _inherit_cf_time_bounds(dataset):
     """Propagate CF time-bound metadata before projecting out a parent field."""
     for variable in dataset.variables.values():
@@ -86,10 +99,8 @@ def select_xarray(dataset, selection: Selection | None, *, label: str):
 def materialize_cf_selection(dataset, selection, *, label, context=None):
     """Keep packed values exact and retain CF time types known from axis endpoints.
 
-    Time dtype detection needs bounded samples outside the selected interval. It
-    cannot detect an out-of-range interior date on an arbitrary nonmonotonic axis;
-    the selected values therefore retain automatic decoding unless the endpoints
-    already require cftime. No full coordinate scan is performed.
+    Time dtype detection samples axis endpoints. Selected values use automatic
+    decoding unless the endpoints already require cftime.
     """
     _inherit_cf_time_bounds(dataset)
     selected = select_xarray(dataset, selection, label=label)

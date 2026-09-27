@@ -53,9 +53,8 @@ name and pass the schema path explicitly:
 }
 ```
 
-The profile name does not grant fields or semantics. Declare every contract field, dtype, unit, and
-per-record shape. The legacy extension prefix remains available for adapter payload compatibility,
-but v0.5 does not broaden undeclared-field acceptance. The complete runnable example is under
+Declare every contract field, dtype, unit, and per-record shape. The legacy extension prefix
+remains available for adapter payload compatibility. The complete runnable example is under
 `examples/thermal-cycle/`.
 
 ## Canonical schema hash

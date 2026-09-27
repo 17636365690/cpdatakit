@@ -39,11 +39,10 @@ preserves JSON global attributes; selection retains associated coordinates. Repo
 descriptive and checks representation compatibility, including relevant observed coordinates.
 
 Output producers write private staging paths. Workbench operations serialize promotion and
-registration, bind snapshots to the produced digest, and restore only outputs still owned by the
+registration, bind snapshots to the produced digest, and restore outputs still owned by the
 failing operation. Concurrent changes and failed restoration retain their bytes and recovery
 metadata. Batch execution records intent and prepared output proof before publishing; kernel locks
-release on process exit. These are process-interruption recovery contracts, not a claim of
-power-loss durability on arbitrary filesystems.
+release on process exit.
 
 Synchronous Web handlers run in FastAPI's worker pool so inspection, validation, mapping previews,
 hashes and archive construction do not occupy the event loop. Jobs wait for successful catalog
@@ -57,10 +56,9 @@ historical completed jobs are not polled. Optional API/catalog pagination preser
 unbounded query defaults for existing callers.
 
 Built-in curve, point and field2d schemas, identifier enrichment, selected plots and the read-only
-DAMASK DADF5 adapter form the CP compatibility layer. Generic schemas do not acquire CP fields.
+DAMASK DADF5 adapter form the CP compatibility layer. Generic schemas use their own declared fields.
 External adapters retain DatasetAdapter.load(path), explicit scientific selections, licensed
-fixtures and provenance. Solver execution, new mesh contracts and physical inference are separate
-workflows.
+fixtures and provenance.
 
 Current workflows and recovery behavior are documented in [post-v07-workflows.md](post-v07-workflows.md).
-Historical design documents remain under superpowers/; they do not replace the current contracts.
+Historical design documents remain under superpowers/.

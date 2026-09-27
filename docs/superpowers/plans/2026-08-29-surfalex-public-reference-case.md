@@ -359,7 +359,7 @@ Files:
 
 Interfaces:
 - Documentation must describe runnable commands and the actual output contract.
-- Documentation must not imply that CPDataKit reads MatFlow generically or certifies physical correctness.
+
 
 - [ ] Step 1: Document the public source and license
 

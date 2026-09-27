@@ -68,8 +68,7 @@ def summarize_dataset(
         "error_count": len(report.errors),
         "warning_count": len(report.warnings),
         "scope_note": (
-            "Validation reports declared format constraints; physical or scientific "
-            "interpretation remains part of the domain workflow."
+            "Validation checks declared structure, fields, units, and data-quality rules."
         ),
     }
     if contract.profile in BUILTIN_PROFILES:

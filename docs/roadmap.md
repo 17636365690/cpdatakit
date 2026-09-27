@@ -1,7 +1,9 @@
 # Roadmap
 
-The current release documented here is **v0.9.1**. Start with the
+The current release documented here is **v0.9.2**. Start with the
 [Chinese workbench guide](workbench-guide.md) or the [command-line quickstart](quickstart.md).
+v0.9.2 fixes validation/write consistency, records unit origins, extends explicit load limits,
+and improves catalog concurrency, atomic text output, and cancellation diagnostics.
 v0.9.1 fixes schema-upload error disclosure, permits pandas 3, updates the CodeQL action,
 and makes the active-job test fixture wait for explicit release during slow catalog writes.
 v0.9.0 introduced guided Chinese project pages and readable offline HTML reports, improved numeric
@@ -64,5 +66,4 @@ See [usage](post-v07-workflows.md), [dependency combinations](v0.8-dependencies.
   Schema diff compares contracts.
 - **Additional adapters:** document the format and version range, provide licensed fixtures,
   and specify selection behavior, units and scientific conventions. DADF5 and ODB extensions use
-  the same acceptance process. Solver execution and physical inference remain separate workflows
-  with their own data and validation.
+  the same acceptance process.

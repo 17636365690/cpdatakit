@@ -134,10 +134,10 @@ Interfaces:
   summaries, classification, added/removed fields, changed properties, conventions, and the scope
   note without raw paths or record values.
 
-- [ ] Step 4: Document the no-mutation boundary
+- [ ] Step 4: Document the comparison output
 
-  Explain that the command compares contracts only and does not migrate data, alter schemas, or
-  rewrite HDF5 artifacts. Keep v0.4.0 roadmap wording consistent with the approved first slice.
+  Explain that the command outputs schema differences and compatibility classifications.
+  Keep v0.4.0 roadmap wording consistent with the approved first slice.
 
 ### Task 4: Verify and hand off schema-diff work
 

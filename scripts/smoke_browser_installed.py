@@ -132,9 +132,28 @@ def browser_workflow(base: str, root: Path, evidence: dict) -> None:
             expect(page.locator("#result-title")).to_have_text("上传完成")
             expect(page.locator("#result-content")).to_contain_text("记录 3")
             expect(page.locator('[data-load-more="datasets"]')).to_be_hidden()
-            page.get_by_role("button", name="校验数据", exact=True).click()
+            with page.expect_response(
+                lambda response: (
+                    response.request.method == "POST" and response.url.endswith("/validate")
+                )
+            ) as validated:
+                page.get_by_role("button", name="校验数据", exact=True).click()
+            validation_response = validated.value
+            assert validation_response.status == 200, validation_response.text()
+            validation = validation_response.json()["value"]["validation"]
+            assert validation["valid"] is True
+            assert validation["errors"] == []
+            assert len(validation["warnings"]) == 3
+            assert {item["code"] for item in validation["warnings"]} == {"unit_not_declared"}
+            assert {item["field"] for item in validation["warnings"]} == {
+                "step",
+                "strain",
+                "stress",
+            }
             expect(page.locator("#result-title")).to_have_text("校验结果")
-            expect(page.locator("#result-content .is-success")).to_have_text("校验通过")
+            expect(page.locator("#result-content .is-warning")).to_have_text("校验通过")
+            expect(page.locator("#result-content .summary-grid")).to_contain_text("错误 0")
+            expect(page.locator("#result-content .summary-grid")).to_contain_text("警告 3")
 
             def submit_job(operation: str, button: str) -> str:
                 with page.expect_response(

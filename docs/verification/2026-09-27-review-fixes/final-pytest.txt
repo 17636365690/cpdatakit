@@ -1,0 +1,135 @@
+........................................................................ [  5%]
+...............................................s........................ [ 10%]
+........................................................................ [ 15%]
+........................................................................ [ 20%]
+........................................................................ [ 25%]
+........................................................................ [ 30%]
+........................................................................ [ 35%]
+........................................................................ [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 51%]
+........................................................................ [ 56%]
+........................................................................ [ 61%]
+........................................................................ [ 66%]
+........................................................................ [ 71%]
+........................................................................ [ 76%]
+........................................................................ [ 81%]
+........................................................................ [ 86%]
+........................................................................ [ 91%]
+........................................................................ [ 97%]
+..........................................                               [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  <repository>\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_application_multiformat.py: 1 warning
+tests/test_conversion_numeric_fidelity.py: 1 warning
+tests/test_coordinate_read_boundaries.py: 4 warnings
+tests/test_format_adapters_v06.py: 1 warning
+tests/test_v06_dependency_probe.py: 4 warnings
+  <repository>\.venv\Lib\site-packages\xarray\backends\netCDF4_.py:96: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+  As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+    data[key] = value
+
+tests/test_coordinate_read_boundaries.py: 12 warnings
+  <repository>\src\cpdatakit\formats\_selection.py:114: SerializationWarning: Unable to decode time axis into full numpy.datetime64[ns] objects, continuing using cftime.datetime objects instead, reason: dates out of range. To silence this warning use a coarser resolution 'time_unit' or specify 'use_cftime=True'.
+    decoded = xr.conventions.decode_cf_variable(name, variable)
+
+tests/test_coordinate_read_boundaries.py: 12 warnings
+  <repository>\src\cpdatakit\formats\_selection.py:119: SerializationWarning: Unable to decode time axis into full numpy.datetime64[ns] objects, continuing using cftime.datetime objects instead, reason: dates out of range. To silence this warning use a coarser resolution 'time_unit' or specify 'use_cftime=True'.
+    decoded = xr.decode_cf(loaded, decode_times=time_coders, concat_characters=False).load()
+
+tests/test_coordinate_read_boundaries.py::test_cf_decoding_does_not_concatenate_an_already_decoded_character_dimension[zarr-False]
+tests/test_coordinate_read_boundaries.py::test_cf_decoding_does_not_concatenate_an_already_decoded_character_dimension[zarr-True]
+  <repository>\.venv\Lib\site-packages\zarr\core\dtype\npy\bytes.py:386: UnstableSpecificationWarning: The data type (NullTerminatedBytes(length=1)) does not have a Zarr V3 specification. That means that the representation of arrays saved with this data type may change without warning in a future version of Zarr Python. Arrays stored with this data type may be unreadable by other Zarr libraries. Use this data type at your own risk! Check https://github.com/zarr-developers/zarr-extensions/tree/main/data-types for the status of data type specifications for Zarr V3.
+    v3_unstable_dtype_warning(self)
+
+tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+  <repository>\.venv\Lib\site-packages\zarr\core\group.py:3413: ZarrUserWarning: Object at linked is not recognized as a component of a Zarr hierarchy.
+    warnings.warn(
+
+tests/test_v06_dependency_probe.py::test_dependency_probe_reports_candidates_and_environment
+  <python-runtime>\Lib\importlib\__init__.py:90: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    return _bootstrap._gcd_import(name[level:], package, level)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                                          Stmts   Miss  Cover   Missing
+---------------------------------------------------------------------------
+src\cpdatakit\__init__.py                        13      1    92%   111
+src\cpdatakit\_atomic.py                        105     10    90%   58, 70, 73-75, 109, 113, 118, 141, 160
+src\cpdatakit\_comparison_v2.py                 173     10    94%   29, 32, 38, 84-88, 132, 156, 161
+src\cpdatakit\_numeric_summary.py                24      0   100%
+src\cpdatakit\_version.py                         1      0   100%
+src\cpdatakit\adapters\__init__.py                5      0   100%
+src\cpdatakit\adapters\base.py                   23      0   100%
+src\cpdatakit\adapters\damask_dadf5.py          193     32    83%   29-37, 53, 55-61, 115-116, 134, 138, 145, 160, 168, 173, 181, 184, 196, 199, 206, 209, 219, 222, 265, 276-277
+src\cpdatakit\adapters\registry.py               27      4    85%   20, 23, 32-33
+src\cpdatakit\application\__init__.py            14      1    93%   137
+src\cpdatakit\application\authoring.py           85      7    92%   16, 21-22, 82, 105-106, 145
+src\cpdatakit\application\batch.py              278     29    90%   54, 59, 66, 82, 84, 88, 95, 105, 107, 109, 117, 121, 147, 154, 192-194, 216, 226, 247, 256, 260, 274, 335, 341, 346, 391, 398, 412, 417
+src\cpdatakit\application\capabilities.py        67      6    91%   57-58, 60, 67-68, 180
+src\cpdatakit\application\contracts.py          202      4    98%   40, 42, 95, 197
+src\cpdatakit\application\data_access.py        147     16    89%   38, 65, 113, 117, 138-144, 170, 188-189, 219-220
+src\cpdatakit\application\mapping.py             77     18    77%   27, 32, 34, 36, 42, 46, 48, 50, 55-56, 63, 68, 70, 75-76, 82-83, 91
+src\cpdatakit\application\scientific.py          27      0   100%
+src\cpdatakit\application\services.py           242     12    95%   153-154, 221, 256, 269, 368, 387, 407, 417, 419, 435-436
+src\cpdatakit\application\slices.py             124      7    94%   55, 70, 76, 90, 104, 115, 130
+src\cpdatakit\application\tensile.py            101      2    98%   237, 273
+src\cpdatakit\application\units.py                1      0   100%
+src\cpdatakit\catalog\__init__.py                 2      0   100%
+src\cpdatakit\catalog\sqlite.py                 351     38    89%   74, 77-78, 141-146, 151, 274, 280, 285, 293-295, 338-340, 382, 402-404, 448, 450, 472-474, 524, 526, 528, 553-555, 638, 676-678
+src\cpdatakit\cli.py                            237     11    95%   136, 249, 251, 254-255, 290, 359-360, 364, 377, 390
+src\cpdatakit\comparison.py                     224      9    96%   39, 50, 79, 115, 174, 176, 179, 394, 462
+src\cpdatakit\data\__init__.py                    2      0   100%
+src\cpdatakit\data\scientific.py                226     32    86%   30, 45-46, 87-88, 90, 105-107, 109, 113-114, 116, 125, 128-129, 131, 133, 147, 150-151, 153, 176-177, 193, 208, 211, 240, 242, 276, 285, 297
+src\cpdatakit\data\units.py                      12      0   100%
+src\cpdatakit\data\validation.py                 48      0   100%
+src\cpdatakit\domains\__init__.py                 0      0   100%
+src\cpdatakit\domains\crystal_plasticity.py       4      0   100%
+src\cpdatakit\exceptions.py                      15      0   100%
+src\cpdatakit\formats\__init__.py                 5      0   100%
+src\cpdatakit\formats\_metadata.py               47      2    96%   17, 26
+src\cpdatakit\formats\_selection.py             104      2    98%   67, 91
+src\cpdatakit\formats\base.py                    78      4    95%   81, 83, 85, 90
+src\cpdatakit\formats\netcdf.py                 132     25    81%   25-26, 32-33, 40, 42, 44, 61, 66-74, 108-109, 142, 150, 156, 160-161, 182
+src\cpdatakit\formats\parquet.py                155     23    85%   24-25, 30, 32, 34, 46, 49-50, 57, 68, 85-88, 121, 143, 161-162, 177, 180-181, 186, 205
+src\cpdatakit\formats\zarr.py                   147     18    88%   23-24, 30-31, 36, 38, 75, 79-80, 116-117, 149, 160, 164-165, 188, 191, 215
+src\cpdatakit\inspection.py                     415     67    84%   48, 52, 54-57, 68, 83, 85, 97, 100-102, 119, 122-123, 126, 141, 144-145, 147, 156, 158, 171, 187-192, 246-247, 344, 347-350, 354, 360, 364-372, 374, 390, 393, 397, 401, 403, 476, 502, 506, 511, 514, 517, 525, 532, 534, 537-538, 543, 633-634, 710-712, 756-759
+src\cpdatakit\io\__init__.py                    326     30    91%   45, 59-62, 95-96, 98, 114, 137, 183-184, 188, 194, 218, 223, 230, 232, 242, 255, 275, 331-334, 352, 354, 363-364, 393
+src\cpdatakit\io\hdf5_v2.py                     317     46    85%   43, 46-49, 53, 74-83, 105-113, 127, 133, 138, 144, 148, 153, 167, 192, 201, 204, 206, 288, 309, 312, 318, 320, 348-356, 364, 366, 372, 380-381, 383, 393, 409, 414, 421, 437, 480, 494, 514-515
+src\cpdatakit\jobs\__init__.py                    2      0   100%
+src\cpdatakit\jobs\manager.py                   211     10    95%   110, 167-170, 238, 240, 243, 278, 328, 335, 364
+src\cpdatakit\model.py                           30      0   100%
+src\cpdatakit\normalization.py                  144     23    84%   22, 25-26, 60-61, 90-93, 95, 98, 101, 107, 116, 118, 123, 125, 127, 156, 161, 175, 185-186
+src\cpdatakit\plotting.py                       134     11    92%   31, 54, 80-81, 84, 115-116, 119, 137, 151, 179
+src\cpdatakit\provenance.py                      21      0   100%
+src\cpdatakit\reporting.py                      186      7    96%   51, 120, 132, 149, 527, 574-575
+src\cpdatakit\samples.py                         17      0   100%
+src\cpdatakit\schema.py                         212     34    84%   57, 92, 108, 116, 118, 120, 127, 131, 133, 135, 137, 149, 153, 155, 160, 162, 167, 170, 174, 177, 179, 181, 187, 192-193, 206, 326-327, 394-395, 398-401
+src\cpdatakit\schema_diff.py                    134      7    95%   74, 76, 164-165, 167, 212, 277
+src\cpdatakit\schemas\__init__.py                 2      0   100%
+src\cpdatakit\schemas\v2.py                     286     44    85%   21-22, 29, 37, 39, 46-50, 55, 58, 60, 90, 92, 120, 174, 178, 184, 189, 193, 200, 205, 212, 214, 217, 246, 249, 258, 269, 273, 278, 298, 302, 305-306, 308, 316, 364, 367, 374, 406, 411, 413-414, 450
+src\cpdatakit\statistics.py                      40      0   100%
+src\cpdatakit\validation.py                     220     27    88%   39, 50-54, 70, 73-74, 189-192, 235, 256-262, 268, 302-310, 330, 420, 438-448, 479-480
+src\cpdatakit\web\__init__.py                     2      0   100%
+src\cpdatakit\web\app.py                        439     43    90%   61, 68-69, 71, 77, 79, 83, 92-93, 99, 108, 157-161, 309, 321, 336, 365, 372, 404, 494-495, 584-585, 668-669, 691, 755, 768-769, 791-793, 820, 823-824, 832-833, 848, 869-870, 889, 897-898
+src\cpdatakit\web\artifacts.py                   57      6    89%   30, 32, 34, 38, 52, 96
+src\cpdatakit\web\authoring.py                   52     10    81%   25, 29, 35-37, 54-55, 72, 83-84
+src\cpdatakit\web\durable.py                     20      4    80%   20-24
+src\cpdatakit\web\operations.py                 100     26    74%   47, 60-61, 68, 84-85, 94, 138, 140, 148-149, 158-159, 166, 220, 229, 238-240, 249-250, 257, 310, 315-316, 323
+src\cpdatakit\web\outputs.py                    120      6    95%   28, 40-41, 124, 147-148
+src\cpdatakit\web\ownership.py                   70      3    96%   73, 87-89
+src\cpdatakit\web\persistence.py                114      6    95%   35, 38, 44, 52, 67, 110
+src\cpdatakit\web\recovery.py                   206     20    90%   55, 60, 63, 66, 71, 98, 146, 156, 160, 163, 240, 266, 276, 291, 305, 325-326, 332-333, 374
+src\cpdatakit\web\slices.py                      43      4    91%   59, 65, 79-80
+src\cpdatakit\web\uploads.py                     98     10    90%   39, 46, 66-67, 90, 102, 114, 128, 134-135
+src\cpdatakit\web\workbench.py                  201     22    89%   30, 39, 48, 50, 118-119, 139, 147, 149, 155, 210, 212, 226, 229, 233, 274-275, 312, 329, 334-336
+---------------------------------------------------------------------------
+TOTAL                                          7937    789    90%
+Coverage JSON written to file docs/verification/2026-09-27-review-fixes/final-coverage.json
+Required test coverage of 85% reached. Total coverage: 90.06%
+1409 passed, 1 skipped, 40 warnings in 150.16s (0:02:30)

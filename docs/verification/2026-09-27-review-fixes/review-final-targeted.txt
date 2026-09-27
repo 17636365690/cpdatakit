@@ -1,0 +1,9 @@
+........................................................................ [ 61%]
+.............................................                            [100%]
+============================== warnings summary ===============================
+tests/test_review_read_limits.py::test_zarr_load_rejects_real_directory_links[False-None]
+  <repository>\.venv\Lib\site-packages\zarr\core\group.py:3413: ZarrUserWarning: Object at linked is not recognized as a component of a Zarr hierarchy.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+117 passed, 1 warning in 2.85s

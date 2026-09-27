@@ -1,0 +1,128 @@
+FFFFFF                                                                   [100%]
+================================== FAILURES ===================================
+_____________ test_matrix_rejects_silent_installed_version_drift ______________
+
+    def test_matrix_rejects_silent_installed_version_drift():
+        module = _load_matrix_module()
+>       with pytest.raises(ValueError, match="numpy") as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_v06_dependency_matrix.py:99: Failed
+_____________ test_probe_completeness_uses_frozen_candidate_list ______________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1532/test_probe_completeness_uses_f0')
+
+    def test_probe_completeness_uses_frozen_candidate_list(tmp_path):
+        import json
+
+        candidates = tmp_path / "candidates.json"
+        candidates.write_text(json.dumps({"packages": [{"name": "fixture"}]}))
+        payload = {
+            "dependencies": {"fixture": {"installed": True}},
+            "runtime": {"cpdatakit": {"installed": True}},
+            "operations": {
+                name: {"status": "pass"}
+                for name in ("netcdf:h5netcdf", "netcdf:netcdf4", "zarr:v3", "parquet", "fastapi:httpx")
+            },
+        }
+        module = _load_matrix_module()
+        assert module.verify_probe(payload, candidates=candidates) is None
+        payload["dependencies"].pop("fixture")
+>       with pytest.raises(ValueError, match="incomplete"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_v06_dependency_matrix.py:163: Failed
+__________ test_installed_module_accepts_normalized_environment_path __________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1532/test_installed_module_accepts_0')
+
+    def test_installed_module_accepts_normalized_environment_path(tmp_path):
+        environment = tmp_path / "venv"
+        module = environment / "lib/cpdatakit/__init__.py"
+        module.parent.mkdir(parents=True)
+        module.write_text("")
+        (tmp_path / "alias-parent").mkdir()
+        alias = tmp_path / "alias-parent/../venv"
+        matrix = _load_matrix_module()
+        assert matrix.verify_environment_module(module, alias) is None
+>       with pytest.raises(ValueError, match="outside installed environment"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_v06_dependency_matrix.py:176: Failed
+_________________ test_installed_module_accepts_symlink_alias _________________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1532/test_installed_module_accepts_1')
+
+    def test_installed_module_accepts_symlink_alias(tmp_path):
+        environment = tmp_path / "venv"
+        module = environment / "lib/cpdatakit/__init__.py"
+        module.parent.mkdir(parents=True)
+        module.write_text("")
+        alias = tmp_path / "alias"
+        import os
+        import subprocess
+
+        if os.name == "nt":
+            subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(alias), str(environment)],
+                check=True,
+                capture_output=True,
+            )
+        else:
+            alias.symlink_to(environment, target_is_directory=True)
+        matrix = _load_matrix_module()
+        assert matrix.verify_environment_module(module, alias) is None
+        assert (
+            matrix.verify_environment_module(alias / "lib/cpdatakit/__init__.py", environment) is None
+        )
+>       with pytest.raises(ValueError, match="outside installed environment"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_v06_dependency_matrix.py:211: Failed
+__________________ test_fetch_verifier_checks_md5_and_sha256 __________________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1532/test_fetch_verifier_checks_md50')
+
+    def test_fetch_verifier_checks_md5_and_sha256(tmp_path: Path) -> None:
+        fetch = _load_case_module("fetch_data")
+        path = tmp_path / "payload.bin"
+        path.write_bytes(b"hello world")
+
+        spec = {
+            "name": "payload.bin",
+            "md5": "5eb63bbbe01eeed093cb22bb8f5acdc3",
+            "sha256": "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9",
+        }
+        assert fetch.verify_file(path, spec) is None
+        assert path.read_bytes() == b"hello world"
+>       with pytest.raises(ValueError, match="SHA-256 mismatch"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_surfalex_public_reference_case.py:169: Failed
+__________________ test_fetch_verifier_rejects_wrong_digest ___________________
+
+tmp_path = WindowsPath('<temporary-directory>/pytest-of-test-user/pytest-1532/test_fetch_verifier_rejects_wr0')
+
+    def test_fetch_verifier_rejects_wrong_digest(tmp_path: Path) -> None:
+        fetch = _load_case_module("fetch_data")
+        path = tmp_path / "payload.bin"
+        path.write_bytes(b"hello world")
+
+>       with pytest.raises(ValueError, match="MD5 mismatch") as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_surfalex_public_reference_case.py:178: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_v06_dependency_matrix.py::test_matrix_rejects_silent_installed_version_drift
+FAILED tests/test_v06_dependency_matrix.py::test_probe_completeness_uses_frozen_candidate_list
+FAILED tests/test_v06_dependency_matrix.py::test_installed_module_accepts_normalized_environment_path
+FAILED tests/test_v06_dependency_matrix.py::test_installed_module_accepts_symlink_alias
+FAILED tests/test_surfalex_public_reference_case.py::test_fetch_verifier_checks_md5_and_sha256
+FAILED tests/test_surfalex_public_reference_case.py::test_fetch_verifier_rejects_wrong_digest
+6 failed in 0.44s

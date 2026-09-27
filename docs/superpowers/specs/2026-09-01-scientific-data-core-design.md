@@ -7,15 +7,14 @@
 ## 1. Goal and positioning
 
 CPDataKit v0.5 will position the project as a schema-first validation, normalization, and audit
-tool for scientific and engineering data, originating from crystal-plasticity workflows. The goal
-is not universal scientific-data support. The supported core remains a tabular record model with
+tool for scientific and engineering data, originating from crystal-plasticity workflows. The
+core uses a tabular record model with
 scalar or fixed-shape per-record values, explicit schemas, explicit field/unit mappings,
 schema-conformance validation, provenance, deterministic reports, and CPDataKit HDF5 1.0.
 
 Crystal plasticity remains the first supported vertical. Its built-in `curve`, `point`, and
 `field2d` contracts, DAMASK DADF5 adapter, stress/strain vocabulary, grain/phase summaries, and
-specialized plots remain available and compatible. Structural validation continues to mean only
-that the declared contract is satisfied; it does not certify physical correctness.
+specialized plots remain available and compatible. Structural validation checks the declared contract.
 
 ## 2. Repository state and baseline
 
@@ -237,14 +236,12 @@ validation-summary behavior are unchanged.
 
 ### 5.4 Validation and normalization
 
-- The validation engine remains field-schema-driven. It will not add checks for plausible stress,
-  strain, temperature, grain counts, monotonic loading, constitutive behavior, or physical
-  equivalence.
+- The validation engine remains field-schema-driven.
 - Arbitrary undeclared fields continue to fail. The existing explicit `extension_prefix` namespace
   remains only for backward compatibility and adapter payloads; it is not expanded. The generic
   example uses fully declared fields.
 - Mapping targets must remain declared in the schema. Unit conversions remain explicit and Pint
-  checks dimensional compatibility only; it does not infer semantics.
+  checks dimensional compatibility.
 - `Dataset` and `FieldMapping` remain structurally unchanged.
 
 ### 5.5 Statistics, inspection, reports, and comparison
@@ -262,8 +259,7 @@ validation-summary behavior are unchanged.
 - Report comparison continues to compare canonical schemas, declared structure, validation, and
   scalar aggregates. Once arbitrary profile validation is enabled, the current comparison engine
   works for same-profile custom reports; differing profile names remain a breaking schema diff.
-- Scope notes continue to state that conformance and aggregate equality are not physical or
-  scientific equivalence.
+- Scope notes describe the declared checks and compared aggregates.
 
 ### 5.6 Plotting
 
@@ -300,9 +296,8 @@ and Python import paths remain unchanged.
 - Add an immutable `AdapterInfo` value with `name`, `format_name`, and `capabilities`. Base-class
   defaults use the subclass name as identity/display text and `{"load"}` as capabilities, so an
   existing subclass that implements only `load()` remains concrete.
-- Add an optional class-level detection hook whose default returns `False`. Detection answers only
-  “this representation appears to be mine”; it does not choose scientific selections or guarantee
-  that `load()` can proceed without configuration.
+- Add an optional class-level detection hook whose default returns `False`. Detection identifies the
+  representation; callers supply scientific selections before loading.
 - Add an `AdapterRegistry` that registers an adapter class under a unique stable name, lists
   descriptors, resolves a name to its class, and returns every matching class for a path. Duplicate
   names fail clearly. A module-level default registry contains built-ins; tests and applications can
@@ -311,8 +306,6 @@ and Python import paths remain unchanged.
 - Register DAMASK DADF5 as the first built-in external adapter and give it header-based detection.
   Keep its selection logic, output `point` profile, `user_dadf5_` fields, units, provenance, and
   error behavior in `adapters/damask_dadf5.py`.
-- Do not add Python entry-point discovery, remote plugins, solver runtime loading, or a large reader
-  framework in v0.5. The registry is the stable seam for evaluating those later.
 - Native CSV, JSON, and CPDataKit HDF5 readers remain core readers; they are not forced through the
   external-adapter registry in this release.
 
@@ -336,7 +329,7 @@ renames fields and explicitly converts to Kelvin/seconds. No CP vocabulary is re
 The README demonstrates reproducible commands for `validate`, `summary`, `convert`, `inspect`,
 `report`, `compare`, and `plot --kind xy`. Inspection and reporting operate on the converted HDF5,
 which proves the custom profile and embedded schema pass the full storage path. Comparison can
-compare two generated JSON reports without claiming physical equivalence. Tests use the checked-in
+compare two generated JSON reports by their declared schema, validation, and aggregates. Tests use the checked-in
 files directly and write outputs only to temporary directories.
 
 ## 6. Planned file impact
@@ -450,23 +443,3 @@ clean wheel smoke test
 
 The final implementation report must distinguish a newly introduced failure from the recorded
 baseline formatting failure; it may not say “should pass” or “expected to pass.”
-
-## 8. Explicit non-goals for v0.5
-
-- xarray or a complete N-dimensional array data model.
-- Unstructured meshes, mesh topology, graph data, or spatial interpolation.
-- NetCDF, Zarr, Parquet, or a broad set of new storage formats.
-- GUI, web platform, cloud catalog, database, account, or collaboration service.
-- Automatic field, unit, role, coordinate, tensor, orientation, or physical-semantic inference.
-- Physical correctness, physical equivalence, constitutive-law checks, or scientific interpretation.
-- AI analysis or automatic scientific explanation.
-- Full Abaqus ODB runtime integration.
-- Solver execution or result generation.
-- Dynamic package/plugin discovery, remote adapter installation, or a general solver-adapter suite.
-- HDF5 2.0, schema inheritance/composition, package rename, PyPI rename, or removal of the
-  `cpdatakit` import path.
-- A release version bump, commit, push, tag, or pull request as part of this task unless separately
-  authorized.
-
-If any implementation slice appears to require one of these items, implementation stops and the
-maintainer receives the concrete reason and alternatives before scope changes.
