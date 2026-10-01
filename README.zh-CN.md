@@ -1,218 +1,244 @@
 # CPDataKit
 
-CPDataKit 是面向科学和工程数据的 Python 工具，通过 schema 定义字段规则，完成验证、标准化
-和审计。项目最初用于晶体塑性工作流。
+简体中文 | [English](README.md)
 
-v0.10.0 新增 CSV 解析设置、逐列字段/用途/单位确认，以及转换结果复用。
-安装软件包或当前源码后，可按[第一次 CSV 导入与转换](examples/csv-intake/README.md)
-完成一个三行示例。审核与验收记录保存在 `docs/verification/`。
+[![CI](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/cpdatakit)](https://pypi.org/project/cpdatakit/)
+[![License](https://img.shields.io/github/license/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/blob/main/LICENSE)
 
-v0.9.2 修正缺失文本校验、单位来源记录、加载限额、并发任务更新和原子文件发布，
-并保留取消期间的异常诊断。说明文档和界面直接介绍已有能力。
+**把科学与工程数据中的字段、单位和检查规则写清楚，再完成验证、转换与可追查的交接。**
 
-v0.9.1 是维护版本：schema 上传失败时返回固定提示，避免暴露内部异常细节；
-pandas 依赖范围扩展为 `>=2.2,<4`，允许使用 pandas 3。
+CPDataKit 是 Python 工具，提供本地中文工作台、命令行和 Python API。
+适合需要整理仪器导出表格、统一不同数据源约定、或在分析前检查数据的实验与工程人员。
+项目最初用于晶体塑性（CP），也能处理热循环等不含 CP 字段的数据。
 
-v0.9.0 引入中文项目页面、分步操作、明确的结果与同名输出提示，以及带统计表和来源摘要的
-离线 HTML 报告；同时改进数值保真、任务终态保存和进程中断后的输出恢复。
-从[当前工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)开始，完成上传、校验与报告导出。
+例如，仪器用分号导出表格，力的单位是 `N`，下游需要 `kN`。
+你可以预览实际列，确认字段名、类型、来源单位和输出单位，再保存转换数据、原始文件与规则。
+后来检查或交接时，可以核对这次换算采用了什么声明。
 
-v0.8.0 新增选择性读取、多维热图、schema 草案、映射预览和可复现批处理。
-使用方法见[工作流指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/post-v07-workflows.md)，另附
-[读取基准](https://github.com/koocmitwho/cpdatakit/blob/main/docs/selective-reading.md)和[KupferDigital/FE 集成案例](https://github.com/koocmitwho/cpdatakit/blob/main/examples/cpfe-tensile/README.md)。
+本文对应已发布的 **v0.10.0**：新增 CSV 逐列确认导入，以及转换结果继续处理。
+安装入口见 [PyPI](https://pypi.org/project/cpdatakit/0.10.0/)，变更见
+[发行说明](.github/release-notes/v0.10.0.md)和
+[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.0)。
 
-v0.8.1 改进数据完整性、批处理中断恢复、多维报告比较和工作台响应，
-并限制任务驻留内存，按需加载资源与历史详情。
+> 工具检查你声明的数据规则与换算，不判断实验是否正确，也不自动推断工程/真实应力应变等科学定义。
 
-合成示例使用固定随机种子，原始公开数据保留在上游来源。KupferDigital 集成随附按
-CC-BY-4.0 署名的处理后数据。
+## 主要作用
 
-## 什么时候用
+- **确认 CSV 的实际含义。** 设置分隔符、表头行、独立单位行、小数符号和编码；预览后逐列确认字段、类型、单位与用途，保留原始字节及排除列的记录。
+- **按规则检查数据。** 数据规则（schema）声明字段、类型、形状、单位、缺失值、索引、范围与科学约定。检查结果分别列出错误和警告。
+- **显式统一字段和单位。** 字段映射（mapping）用于改名与单位转换；向量、矩阵和张量按声明的形状处理。CSV 确认导入可直接填写这些声明。
+- **保存可追查的结果。** CPDataKit HDF5 可保存规则、单位来源、源文件摘要、验证结果和处理记录；报告支持离线 HTML、Markdown 与 JSON。
+- **继续使用已有成果。** 本地项目保存文件、规则、任务与结果；已核对的转换快照可以作为后续输入，无需下载后重新上传。
+- **接入脚本工作流。** CLI 和 Python API 提供验证、统计、转换、检查、绘图、报告与比较；另有选择性读取、多维切片和批处理入口。
 
-热循环导出器使用摄氏度，下游脚本需要开尔文。晶体塑性导出器给出 `eps` 和 `sigma_pa`，
-分析脚本需要 `strain` 和 `stress`。把这些约定写进 schema 和 mapping 文件，CPDataKit
-就能在分析或交接文件前完成转换，并把验证结果保存到输出 HDF5，方便以后追查字段改名的原因。
+## 环境要求与安装
 
-仓库提供 CPDataKit HDF5、选定 DAMASK DADF5 数据和 Surfalex 公开参考流程的读取器与示例。
+- Python **3.12 或更高版本**；本版本的完整 CI 覆盖 Python 3.12 和 3.13。
+- Windows、macOS 或 Linux。使用工作台需要浏览器；使用 CLI/API 无需浏览器。
+- Python 依赖由安装命令获取。工作台静态资源随包提供，**使用时无需安装 Node.js，也不依赖 CDN**。
 
-内置 `curve`、`point` 和 `field2d` 是来自 CP 垂直场景的兼容 profile。外部 JSON schema 可使用
-其他非空 profile 名称。CPDataKit 读取 UTF-8 CSV、JSON records 和自有 HDF5，并提供 schema
-diff 与离线报告比较。schema 显式声明字段、类型、shape、
-物理角色、单位、缺失值、索引、
-范围与科学约定。应力/应变量、张量顺序、取向表达、单位和 ID 含义都通过 schema 或 mapping
-显式提供。DAMASK DADF5 只读适配器在文件中存在一个明确选择时，也能完成检查和报告。
-Writer 还会把完整的 canonical schema 和 SHA-256 写入 HDF5。提供 schema URI 时，
-CPDataKit 会把它记录为由调用方管理的 provenance。
-CSV/JSON 缺少来源单位时，校验会以 schema 单位作为假定并给出 `unit_not_declared` 警告；
-只有警告时结果仍有效。HDF5 保留原有单位键，并用 `units_source_json` 区分来源声明、
-schema 假定和历史未知；检查、报告和比较均显示单位来源。
-v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和 Parquet 表格
-适配器，所有 N 维数据和能力检查都保持显式。
+Python 3.12 下限从 v0.6.0 开始采用。Python 3.10 和 3.11 用户可使用已发布的 v0.5.x 兼容线，
+见 [v0.5.0 发行记录](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)；
+该旧版不包含本文的 v0.10.0 CSV 确认导入与结果复用流程。
 
-## 安装与快速开始
+在一个空目录建立独立环境。若下列环境、工作区或输出名称已经存在，请换用新名称。
+不必激活环境，也不必修改 PowerShell 的脚本执行策略。
 
-工作台支持表格和多维数据上传、自定义规则、校验、转换和报告。
-操作步骤见[当前中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)。
-
-v0.6.0 要求 Python 3.12 或更高版本，因为 xarray 和 Zarr 已经高于 v0.5 的依赖下限。
-Python 3.10 和 3.11 用户继续使用已发布的 v0.5.x 兼容线。
-
-从 PyPI 安装 v0.10.0：
+Windows PowerShell：
 
 ```powershell
-python -m pip install "cpdatakit==0.10.0"
+python -m venv .venv-cpdatakit
+.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.10.0"
+.venv-cpdatakit\Scripts\cpdatakit.exe --version
+.venv-cpdatakit\Scripts\cpdatakit.exe ui --workspace ./csv-demo-workspace
 ```
 
-也可以安装同版本的 GitHub release wheel：
+macOS / Linux：
+
+```bash
+python3 -m venv .venv-cpdatakit
+.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.10.0"
+.venv-cpdatakit/bin/cpdatakit --version
+.venv-cpdatakit/bin/cpdatakit ui --workspace ./csv-demo-workspace
+```
+
+版本输出应为 `cpdatakit 0.10.0`。工作台只绑定本机回环地址，默认打开浏览器；
+如未打开，访问终端显示的地址。保持终端运行，结束后按 `Ctrl+C` 停止服务。
+首次安装需要下载依赖；安装后，下面的本地 CSV 流程不需要外部服务或 AI 模型。
+
+工作区存放原始文件、规则、任务记录及结果。保留这整个目录以便继续处理；对外分享前检查文件内容。
+无头环境可在启动命令末尾添加 `--no-browser`，但交互操作仍需浏览器访问服务。
+
+## 第一次使用：把三行 CSV 转成 HDF5
+
+这个合成示例只演示文件处理，没有实验或材料验证含义。
+将下列内容保存为 UTF-8 文件 `instrument-demo.csv`；也可使用仓库中的
+[instrument.csv](examples/csv-intake/instrument.csv)。
+
+```csv
+(sec);(mm);(N);;(MPa);(mm/mm)
+0;0;100;0;20;0
+1;0.5;250;0;40;0.01
+2;1.25;375;0;60;0.02
+```
+
+### 1. 预览原文件
+
+在工作台创建新项目，打开“CSV 导入 · 预览并确认字段”，选择这个文件。
+分隔符选“分号”，表头行填 `1`，单位行填 `0`，小数符号选“.”，编码选“UTF-8 / UTF-8 BOM”。
+点击“预览表格”，应看到 **3 条记录、6 列**。
+
+行号从 1 开始，包含原文件中的空行；`0` 表示没有表头或独立单位行。
+更改文件或解析设置后，需要重新预览。
+
+### 2. 确认字段和单位
+
+五个保留字段的类型均选“小数”，第四列取消“保留”。按表填写：
+
+| 来源列 | 输出字段名 | 来源单位 | 输出单位 | 用途 |
+|---|---|---|---|---|
+| 1 `(sec)` | `time` | `s` | `s` | 时间 |
+| 2 `(mm)` | `extension` | `mm` | `mm` | 测量值 |
+| 3 `(N)` | `force` | `N` | `kN` | 测量值 |
+| 4 无列名 | 取消保留 | — | — | — |
+| 5 `(MPa)` | `reported_stress` | `MPa` | `MPa` | 测量值 |
+| 6 `(mm/mm)` | `reported_strain` | `mm/mm` | `dimensionless` | 测量值 |
+
+来源说明填写：“合成示例，单位由示例表头定义；第四列排除但保留原文件；不推断工程/真实应力应变。”
+核对后勾选确认，点击“确认并导入”。数字列的来源单位与输出单位必须明确；
+未知单位须查证来源，不能填成无量纲。原始第四列仍保存在原文件中。
+
+### 3. 检查、保存并继续处理
+
+1. 导入后，当前数据与规则自动选中。点击“生成报告”，选择 JSON 或 HTML 及新的保存路径，检查 **3 条记录、零错误、零警告**。
+2. 点击“转换并保存”，选择 HDF5 和新的项目内路径，例如 `results/csv-demo.h5`。
+3. 完成后点击“使用此结果继续处理”。输入切换到转换时保存的快照及原规则，再用新路径生成一份报告。
+4. 在“查看与下载结果”中打开报告、下载 HDF5，并核对原文件、规则和导入清单。
+
+结果字段顺序应为 `time, extension, force, reported_stress, reported_strain`；
+`force` 应为 **`0.1, 0.25, 0.375 kN`**。CSV 导入已经应用表中声明的换算，
+无需再到高级映射里重复转换。重复点击继续处理会复用同一份输入记录。
+
+同名输出需改名另存，或明确确认替换。已登记的旧转换快照保留其原内容；
+快照被改动、原规则不可用或结果来自另一项目时，不能继续使用。
+
+详细操作、可运行的示例脚本及常见错误见
+[CSV 完整示例](examples/csv-intake/README.md)和[中文工作台指南](docs/workbench-guide.md)。
+普通 wheel 不包含仓库的 `examples/` 目录；上面的手动流程只需已安装的软件包。
+
+## 得到哪些文件
+
+| 成果 | 用途 |
+|---|---|
+| `source.csv` | 下载的原始字节；来源文件名与 SHA-256 记在导入清单中 |
+| `schema.json` | CSV 导入后确认的数据规则，可在后续检查中复用 |
+| `manifest.json` | 解析设置、字段声明、排除列、记录数与来源摘要 |
+| 已确认的 HDF5 与后续转换文件 | 保存可处理的数据及其声明；文件名和目录由具体操作决定 |
+| HTML / Markdown / JSON 报告 | 校验概览、字段与统计、问题及来源摘要；HTML 可离线打开与打印 |
+| 项目与任务记录 | 保留处理状态、输入选择和结果引用，供重新打开工作区后查询 |
+
+原始文件与处理结果分别保留。报告里的“有效”表示没有违反本次声明的规则；
+只出现警告时仍可有效，需结合具体警告判断是否适合下游使用。
+
+## 命令行与 Python API
+
+### 不依赖源码仓库的命令行示例
+
+在刚才的安装目录，使用同一个独立环境。以下命令生成固定种子的合成曲线，
+完成验证、统计、转换、检查、离线报告与绘图。
+这条路径使用内置 `curve` 规则，适用于生成器提供的字段，不能直接套用到任意仪器表格。
+
+Windows PowerShell：
 
 ```powershell
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.0/cpdatakit-0.10.0-py3-none-any.whl"
+.venv-cpdatakit\Scripts\python.exe -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('cpdatakit-demo')"
+.venv-cpdatakit\Scripts\cpdatakit.exe validate cpdatakit-demo/synthetic_curve.csv --schema curve --json-output validation.json
+.venv-cpdatakit\Scripts\cpdatakit.exe summary cpdatakit-demo/synthetic_curve.csv --schema curve --json-output summary.json
+.venv-cpdatakit\Scripts\cpdatakit.exe convert cpdatakit-demo/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Fixed-seed README example"
+.venv-cpdatakit\Scripts\cpdatakit.exe inspect curve.h5 --format json --output inspect.json
+.venv-cpdatakit\Scripts\cpdatakit.exe report curve.h5 --schema curve --output report.html
+.venv-cpdatakit\Scripts\cpdatakit.exe plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
 ```
 
-安装后运行 `cpdatakit ui`，按[工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)操作。
-如果使用命令行，可按[五分钟快速教程](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
-验证、统计、转换并绘制固定种子生成的示例。
+macOS / Linux 使用相同参数，将解释器路径换为 `.venv-cpdatakit/bin/python`，
+CLI 路径换为 `.venv-cpdatakit/bin/cpdatakit`。
+CSV 没有声明来源单位时，这个内置规则示例会出现 `unit_not_declared` 警告；
+报告区分来源声明和规则假定，不能把它写成“零警告”。
 
-## 仓库里的工作流
+已有输出默认保留；确定要替换时，对支持该参数的命令显式添加 `--force`。
+验证类命令的退出码通常为：`0` 无验证错误（可含警告），`1` 有验证错误或检查发现结构风险，
+`2` 参数、规则、读取或输出错误。完整选项以 `cpdatakit --help` 和子命令帮助为准。
 
-示例和测试覆盖以下路径：
+### 在 Python 中检查数据
 
-- 在分析或交换前，按显式 schema 验证 curve、point 和二维 field 数据；
-- 使用 JSON mapping 文件处理不同导出器的字段名和单位。声明过的向量、矩阵和张量字段会
-  按元素转换单位，并保持原有 shape；
-- 以声明的 shape 和 component order 保存向量/张量数据；
-- 转换为包含单位、映射、来源和验证摘要的可审计 HDF5；
-- 在 CI、文档和实验脚本中生成固定种子的合成测试数据。
-- 复现公开 Surfalex HF（AA6016A）Workflow 7A 的转换，查看显式张量 mapping、来源 hash
-  和 schema provenance。流程按需下载第三方原始文件，并记录来源 hash。
-- 运行不含晶体塑性字段的 `examples/thermal-cycle/`，完成自定义 profile、显式温度/时间单位
-  转换、HDF5 round-trip、检查、报告、比较和通用 x-y 绘图。
-- 使用 `cpdatakit ui` 启动仅绑定本机回环地址的工作台，在项目页面上传、校验、转换数据、
-  生成报告或二维切片，并查看任务进度；静态资源随 wheel 提供，不依赖 CDN。
-
-## 项目与集成链接
-
-- [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.10.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.0)
-- [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
-- [五分钟快速教程](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
-- [当前中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
-- [Schema authoring 与 mapping 指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/schema-authoring.md)
-- [示例目录](https://github.com/koocmitwho/cpdatakit/tree/main/examples)
-- [公共参考案例 #1：Surfalex HF](https://github.com/koocmitwho/cpdatakit/tree/main/examples/public-datasets/surfalex-aa6016a)
-- [路线图与 Issue](https://github.com/koocmitwho/cpdatakit/issues)
-如果需要新的数据契约或输入格式，请在 Issue 中附一个小型合成样例和字段规则，后续改动就有
-具体的测试对象。
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-python examples/generate_sample_data.py --output sample_data
-cpdatakit validate sample_data/synthetic_curve.csv --schema curve --json-output validation.json
-cpdatakit summary sample_data/synthetic_curve.csv --schema curve --json-output summary.json
-cpdatakit convert sample_data/synthetic_curve.csv --schema curve --output curve.h5
-cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.png
-cpdatakit plot curve.h5 --schema curve --kind stress-strain --output curve.svg
-cpdatakit inspect curve.h5 --format json --output inspect.json
-cpdatakit report curve.h5 --schema curve --output report.html
-```
-
-通用热循环示例的核心命令如下，完整流程见 `examples/thermal-cycle/README.md`：
-
-```powershell
-cpdatakit validate examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json
-cpdatakit convert examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --output thermal-cycle.h5
-cpdatakit plot thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output temperature-vs-time.png
-```
-
-对于字段名或单位不同的导出数据，可显式提供 mapping 文件：
-
-```powershell
-cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h5
-```
-
-详见[schema authoring 与 mapping 指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/schema-authoring.md)。
-
-比较两个 schema 契约：
-
-```powershell
-cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
-```
-
-结果分为 identical、backward-compatible 和 breaking，生成两份 schema 的差异报告。
-
-启动本地工作台（默认绑定 loopback 并打开浏览器）：
-
-```powershell
-cpdatakit ui
-cpdatakit ui --workspace .\cpdatakit-workspace --no-browser
-```
-
-`--no-browser` 适用于无头环境和 CI 启动检查。页面会显示本次处理使用的文件与规则；
-切换选择后，旧校验结论会标记为历史结果。同名输出需改名另存或显式勾选替换。
-任务记录显示结果是否仍待保存；中断输出的恢复入口会核对已有证据，并复制到新位置。
-报告比较、声明字段绘图和能力发现还可通过 API 调用。
-
-比较两份 JSON 验证报告并生成离线 bundle：
-
-```powershell
-cpdatakit compare left-report.json right-report.json --output comparison-bundle
-```
-
-bundle 包含 JSON、Markdown、HTML 和带成员 hash 的 manifest。比较内容包括声明的 schema、验证结果、
-结构、单位来源和标量统计。
-
-`inspect` 的 schema 参数可选。它会显示文件类型、格式版本、字段 dtype/shape/单位、缺失值、
-HDF5 chunk、provenance、adapter 和结构风险。`report` 要求显式 schema，默认生成可离线打开的
-HTML，也支持 `--format markdown` 和 `--format json`。HTML 顶部显示校验状态与数量，
-随后列出字段、统计表和来源摘要；完整元数据可以展开。未知统计标记为未提供；
-无量纲单位沿用明确声明的 `1` 或 `dimensionless`。JSON 与 Markdown 沿用原有结构，原始记录继续保留在输入数据中。
-替换已有输出时显式传入 `--force`。处理成功且没有验证错误时退出码为 `0`；
-验证错误，或 `inspect` 发现声明的结构/缺失值风险时为 `1`。只有 warning 的结果仍会被报告，并保持有效。参数、schema、读取和输出错误为 `2`。验证结果逐项列出所声明规则的检查结果。使用 `cpdatakit --help`
-查看完整帮助。
-
-## Python API
+先运行上面的生成器，再用同一环境执行：
 
 ```python
-from cpdatakit import (
-    build_report,
-    inspect_dataset,
-    load_dataset,
-    load_hdf5,
-    validate_dataset,
-    normalize_dataset,
-    summarize_dataset,
-)
-from cpdatakit.adapters import DamaskDADF5Adapter
+from cpdatakit import load_dataset, validate_dataset, summarize_dataset
 
-dataset = load_dataset("sample_data/synthetic_curve.csv")
-result = validate_dataset(dataset, "curve")
-summary = summarize_dataset(dataset, "curve", validation=result)
-print(result.valid, summary)
-print(inspect_dataset("curve.h5", schema="curve")["record_count"])
-print(build_report("curve.h5", "curve")["validation"]["valid"])
-
-dadf5 = DamaskDADF5Adapter(
-    kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
-).load("result.hdf5")
-window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
+dataset = load_dataset("cpdatakit-demo/synthetic_curve.csv")
+validation = validate_dataset(dataset, "curve")
+summary = summarize_dataset(dataset, "curve", validation=validation)
+print(validation.valid)
+print(summary)
 ```
 
-字段映射与单位转换必须通过 `FieldMapping` 显式提供。未映射的原始字段默认保留。
-绘图函数返回 Matplotlib `Figure/Axes`，支持 PNG 和 SVG，并适用于 CI 无显示环境。
+自定义字段和单位见[规则与映射指南](docs/schema-authoring.md)。
+更多完整操作见[五分钟教程](docs/quickstart.md)，选择性读取、多维查看、规则草案和批处理见
+[进阶工作流](docs/post-v07-workflows.md)。
 
-## 文档、范围与贡献
+## 输入格式与适用范围
 
-详细格式见[数据格式文档](https://github.com/koocmitwho/cpdatakit/blob/main/docs/data-format.md)，
-架构、适配器、维护和路线图见仓库 `docs/`。
-仓库提供一个文档化的 DAMASK DADF5 只读选择适配器，适配器贡献按格式证据、许可、可复现
-夹具和科学约定清单审核。贡献前请阅读
-[CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/main/CONTRIBUTING.md)。项目采用
-Apache-2.0，依赖许可核查见
-[NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE)，引用信息见
-[CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/main/CITATION.cff)。
+| 数据路径 | 范围与要求 |
+|---|---|
+| CSV 确认导入 | 逗号、分号、Tab；UTF-8/BOM 或 GB18030；显式字段、类型、单位与用途；默认上限 64 MiB、100,000 条记录 |
+| 常规 CSV / JSON records | UTF-8 CSV 或 JSON 对象数组，配合内置或外部规则；来源单位缺失时报告规则假定警告 |
+| CPDataKit HDF5 | 表格 HDF5 1.0 和多维 HDF5 2.0；保存规则、单位与来源信息，支持选择性读取 |
+| 多维与其他格式 | `ScientificDataset` 的数值型多维数据、NetCDF、Zarr 3，以及 Parquet 表格；按适配器能力处理，不能假定格式之间任意互转 |
+| DAMASK DADF5 | 文档化的只读选择适配器，需明确种类、标签、字段和数据集；不承诺读取所有 DAMASK 输出 |
 
-本轮改动见 [v0.10.0 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.10.0.md)和
-[当前工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)。历史验证记录保留在
-[`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/)。
+内置 `curve`、`point`、`field2d` 规则来自原有 CP 场景。
+外部 JSON 规则可以使用其他非空 profile 名称，但仍须显式声明类型、形状、单位和约定。
+格式合同与适配器边界见[数据格式文档](docs/data-format.md)。
+
+以下边界需要保留：
+
+- 数字单位、应力应变定义、张量分量顺序、取向表达和 ID 含义由数据提供者确认；工具不补写未知科学含义。
+- CSV 确认导入遇到异常行、缺失数字单位或无法保证精度的转换时停止，不丢弃异常行来得到通过结果。
+- 新写出的 HDF5 保留列创建顺序；旧文件若没有顺序元数据，不能恢复最初输入列序。按位置使用特征数组时，应显式指定字段与顺序。
+- 原生 NetCDF3 读取及日期坐标规则仍有已知兼容性问题，本轮 CSV 发布未修复或重测这两个路径。见[问题记录](docs/known-issues/netcdf3-datetime.md)。
+- 工具不运行晶体塑性或有限元求解器；已有集成案例演示数据整理与交接，不构成独立项目间的自动接入。
+
+## 示例与验证
+
+先用合成数据熟悉流程，再按自己的来源记录建立规则。
+
+- [三行仪器 CSV](examples/csv-intake/README.md)：逐列确认、单位换算、原字节保留与转换结果复用。
+- [热循环](examples/thermal-cycle/README.md)：自定义 profile，摄氏度/开尔文与时间单位转换、HDF5 往返及通用 x-y 绘图。
+- [KupferDigital/FE 拉伸案例](examples/cpfe-tensile/README.md)：使用有署名的 CC BY 4.0 处理后数据，演示实验数据交接。
+- [Surfalex HF 公开参考流程](examples/public-datasets/surfalex-aa6016a/README.md)：显式张量映射与来源核对，原始第三方数据按需从上游获取。
+
+v0.10.0 发布提交 `7ef4ece` 的
+[完整 CI](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526428)已通过：
+Windows、Linux、macOS 的 Python 3.12/3.13 六套完整测试各 **1559 项通过**；
+[依赖上下限矩阵](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526427)的 12 套检查也已通过。
+这些结果对应 2026-10-01 的发布提交。
+
+发布验收还检查了干净安装、三行 CSV 浏览器流程，以及来自
+[Mendeley DOI 10.17632/nx55jj48rx.2](https://doi.org/10.17632/nx55jj48rx.2) 的 IN718
+原始压缩包中 12 个 CSV、24,073 行的来源字节、声明单位和数值。
+仓库不附带该原始压缩包；仅包含来源指纹和合成 CSV。
+测试通过说明被测路径满足声明与断言，不证明实验数据的物理正确性。
+历史审核快照与测量条件保存在 [verification 目录](docs/verification/)，其中发布前快照不等同于最终发布收据。
+
+## 贡献与许可
+
+问题和功能建议提交到 [Issues](https://github.com/koocmitwho/cpdatakit/issues)。
+请附最小合成样例、预期字段/单位和复现步骤；不要提交私有实验数据或凭据。
+代码贡献见 [CONTRIBUTING.md](CONTRIBUTING.md)，安全问题见 [SECURITY.md](SECURITY.md)，
+历史版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+
+项目采用 [Apache-2.0](LICENSE)，依赖与第三方材料说明见 [NOTICE](NOTICE)，
+引用信息见 [CITATION.cff](CITATION.cff)。第三方数据遵循各自许可和署名要求。
