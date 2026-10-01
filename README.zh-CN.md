@@ -3,6 +3,10 @@
 CPDataKit 是面向科学和工程数据的 Python 工具，通过 schema 定义字段规则，完成验证、标准化
 和审计。项目最初用于晶体塑性工作流。
 
+v0.10.0 新增 CSV 解析设置、逐列字段/用途/单位确认，以及转换结果复用。
+安装软件包或当前源码后，可按[第一次 CSV 导入与转换](examples/csv-intake/README.md)
+完成一个三行示例。审核与验收记录保存在 `docs/verification/`。
+
 v0.9.2 修正缺失文本校验、单位来源记录、加载限额、并发任务更新和原子文件发布，
 并保留取消期间的异常诊断。说明文档和界面直接介绍已有能力。
 
@@ -53,16 +57,16 @@ v0.6 还提供 `ScientificDataset`、CPDataKit HDF5 2.0、NetCDF、Zarr 3 和 Pa
 v0.6.0 要求 Python 3.12 或更高版本，因为 xarray 和 Zarr 已经高于 v0.5 的依赖下限。
 Python 3.10 和 3.11 用户继续使用已发布的 v0.5.x 兼容线。
 
-从 PyPI 安装 v0.9.3：
+从 PyPI 安装 v0.10.0：
 
 ```powershell
-python -m pip install "cpdatakit==0.9.3"
+python -m pip install "cpdatakit==0.10.0"
 ```
 
 也可以安装同版本的 GitHub release wheel：
 
 ```powershell
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.3/cpdatakit-0.9.3-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.0/cpdatakit-0.10.0-py3-none-any.whl"
 ```
 
 安装后运行 `cpdatakit ui`，按[工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)操作。
@@ -89,7 +93,7 @@ python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download
 ## 项目与集成链接
 
 - [PyPI 软件包](https://pypi.org/project/cpdatakit/)
-- [v0.9.3 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.9.3)
+- [v0.10.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.0)
 - [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
 - [五分钟快速教程](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
 - [当前中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
@@ -209,6 +213,6 @@ Apache-2.0，依赖许可核查见
 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE)，引用信息见
 [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/main/CITATION.cff)。
 
-本轮改动见 [v0.9.3 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.9.3.md)和
+本轮改动见 [v0.10.0 发行说明](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.10.0.md)和
 [当前工作台指南](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)。历史验证记录保留在
 [`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/)。

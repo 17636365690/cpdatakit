@@ -1,6 +1,6 @@
 # Roadmap
 
-The current release documented here is **v0.9.3**. Start with the
+The current release documented here is **v0.10.0**. Start with the
 [Chinese workbench guide](workbench-guide.md) or the [command-line quickstart](quickstart.md).
 v0.9.2 fixes validation/write consistency, records unit origins, extends explicit load limits,
 and improves catalog concurrency, atomic text output, and cancellation diagnostics.

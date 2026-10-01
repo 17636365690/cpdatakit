@@ -341,6 +341,147 @@ class SQLiteCatalog:
         finally:
             connection.close()
 
+    def register_artifact_input(
+        self, project_id: int, artifact_id: int, *, schema_selector: str
+    ) -> DatasetRecord:
+        """Atomically reuse or bind one conversion artifact to a project input."""
+        self.get_project(project_id)
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            artifact = connection.execute(
+                "SELECT * FROM artifacts WHERE id = ? AND project_id = ?",
+                (artifact_id, project_id),
+            ).fetchone()
+            if artifact is None or artifact["kind"] != "convert":
+                raise CatalogError("Conversion artifact does not belong to this project")
+            if json.loads(artifact["metadata_json"]).get("schema") != schema_selector:
+                raise CatalogError("Conversion schema does not match the requested binding")
+            row = connection.execute(
+                "SELECT * FROM datasets WHERE project_id = ? "
+                "AND json_extract(metadata_json, '$.source_artifact_id') = ? ORDER BY id LIMIT 1",
+                (project_id, artifact_id),
+            ).fetchone()
+            if row is not None:
+                metadata = json.loads(row["metadata_json"])
+                if (
+                    row["relative_path"] != artifact["relative_path"]
+                    or row["sha256"] != artifact["sha256"]
+                    or metadata.get("schema_selector") != schema_selector
+                ):
+                    raise CatalogError("Existing artifact input no longer matches its snapshot")
+                result = DatasetRecord(
+                    int(row["id"]),
+                    project_id,
+                    row["relative_path"],
+                    row["sha256"],
+                    metadata,
+                )
+            else:
+                metadata = {
+                    "source_artifact_id": artifact_id,
+                    "schema": schema_selector,
+                    "schema_selector": schema_selector,
+                }
+                inserted = connection.execute(
+                    "INSERT INTO datasets (project_id, relative_path, sha256, metadata_json) "
+                    "VALUES (?, ?, ?, ?)",
+                    (
+                        project_id,
+                        artifact["relative_path"],
+                        artifact["sha256"],
+                        _json_text(metadata, "Dataset metadata"),
+                    ),
+                )
+                result = DatasetRecord(
+                    int(inserted.lastrowid),
+                    project_id,
+                    artifact["relative_path"],
+                    artifact["sha256"],
+                    metadata,
+                )
+            connection.commit()
+            return result
+        except sqlite3.DatabaseError as exc:
+            connection.rollback()
+            raise CatalogError(f"Cannot register artifact input: {exc}") from exc
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
+    def register_csv_import(
+        self,
+        project_id: int,
+        *,
+        data_path: Path,
+        data_sha256: str,
+        schema_path: Path,
+        schema_sha256: str,
+        schema_name: str,
+        metadata: dict[str, Any],
+    ) -> tuple[DatasetRecord, SchemaRecord]:
+        """Register confirmed CSV data and its schema together or not at all."""
+        self.get_project(project_id)
+        if not isinstance(schema_name, str) or not schema_name.strip():
+            raise CatalogError("Schema name must be non-empty")
+        data_relative = self._relative_path(data_path)
+        schema_relative = self._relative_path(schema_path)
+        data_digest = self._validate_hash(data_sha256)
+        schema_digest = self._validate_hash(schema_sha256)
+        schema_metadata = _json_text(metadata, "Schema metadata")
+        connection = self._connect()
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            inserted_schema = connection.execute(
+                "INSERT INTO schemas "
+                "(project_id, name, version, relative_path, sha256, metadata_json) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (project_id, schema_name, "1.0", schema_relative, schema_digest, schema_metadata),
+            )
+            schema_id = int(inserted_schema.lastrowid)
+            selector = f"schema:{schema_id}"
+            dataset_metadata = {**metadata, "schema": selector, "schema_selector": selector}
+            inserted_dataset = connection.execute(
+                "INSERT INTO datasets (project_id, relative_path, sha256, metadata_json) "
+                "VALUES (?, ?, ?, ?)",
+                (
+                    project_id,
+                    data_relative,
+                    data_digest,
+                    _json_text(dataset_metadata, "Dataset metadata"),
+                ),
+            )
+            result = (
+                DatasetRecord(
+                    int(inserted_dataset.lastrowid),
+                    project_id,
+                    data_relative,
+                    data_digest,
+                    dataset_metadata,
+                ),
+                SchemaRecord(
+                    schema_id,
+                    project_id,
+                    schema_name,
+                    "1.0",
+                    schema_relative,
+                    schema_digest,
+                    json.loads(schema_metadata),
+                ),
+            )
+            connection.commit()
+            return result
+        except sqlite3.DatabaseError as exc:
+            connection.rollback()
+            raise CatalogError(f"Cannot register CSV import: {exc}") from exc
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
     def list_datasets(
         self,
         project_id: int,

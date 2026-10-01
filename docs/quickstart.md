@@ -3,7 +3,11 @@
 This run uses deterministic synthetic data. It validates a declared crystal-plasticity curve,
 writes an HDF5 file with provenance, and renders a stress-strain plot.
 
-For the current v0.9.3 Chinese interface, start with the [workbench guide](workbench-guide.md).
+For the v0.10.0 workbench, start with the [workbench guide](workbench-guide.md).
+Its CSV confirmation and result-reuse workflow is included in the package and this source checkout.
+For a complete semicolon CSV walkthrough, use the [CSV first-use example](../examples/csv-intake/README.md).
+It includes a three-row source file, explicit settings, the field/unit table, and an installed-package
+runner that preserves original bytes and refuses to replace an existing output directory.
 See [multidimensional viewing, schema drafting and batch conversion](post-v07-workflows.md)
 for advanced workflows. The command-line walkthrough below uses the current release.
 
@@ -30,13 +34,13 @@ source .venv/bin/activate
 Install the current release from PyPI:
 
 ```bash
-python -m pip install "cpdatakit==0.9.3"
+python -m pip install "cpdatakit==0.10.0"
 ```
 
-For a pinned GitHub v0.9.3 release wheel, use:
+For a pinned GitHub v0.10.0 release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.9.3/cpdatakit-0.9.3-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.0/cpdatakit-0.10.0-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example
@@ -104,8 +108,9 @@ The workbench binds to loopback, opens the default browser, and keeps its catalo
 artifacts below the selected workspace. Use `--no-browser` for a headless smoke check.
 Follow the [Chinese workbench guide](workbench-guide.md) to upload a file, select its data rules,
 validate it, and create a report. The UI explains same-name output conflicts and provides access
-to interrupted-output recovery. Reports use the selected uploaded file; upload a converted result
-as a new input before validating or reporting on that output in the page.
+to interrupted-output recovery. Reports use the selected input.
+Choose **Use this result as input** beside a conversion result;
+the page selects its verified snapshot and original schema without another upload.
 
 ## 8. Read a window or stream chunks
 

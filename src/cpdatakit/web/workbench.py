@@ -77,7 +77,7 @@ def install_workbench(app, templates, *, csrf_token, session_token, require_csrf
             context["resource_state"] = {
                 "project": {"id": project_id, "name": context["project"].name},
                 "datasets": [
-                    {"id": item.id, "relative_path": item.relative_path}
+                    {"id": item.id, "relative_path": item.relative_path, "metadata": item.metadata}
                     for item in context["datasets"]
                 ],
                 "schemas": [

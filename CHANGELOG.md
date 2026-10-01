@@ -4,6 +4,38 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-01
+
+### Added
+
+- Explicit CSV workbench preview with delimiter, header/unit rows, decimal and encoding settings;
+  field/type/unit/role confirmation without JSON editing, retained original bytes and downloadable
+  schema/import receipts. Invalid rows and unconfirmed numeric units stop the import.
+- Reuse verified project conversion snapshots as inputs with their original schema, without
+  downloading and uploading the file again. Repeated requests reuse one catalog record.
+- A three-row semicolon CSV example with explicit settings, a runnable installed-package import,
+  source preservation and JSON/HTML reports. Installed-wheel Chromium acceptance covers CSV review
+  and reuse, including malformed input and ordinary-upload state cleanup.
+
+### Fixed
+
+- Exclude a historical planning document containing personal machine paths from the source
+  distribution, while preserving the original repository record.
+- Preserve data-column creation order in newly written HDF5 1.0 files, including extension fields.
+  Legacy files keep their existing order; explicit field selections retain caller order.
+- Clear stale authoring state when the selected input changes, and reject outdated asynchronous
+  authoring results before applying them to another dataset.
+- Display the API's corrective action alongside CSV row/column diagnostics. Ordinary uploads
+  that select a new input also clear the previous mapping and schema draft.
+- Require the licensed IN718 archive identity, all 12 files and 24,073 rows before writing a
+  successful real-case acceptance receipt.
+
+### Changed
+
+- Run frontend test scenarios in one Node process with fresh VM contexts and observed background
+  completion. Keep every assertion and the 15-second process limit; unknown cases and late errors
+  fail verification. CI records the Node/platform identity and execution stages on failure.
+
 ## [0.9.3] - 2026-09-27
 
 ### Changed

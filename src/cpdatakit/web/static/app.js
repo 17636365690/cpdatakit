@@ -1,5 +1,6 @@
 import {setupFields, showSliceResult} from './fields.js';
 import {setupAuthoring} from './authoring.js';
+import {setupCsvIntake} from './csv-intake.js';
 
 const csrf = document.querySelector('[name="csrf_token"]')?.value;
 const projectId = document.body.dataset.projectId;
@@ -18,6 +19,8 @@ let pendingRefresh;
 let refreshEpoch = 0;
 let validationSnapshot;
 let resultNotice;
+let selectionVersion = 0;
+let activationVersion = 0;
 
 async function request(url, data) {
   const response = await fetch(url, data ? {
@@ -45,6 +48,7 @@ function selectedContext() {
     datasetId: dataset?.value, schemaSelector: schema?.value,
     filename: dataset?.selectedOptions[0]?.textContent || '',
     schemaLabel: schema?.selectedOptions[0]?.textContent || schema?.value || '',
+    selectionVersion,
   };
 }
 
@@ -61,7 +65,7 @@ function updateWorkflow() {
     const matches = previous && previous.datasetId === current.datasetId && previous.schemaSelector === current.schemaSelector;
     const subject = validationSnapshot.mapped ? '映射后数据' : '当前数据';
     message = matches
-      ? (validationSnapshot.valid ? `${subject}校验通过，可生成报告或转换文件。` : `${subject}校验未通过，请检查下方错误。`)
+      ? (validationSnapshot.valid ? (validationSnapshot.mapped ? '映射后的数据通过校验；转换完成后请使用该结果继续处理。' : `${subject}校验通过，可生成报告或转换文件。`) : `${subject}校验未通过，请检查下方错误。`)
       : '历史校验结果：当前数据或规则已切换，或该任务未记录选择；请对当前选择重新校验。';
     if (resultNotice) {
       resultNotice.textContent = matches ? '此结果对应当前选择。' : '历史结果，仅对应下方记录的文件与规则。';
@@ -80,7 +84,60 @@ function artifactActions(payload) {
   link.target = '_blank'; link.rel = 'noopener';
   const download = element('a', '下载'); download.href = `${link.href}?download=true`;
   actions.append(link, download);
+  if (payload.operation === 'convert_and_write') actions.append(reuseButton(id));
   return actions;
+}
+
+function reuseButton(id) {
+  const button = element('button', '使用此结果继续处理', 'secondary');
+  button.type = 'button'; button.dataset.useArtifact = String(id); return button;
+}
+
+function selectSchema(selector, label) {
+  if (!selector) return;
+  let option = [...schema.options].find(item => item.value === selector);
+  if (!option) {
+    option = element('option', label || `项目规则 ${selector}`);
+    option.value = selector; schema.querySelector('optgroup:last-child').append(option);
+  }
+  schema.value = selector;
+}
+
+function selectBoundSchema() {
+  const current = resourceState?.datasets.find(item => String(item.id) === dataset.value);
+  const selector = current?.metadata?.schema_selector || current?.metadata?.schema;
+  selectSchema(selector);
+}
+
+async function activateInput(result, context = selectedContext()) {
+  if (context.selectionVersion !== selectionVersion) {
+    await refreshResources();
+    return false;
+  }
+  const activation = ++activationVersion;
+  const stillCurrent = () => activation === activationVersion && context.selectionVersion === selectionVersion;
+  // Background job refreshes may supersede this response. Do not change the
+  // current input until the user's selection and the verified result agree.
+  await refreshResources();
+  if (!stillCurrent()) return false;
+  const id = String(result.dataset_id);
+  let item = resourceState.datasets.find(candidate => String(candidate.id) === id);
+  if (!item) {
+    item = {id: result.dataset_id, relative_path: result.filename || `数据 #${id}`, metadata: {}};
+    resourceState.datasets.unshift(item);
+  }
+  item.metadata = {...item.metadata, schema_selector: result.schema_selector};
+  if (result.operation === 'csv_import' && !item.metadata.csv_import) {
+    item.label = `${result.filename || '已确认 CSV'} · #${id}`;
+  } else if (result.artifact_id) item.metadata.source_artifact_id = result.artifact_id;
+  renderDatasets(id);
+  selectSchema(result.schema_selector, result.schema_name);
+  const mapping = document.querySelector('#mapping-json'); if (mapping) mapping.value = '';
+  const preview = document.querySelector('#mapping-preview'); if (preview) preview.hidden = true;
+  validationSnapshot = null;
+  schema.dispatchEvent(new Event('change'));
+  dataset.dispatchEvent(new Event('change'));
+  return true;
 }
 
 function showResult(title, payload, context) {
@@ -156,7 +213,9 @@ function updatePaging(kind) {
 function renderDatasets(current) {
   dataset.replaceChildren();
   for (const item of resourceState.datasets) {
-    const option = element('option', item.relative_path.split('/').pop());
+    const name = item.relative_path.split('/').pop();
+    const label = item.label || (item.metadata?.csv_import ? `${item.metadata.source_name || name} · 已确认 #${item.id}` : item.metadata?.source_artifact_id ? `${name} · 转换结果 #${item.id}` : name);
+    const option = element('option', label);
     option.value = String(item.id);
     dataset.append(option);
   }
@@ -189,6 +248,7 @@ function renderArtifacts() {
     const download = element('a', '下载');
     download.href = `${link.href}?download=true`;
     row.append(link, element('span', operationLabels[item.kind] || item.kind, 'hint'), download);
+    if (item.kind === 'convert') row.append(reuseButton(item.id));
     artifacts.append(row);
   }
   if (!resourceState.artifacts.length) artifacts.append(element('p', '完成转换或生成报告后，可在这里查看和下载结果。', 'hint'));
@@ -271,9 +331,13 @@ async function refreshResources(selectedDataset) {
   for (const kind of resourceKinds) pageEpochs[kind]++;
   const project = await request(pageUrl());
   if (epoch !== refreshEpoch) return resourceState;
+  const priorDataset = dataset?.value;
   for (const kind of resourceKinds) {
     pageEpochs[kind]++;
     applyPage(project, kind, false, selectedDataset);
+  }
+  if (selectedDataset !== undefined && dataset?.value !== priorDataset) {
+    dataset.dispatchEvent(new Event('change'));
   }
   return resourceState;
 }
@@ -397,10 +461,29 @@ if (projectId && resourceState) {
     });
   });
   for (const kind of resourceKinds) updatePaging(kind);
+  renderSchemas(schema.value);
+  renderDatasets(dataset.value);
+  selectBoundSchema();
   renderJobs();
 }
-dataset?.addEventListener('change', updateWorkflow);
-schema?.addEventListener('change', updateWorkflow);
+dataset?.addEventListener('change', () => { selectionVersion++; selectBoundSchema(); updateWorkflow(); });
+document.addEventListener('click', async event => {
+  const button = event.target.closest('[data-use-artifact]');
+  if (!button) return;
+  button.disabled = true;
+  const context = selectedContext();
+  try {
+    const result = await request(`/api/projects/${projectId}/artifacts/${button.dataset.useArtifact}/use-as-input`, new FormData());
+    const activated = await activateInput(result, context);
+    const resultContext = {datasetId: String(result.dataset_id), schemaSelector: result.schema_selector, filename: result.filename, schemaLabel: result.schema_name || result.schema_selector};
+    showResult(activated ? '已选中转换结果' : '转换结果已保存为输入', {value: {message: activated
+      ? '当前输入已切换到已保存的转换结果，并沿用其规则。可直接生成报告。'
+      : '当前选择已改变，未切换输入。请从数据列表选择已保存的转换结果。'}}, resultContext);
+  } catch (error) { showResult('无法使用此结果', error.payload || {error: {message: error.message}}); }
+  finally { button.disabled = false; }
+});
+schema?.addEventListener('change', () => { selectionVersion++; updateWorkflow(); });
 updateWorkflow();
 setupFields({request, showResult, followJob});
 setupAuthoring({request, showResult, selectedContext});
+setupCsvIntake({request, activateInput, showResult, selectedContext});

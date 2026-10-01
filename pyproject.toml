@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cpdatakit"
-version = "0.9.3"
+version = "0.10.0"
 description = "Schema-first validation, normalization, and audit tooling for scientific data"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -73,6 +73,7 @@ reproducible = true
 packages = ["src/cpdatakit"]
 
 [tool.hatch.build.targets.sdist]
+exclude = ["/docs/superpowers/plans/2026-08-31-post-v0.3.0-next-steps.md"]
 include = [
   "/src",
   "/tests",
