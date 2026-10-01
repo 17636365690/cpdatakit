@@ -24,6 +24,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
       - run: python -m pip install -e ".[dev]"
+      - name: Record frontend runtime
+        run: node -p "JSON.stringify({node:process.version,platform:process.platform,arch:process.arch})"
       - run: pytest
 
   macos-wheel-smoke:
@@ -65,6 +67,8 @@ jobs:
           browser-runtime/bin/python -m pip check
       - name: Upload, validate, convert, report and read back downloads
         run: python scripts/smoke_browser_installed.py --python browser-runtime/bin/python --output-dir browser-evidence
+      - name: Confirm CSV fields, preserve sources and reuse converted data
+        run: python scripts/smoke_csv_installed.py --python browser-runtime/bin/python --output-dir browser-evidence/csv
       - name: Retain browser and server evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -28,6 +28,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+      - name: Record frontend runtime
+        run: node -p "JSON.stringify({node:process.version,platform:process.platform,arch:process.arch})"
       - name: Test candidate wheel with exact lower or latest dependencies
         run: >-
           python scripts/run_v06_dependency_matrix.py

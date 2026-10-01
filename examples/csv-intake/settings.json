@@ -1,0 +1,12 @@
+{
+  "options": {"delimiter": ";", "header_row": 1, "unit_row": 0, "decimal": ".", "encoding": "utf-8-sig"},
+  "confirmed_source_definition": "Synthetic instrument-format example, not experimental measurements. Units are defined by the example header. The unnamed fourth channel is excluded but retained in the original bytes. No engineering/true stress-strain definition is inferred.",
+  "columns": [
+    {"index": 0, "include": true, "target": "time", "dtype": "float", "input_unit": "s", "output_unit": "s", "role": "time"},
+    {"index": 1, "include": true, "target": "extension", "dtype": "float", "input_unit": "mm", "output_unit": "mm", "role": "measured_quantity"},
+    {"index": 2, "include": true, "target": "force", "dtype": "float", "input_unit": "N", "output_unit": "kN", "role": "measured_quantity"},
+    {"index": 3, "include": false},
+    {"index": 4, "include": true, "target": "reported_stress", "dtype": "float", "input_unit": "MPa", "output_unit": "MPa", "role": "measured_quantity"},
+    {"index": 5, "include": true, "target": "reported_strain", "dtype": "float", "input_unit": "mm/mm", "output_unit": "dimensionless", "role": "measured_quantity"}
+  ]
+}

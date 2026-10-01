@@ -1,6 +1,6 @@
 # 多维查看、schema 草案与批处理
 
-安装 `python -m pip install "cpdatakit==0.9.3"` 后，即可查看多维数据、
+安装 `python -m pip install "cpdatakit==0.10.0"` 后，即可查看多维数据、
 编辑 schema 和运行批处理。需要 Python >=3.12。
 首次使用页面时，先按[当前中文工作台指南](workbench-guide.md)完成上传、校验与报告。
 
@@ -100,8 +100,8 @@ cpdatakit convert temperature.nc --schema schema.json --mapping mapping.json --o
 
 Python 对应 `draft_schema(ImportInspectRequest(...))` 和
 `preview_mapping(DatasetRequest(...))`。转换结果保留字段、维度映射和映射文件哈希。
-网页中的映射仅用于转换，常规 **校验数据** 与 **生成报告** 仍检查所选上传文件本身。
-要在页面检查转换后的文件，请将该结果作为新输入上传，再选择匹配规则。
+网页中的映射用于转换，常规 **校验数据** 与 **生成报告** 检查当前所选输入。
+v0.10.0 可点击转换结果旁的“使用此结果继续处理”，复用已核验快照及原规则，再生成报告。
 
 ## 一份配置处理多份输入
 

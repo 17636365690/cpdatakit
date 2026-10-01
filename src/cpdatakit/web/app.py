@@ -33,13 +33,16 @@ from ..application import (
     plot_declared_fields,
     validate_and_summarize,
 )
+from ..application.data_access import path_sha256
 from ..catalog import ProjectRecord, SQLiteCatalog
 from ..catalog.sqlite import ArtifactRecord
 from ..exceptions import CatalogError, CPDataKitError, JobError, OutputExistsError, SchemaError
 from ..jobs import JobManager
 from ..jobs.manager import CommittedResult, JobCancelled, JobFailure
+from .artifact_inputs import install_artifact_inputs
 from .artifacts import register_snapshot
 from .authoring import install_authoring, store_mapping
+from .csv_workflow import install_csv_workflow
 from .operations import install_output_operations
 from .ownership import OwnershipMiddleware, RequestDrain, WorkspaceOwnership
 from .persistence import TERMINAL, JobPersistence
@@ -363,6 +366,15 @@ def _create_owned_app(
             path.is_file() or (path.is_dir() and path.suffix.lower() == ".zarr")
         ) or not path.is_relative_to(root):
             raise CatalogError("Dataset source is not a regular project file")
+        if record.metadata.get("source_artifact_id") or record.metadata.get("csv_import"):
+            stored_path = workspace_path / record.relative_path
+            for candidate in (stored_path, *stored_path.parents):
+                if candidate == workspace_path:
+                    break
+                if candidate.is_symlink() or candidate.is_junction():
+                    raise CatalogError("Confirmed dataset contains a linked path")
+            if path_sha256(path) != record.sha256:
+                raise CatalogError("Confirmed dataset has changed since registration")
         return path
 
     def existing_project_file(project_id: int, raw_name: str) -> Path:
@@ -920,6 +932,8 @@ def _create_owned_app(
         compare_reports=lambda request: compare_reports(request),
     )
     install_authoring(app, dataset_path=dataset_path, require_csrf=require_csrf)
+    install_csv_workflow(app, require_csrf=require_csrf)
+    install_artifact_inputs(app, require_csrf=require_csrf)
     install_slices(
         app,
         dataset_path=dataset_path,

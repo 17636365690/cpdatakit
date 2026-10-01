@@ -1,0 +1,12 @@
+{
+  "doi": "10.17632/nx55jj48rx.2",
+  "url": "https://data.mendeley.com/datasets/nx55jj48rx/2",
+  "authors": ["Simon Malej", "Matjaž Godec"],
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "archive_name": "05_Mechanical_properties.zip",
+  "archive_sha256": "8bd49396f5f78f255dadf41fb1ec1061cfe0b5d27cb3d7027c3ea61bc0a235db",
+  "csv_files": 12,
+  "rows": 24073,
+  "scope": "Five unit-labelled reported quantities; unnamed fourth channel excluded and retained in raw bytes. Stress/strain definitions are not inferred."
+}

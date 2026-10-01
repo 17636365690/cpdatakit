@@ -479,7 +479,7 @@ def write_hdf5(
                 },
                 sort_keys=True,
             )
-            group = handle.create_group("data")
+            group = handle.create_group("data", track_order=True)
             for name in dataset.data.columns:
                 values = _hdf5_column_values(dataset.data[name], str(name))
                 chunks = None

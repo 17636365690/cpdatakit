@@ -7,10 +7,26 @@ export function setupAuthoring({request, showResult, selectedContext}) {
   const editor = document.querySelector('#schema-draft-json');
   const mapping = document.querySelector('#mapping-json');
   const status = document.querySelector('#authoring-status');
+  let selectionVersion = 0;
+  let selectingSavedDraft = false;
+  function resetAuthoring() {
+    selectionVersion++;
+    document.querySelector('#mapping-preview').hidden = true;
+    document.querySelector('#mapping-preview tbody').replaceChildren();
+    if (selectingSavedDraft) return;
+    mapping.value = ''; editor.value = '';
+    document.querySelector('#schema-review').replaceChildren();
+    document.querySelector('#draft-editor').hidden = true;
+    status.textContent = '数据或规则已切换，请为当前选择重新生成草稿或确认映射。';
+  }
+  dataset.addEventListener('change', resetAuthoring);
+  schema.addEventListener('change', resetAuthoring);
   draftButton.addEventListener('click', async () => {
     draftButton.disabled = true;
+    const version = selectionVersion;
     try {
       const result = await request(`/api/projects/${project}/datasets/${dataset.value}/schema-draft`);
+      if (version !== selectionVersion) return;
       const value = result.value;
       editor.value = JSON.stringify(value.schema, null, 2);
       const review = document.querySelector('#schema-review'); review.replaceChildren();
@@ -32,30 +48,36 @@ export function setupAuthoring({request, showResult, selectedContext}) {
       mapping.value = JSON.stringify(draft, null, 2);
       document.querySelector('#draft-editor').hidden = false;
       status.textContent = '草稿已生成。请核对下列声明并补全缺失信息，再保存数据规则。';
-    } catch (error) { status.textContent = error.message; }
+    } catch (error) { if (version === selectionVersion) status.textContent = error.message; }
     finally { draftButton.disabled = false; }
   });
   document.querySelector('#save-draft').addEventListener('click', async event => {
     const button = event.currentTarget; button.disabled = true;
+    const version = selectionVersion;
     try {
       const payload = JSON.parse(editor.value);
       const data = new FormData(); data.set('file', new Blob([JSON.stringify(payload)], {type: 'application/json'}), 'reviewed-schema.json');
       const result = await request(`/api/projects/${project}/schemas`, data);
+      if (version !== selectionVersion) return;
       const option = document.createElement('option'); option.value = result.selector;
       option.textContent = `${result.name} · ${result.version} · #${result.id}`;
       schema.querySelector('optgroup:last-child').append(option); schema.value = result.selector;
-      schema.dispatchEvent(new Event('change'));
+      selectingSavedDraft = true;
+      try { schema.dispatchEvent(new Event('change')); }
+      finally { selectingSavedDraft = false; }
       status.textContent = '数据规则已保存并选中，请重新校验当前数据。';
-    } catch (error) { status.textContent = error.message; }
+    } catch (error) { if (version === selectionVersion) status.textContent = error.message; }
     finally { button.disabled = false; }
   });
   document.querySelector('#preview-mapping').addEventListener('click', async event => {
     const button = event.currentTarget; button.disabled = true;
     const context = selectedContext?.();
+    const version = selectionVersion;
     try {
       const data = new FormData(); data.set('dataset_id', dataset.value); data.set('schema', schema.value);
       data.set('mapping_json', mapping.value || '{"mappings": []}');
       const result = await request(`/api/projects/${project}/mapping-preview`, data);
+      if (version !== selectionVersion) return;
       showResult('映射预览', result, context);
       const table = document.querySelector('#mapping-preview tbody'); table.replaceChildren();
       for (const field of result.value.fields) {
@@ -68,7 +90,7 @@ export function setupAuthoring({request, showResult, selectedContext}) {
         table.append(row);
       }
       document.querySelector('#mapping-preview').hidden = false;
-    } catch (error) { showResult('映射预览失败', error.payload || {error: {message: error.message}}, context); }
+    } catch (error) { if (version === selectionVersion) showResult('映射预览失败', error.payload || {error: {message: error.message}}, context); }
     finally { button.disabled = false; }
   });
 }
