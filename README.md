@@ -1,342 +1,314 @@
 # CPDataKit
 
+[简体中文](README.zh-CN.md) | English
+
 [![CI](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/releases/latest)
 [![PyPI](https://img.shields.io/pypi/v/cpdatakit)](https://pypi.org/project/cpdatakit/)
 [![License](https://img.shields.io/github/license/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/blob/main/LICENSE)
 
-CPDataKit is a schema-first Python toolkit for validating, normalizing, and auditing scientific and
-engineering data. It began with crystal-plasticity workflows.
+**Make fields, units, and checks explicit before validating, converting, and handing off scientific or engineering data.**
 
-v0.10.0 adds explicit CSV parsing/field/unit confirmation and conversion-result reuse.
-Start with the [CSV first-use example](examples/csv-intake/README.md) after installing the package
-or this source checkout. Review and acceptance evidence is recorded in `docs/verification/`.
+CPDataKit is a Python toolkit with a local Chinese-language workbench, a command-line interface,
+and a Python API. It is for experimental and engineering users who need to organize instrument
+exports, reconcile conventions across sources, or check data before analysis.
+It began with crystal-plasticity (CP) workflows and also handles data without CP fields,
+such as thermal cycles.
 
-v0.9.2 improves missing-text validation, unit provenance, load limits, concurrent job updates,
-and atomic output publication. Cancellation retains failure diagnostics, and documentation
-and interface copy describe supported workflows directly.
+For example, an instrument exports a semicolon-separated table with force in `N`, while a
+downstream script expects `kN`. Preview the actual columns, confirm the field names, types,
+source units, and output units, then save the converted data, original file, and schema.
+Anyone checking or receiving the result can see which declarations governed the conversion.
 
-v0.9.1 is a maintenance release: schema-upload errors use a fixed message without exposing internal
-exception details, and the pandas dependency range now includes pandas 3 (`>=2.2,<4`).
+This guide covers the published **v0.10.0**, which adds explicit CSV column confirmation
+and reuse of conversion results as inputs. Install from
+[PyPI](https://pypi.org/project/cpdatakit/0.10.0/); see the
+[release notes](.github/release-notes/v0.10.0.md) and
+[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.0) for changes.
 
-v0.9.0 introduced Chinese project screens with step-by-step guidance, clearer results and output-conflict
-messages, and readable offline HTML reports with statistics tables and provenance summaries.
-It also improves numeric fidelity and recovery of job and output records after process interruption.
-Start with the [current Chinese workbench guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md).
+> CPDataKit checks declared data rules and conversions. It does not establish experimental validity
+> or infer scientific definitions such as engineering versus true stress and strain.
 
-v0.8.0 adds selective reads, multidimensional heatmaps, editable
-schema drafts, mapping previews and reproducible batches. See
-[the workflow guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/post-v07-workflows.md), [read benchmarks](https://github.com/koocmitwho/cpdatakit/blob/main/docs/selective-reading.md),
-and the [KupferDigital/FE integration case](https://github.com/koocmitwho/cpdatakit/blob/main/examples/cpfe-tensile/README.md).
+## Features
 
-v0.8.1 improves data integrity, interrupted batch recovery, scientific report comparison and
-workbench responsiveness. It also bounds retained job state and loads resource history on demand.
+- **Confirm what a CSV contains.** Set the delimiter, header row, separate unit row, decimal separator,
+  and encoding. Preview the file, then confirm each field's name, type, units, and role.
+  Retain the original bytes and a record of excluded columns.
+- **Validate against explicit rules.** A schema declares fields, types, shapes, units, missing-value
+  policies, indexes, ranges, and scientific conventions. Findings distinguish errors from warnings.
+- **Normalize names and units explicitly.** A field mapping handles renaming and unit conversion.
+  Vectors, matrices, and tensors follow their declared shapes. CSV confirmation accepts these
+  declarations directly.
+- **Keep results traceable.** CPDataKit HDF5 can retain the schema, unit provenance, source digest,
+  validation results, and processing records. Reports support offline HTML, Markdown, and JSON.
+- **Continue from saved results.** Local projects retain files, schemas, jobs, and results.
+  Verified conversion snapshots can become subsequent inputs without downloading and uploading again.
+- **Use scripts as well as the workbench.** CLI and Python API operations cover validation, summaries,
+  conversion, inspection, plotting, reporting, and comparison. Additional workflows provide
+  selective reads, multidimensional slices, and batch processing.
 
-The KupferDigital integration includes processed data with CC-BY-4.0 attribution.
+## Requirements and installation
 
-## When it helps
+- Python **3.12 or later**. Full CI for this release covers Python 3.12 and 3.13.
+- Windows, macOS, or Linux. The workbench requires a browser; CLI/API use does not.
+- Installation fetches the Python dependencies. Workbench assets are bundled in the package:
+  **using the workbench requires neither Node.js nor a CDN**.
 
-One exporter stores temperature in degrees Celsius while the next script expects kelvin, and a
-crystal-plasticity exporter writes `sigma_pa` where an analysis expects `stress` in MPa.
-Put those conventions in a schema and mapping file, then use CPDataKit to convert the data and
-keep the validation result for later analysis or file exchanges.
+The Python 3.12 minimum was introduced in v0.6.0. The published v0.5.x line remains the
+compatibility path for Python 3.10 and 3.11; see the
+[v0.5.0 release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0).
+That older version does not include the v0.10.0 CSV confirmation and result-reuse workflow below.
 
-Documented readers and examples cover CPDataKit HDF5, selected DAMASK DADF5 data, and the
-Surfalex reference workflow.
+Start in an empty directory and create an isolated environment.
+If an environment, workspace, or output name below already exists, choose a new name.
+You do not need to activate the environment or change PowerShell's script execution policy.
 
-## Supported contracts and formats
-
-The built-in CPDataKit schema v1.0 has three compatibility profiles from the original
-crystal-plasticity vertical:
-
-- `curve`: ordered macroscopic steps such as time, strain, stress, and load curves.
-- `point`: material-point, integration-point, element, or sample records.
-- `field2d`: scalar samples with two-dimensional Cartesian coordinates.
-
-External JSON schemas may use other non-empty profile names while keeping the same explicit field,
-dtype, unit, shape, and convention rules. See the complete non-CP
-[`thermal-cycle` example](https://github.com/koocmitwho/cpdatakit/tree/main/examples/thermal-cycle).
-
-Inputs are UTF-8 CSV, JSON arrays of records, and CPDataKit HDF5 (`.h5`/`.hdf5`). CSV and JSON
-use schema units as assumptions when source declarations are absent; validation reports a
-`unit_not_declared` warning while keeping error-free data valid. HDF5 retains `units_json` and
-adds `units_source_json` to distinguish declared, assumed, and historical unknown origins.
-Inspection, reports, and comparison bundles display these origins. HDF5 stores mapping, validation
-summary, source filename and SHA-256, UTC conversion time, Python and CPDataKit versions, and an
-operation log. The current HDF5 writer also puts the canonical schema and its SHA-256 digest in
-the file. CPDataKit records a supplied schema URI as caller-managed provenance. The read-only DAMASK
-DADF5 adapter can inspect or report a selection when the file
-has one clear choice. CPDataKit HDF5 uses its own format alongside DAMASK DADF5 and Abaqus ODB.
-The v0.6 N-dimensional path adds `ScientificDataset`, CPDataKit HDF5 2.0, NetCDF, Zarr 3, and
-tabular-only Parquet adapters with explicit capability checks.
-
-Schemas declare standard names, aliases, requiredness, dtype, per-record shape, role, unit,
-missing-value policy, index constraints, ranges, and scientific conventions. Custom fields
-must be declared or use `user_`. Stress/strain measures, tensor order, orientation representation,
-units, and identifier semantics come from the explicit schema or mapping. See
-[the data format](https://github.com/koocmitwho/cpdatakit/blob/main/docs/data-format.md).
-
-## Install
-
-Install v0.10.0 from PyPI (Python 3.12 or later):
-
-```bash
-python -m pip install "cpdatakit==0.10.0"
-```
-
-To install the matching GitHub release wheel:
-
-```bash
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.0/cpdatakit-0.10.0-py3-none-any.whl"
-```
-
-Then run `cpdatakit ui` and follow the [Chinese workbench guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md).
-For a command-line walkthrough, the
-[five-minute quickstart](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
-validates, summarizes, converts, and plots a deterministic example.
-
-Installing from the source checkout is intended for contributors:
-
-```bash
-git clone https://github.com/koocmitwho/cpdatakit.git
-cd cpdatakit
-python -m venv .venv
-```
-
-Activate on Windows PowerShell:
+Windows PowerShell:
 
 ```powershell
-.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
+python -m venv .venv-cpdatakit
+.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.10.0"
+.venv-cpdatakit\Scripts\cpdatakit.exe --version
+.venv-cpdatakit\Scripts\cpdatakit.exe ui --workspace ./csv-demo-workspace
 ```
 
-The v0.6.0 release requires Python 3.12 or later because its xarray and Zarr stack has moved past
-the v0.5 dependency floor. The released v0.5.x line remains the compatibility path for Python 3.10 and 3.11.
-
-Activate on POSIX shells:
+macOS / Linux:
 
 ```bash
-source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python3 -m venv .venv-cpdatakit
+.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.10.0"
+.venv-cpdatakit/bin/cpdatakit --version
+.venv-cpdatakit/bin/cpdatakit ui --workspace ./csv-demo-workspace
 ```
 
-Regenerate the fixed-seed examples at any time:
+The version output should be `cpdatakit 0.10.0`.
+The workbench binds only to a loopback address and opens the browser by default.
+If it does not open, visit the address printed in the terminal.
+Keep the terminal running; press `Ctrl+C` when finished to stop the service.
+Initial installation downloads dependencies. Once installed, the local CSV workflow below
+requires no external service or AI model.
 
-```bash
-python examples/generate_sample_data.py --output sample_data
+The workspace contains original files, schemas, job records, and results.
+Keep the whole directory to resume work, and inspect its contents before sharing.
+For a headless launch, append `--no-browser`; interactive use still requires a browser
+that can reach the service.
+
+## First use: convert a three-row CSV to HDF5
+
+This synthetic example demonstrates file processing; it has no experimental or material-validation
+meaning. Save the following text as a UTF-8 file named `instrument-demo.csv`,
+or use the repository's [instrument.csv](examples/csv-intake/instrument.csv).
+
+```csv
+(sec);(mm);(N);;(MPa);(mm/mm)
+0;0;100;0;20;0
+1;0.5;250;0;40;0.01
+2;1.25;375;0;60;0.02
 ```
 
-## Workflows covered by the repository
+The workbench UI is in Chinese. Instructions below include its actual labels.
 
-The examples and tests cover these paths:
+### 1. Preview the source
 
-- validate exported curve, point, or two-dimensional field records against an explicit contract.
-- normalize exporter-specific column names and units with a reviewable JSON mapping file. An
-  explicit mapping converts each element of a declared shaped field and leaves its dimensions intact.
-- preserve validated vectors and tensors in JSON/HDF5 with declared shapes and component order.
-- convert records into auditable HDF5 with units, mapping, provenance, and validation metadata.
-- inspect files and produce shareable aggregate reports.
-- start the local-first workbench with `cpdatakit ui`; it keeps uploads and artifacts in an explicit
-  workspace and serves bundled browser assets locally.
-- read/write explicit N-dimensional values through schema 2.0, HDF5 2.0, NetCDF, Zarr 3, and
-  tabular-only Parquet adapters.
-- run deterministic synthetic fixtures in notebooks, CI, and documentation examples.
-- run the Surfalex HF (AA6016A) Workflow 7A example with explicit tensor mappings, source hashes,
-  and schema provenance. The example downloads third-party raw files on request and records their
-  source hashes.
+Create a new project and open “CSV import · preview and confirm fields”
+(`CSV 导入 · 预览并确认字段`). Select the file.
+Choose semicolon (`分号`), set header row to `1` and unit row to `0`,
+choose “.” for the decimal separator, and select “UTF-8 / UTF-8 BOM”.
+Click “Preview table” (`预览表格`): expect **3 records and 6 columns**.
 
-## Useful links
+Row numbers start at 1 and include blank lines in the original file.
+`0` means there is no header or separate unit row.
+Changing the file or parsing settings requires a new preview.
 
-- [PyPI package](https://pypi.org/project/cpdatakit/)
-- [v0.10.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.0)
-- [v0.5.0 GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.5.0)
-- [Quickstart](https://github.com/koocmitwho/cpdatakit/blob/main/docs/quickstart.md)
-- [Current workbench guide (Chinese)](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md)
-- [Schema authoring and mapping guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/schema-authoring.md)
-- [Examples](https://github.com/koocmitwho/cpdatakit/tree/main/examples)
-- [Public Reference Case #1: Surfalex HF](https://github.com/koocmitwho/cpdatakit/tree/main/examples/public-datasets/surfalex-aa6016a)
-- [Roadmap and Issue tracker](https://github.com/koocmitwho/cpdatakit/issues)
+### 2. Confirm fields and units
 
-## Command line
+Choose decimal (`小数`) for all five retained fields and deselect “Keep” (`保留`)
+for column four. Fill in the declarations below:
 
-Run the generic thermal-cycle workflow with an external profile and explicit mapping:
+| Source column | Output field | Source unit | Output unit | Role |
+|---|---|---|---|---|
+| 1 `(sec)` | `time` | `s` | `s` | Time (`时间`) |
+| 2 `(mm)` | `extension` | `mm` | `mm` | Measured quantity (`测量值`) |
+| 3 `(N)` | `force` | `N` | `kN` | Measured quantity (`测量值`) |
+| 4 Unnamed | Deselect Keep | — | — | — |
+| 5 `(MPa)` | `reported_stress` | `MPa` | `MPa` | Measured quantity (`测量值`) |
+| 6 `(mm/mm)` | `reported_strain` | `mm/mm` | `dimensionless` | Measured quantity (`测量值`) |
 
-```bash
-cpdatakit validate examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json
-cpdatakit convert examples/thermal-cycle/input/thermal-cycle.csv --schema examples/thermal-cycle/schema/thermal-cycle.json --mapping examples/thermal-cycle/mappings/thermal-cycle.json --output thermal-cycle.h5
-cpdatakit plot thermal-cycle.h5 --schema examples/thermal-cycle/schema/thermal-cycle.json --kind xy --x time --y temperature --output temperature-vs-time.png
+Enter this source description: “Synthetic example; units are defined by the example header.
+Column four is excluded but retained in the original file.
+No engineering/true stress-strain definition is inferred.”
+After checking the declarations, tick the confirmation box and click “Confirm and import”
+(`确认并导入`). Numeric columns require explicit source and output units.
+Investigate unknown units rather than declaring them dimensionless.
+The original fourth column remains in the source file.
+
+### 3. Check, save, and continue
+
+1. The imported data and schema are selected automatically.
+   Click “Generate report” (`生成报告`), select JSON or HTML and a new output path,
+   and check for **3 records, zero errors, and zero warnings**.
+2. Click “Convert and save” (`转换并保存`).
+   Select HDF5 and a new project-relative path, such as `results/csv-demo.h5`.
+3. When conversion completes, click “Use this result to continue”
+   (`使用此结果继续处理`). The input switches to the saved conversion snapshot
+   and its original schema. Generate another report with a new output path.
+4. Under “View and download results” (`查看与下载结果`), open the report, download
+   the HDF5 file, and check the original file, schema, and import manifest.
+
+The resulting field order should be
+`time, extension, force, reported_stress, reported_strain`;
+`force` should contain **`0.1, 0.25, 0.375 kN`**.
+CSV import has already applied the declared conversions: do not repeat them in the advanced mapping.
+Selecting the same result again reuses the same input record.
+
+For an existing output name, choose a new name or explicitly confirm replacement.
+Previously registered conversion snapshots retain their original content.
+Reuse is rejected if a snapshot has changed, its original schema is unavailable,
+or the result belongs to another project.
+
+See the [complete CSV example](examples/csv-intake/README.md) and
+[Chinese workbench guide](docs/workbench-guide.md) for detailed steps, a runnable example script,
+and troubleshooting. Ordinary wheels do not include the repository's `examples/` directory.
+The manual workflow above needs only the installed package.
+
+## Outputs
+
+| Output | Purpose |
+|---|---|
+| `source.csv` | Download of the original bytes; the import manifest records the source filename and SHA-256 |
+| `schema.json` | The confirmed CSV schema, reusable for later checks |
+| `manifest.json` | Parsing settings, field declarations, excluded columns, record count, and source digest |
+| Confirmed HDF5 and subsequent conversion files | Processable data with its declarations; names and directories depend on the operation |
+| HTML / Markdown / JSON reports | Validation overview, fields and statistics, findings, and provenance; HTML opens and prints offline |
+| Project and job records | Processing state, input selections, and result references for use after reopening the workspace |
+
+Original files and processing results are retained separately.
+“Valid” in a report means the data violates none of the declared rules in that check.
+Warning-only results can remain valid; assess the particular warnings before downstream use.
+
+## Command line and Python API
+
+### A command-line example without a source checkout
+
+Use the same isolated environment in the installation directory.
+These commands generate a fixed-seed synthetic curve, then validate, summarize, convert,
+inspect, report, and plot it.
+This workflow uses the built-in `curve` schema for the generator's fields;
+it cannot be applied directly to arbitrary instrument tables.
+
+Windows PowerShell:
+
+```powershell
+.venv-cpdatakit\Scripts\python.exe -c "from cpdatakit.samples import generate_sample_data; generate_sample_data('cpdatakit-demo')"
+.venv-cpdatakit\Scripts\cpdatakit.exe validate cpdatakit-demo/synthetic_curve.csv --schema curve --json-output validation.json
+.venv-cpdatakit\Scripts\cpdatakit.exe summary cpdatakit-demo/synthetic_curve.csv --schema curve --json-output summary.json
+.venv-cpdatakit\Scripts\cpdatakit.exe convert cpdatakit-demo/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Fixed-seed README example"
+.venv-cpdatakit\Scripts\cpdatakit.exe inspect curve.h5 --format json --output inspect.json
+.venv-cpdatakit\Scripts\cpdatakit.exe report curve.h5 --schema curve --output report.html
+.venv-cpdatakit\Scripts\cpdatakit.exe plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
 ```
 
-The example README includes `summary`, `inspect`, `report`, and `compare` as well. Crystal
-plasticity remains available through the original built-in profiles and commands below.
+On macOS / Linux, use the same arguments with `.venv-cpdatakit/bin/python`
+and `.venv-cpdatakit/bin/cpdatakit`.
+Because the CSV has no source-unit declarations, this built-in schema example produces
+`unit_not_declared` warnings. Reports distinguish source declarations from schema assumptions;
+this example must not be described as having “zero warnings”.
 
-Validate and write a JSON report:
+Existing outputs are kept by default.
+To replace them intentionally, add `--force` to commands that support it.
+Validation-related commands generally return `0` for no validation errors (warnings may remain),
+`1` for validation errors or structural risks found during inspection,
+and `2` for argument, schema, read, or output errors.
+Consult `cpdatakit --help` and subcommand help for full options.
 
-```bash
-cpdatakit validate sample_data/synthetic_curve.csv --schema curve --json-output validation.json
-```
+### Check data in Python
 
-Summarize, convert, and create both image formats:
-
-```bash
-cpdatakit summary sample_data/synthetic_curve.csv --schema curve --json-output summary.json
-cpdatakit convert sample_data/synthetic_curve.csv --schema curve --output curve.h5 --source-description "Synthetic README example"
-cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.png
-cpdatakit plot curve.h5 --schema curve --kind stress-strain --output stress-strain.svg
-```
-
-For an exporter with different names or units, provide an explicit mapping file:
-
-```bash
-cpdatakit convert raw.csv --schema curve --mapping mapping.json --output curve.h5
-```
-
-See the [schema authoring and mapping guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/schema-authoring.md)
-for the JSON format and explicit-convention rules.
-
-Compare two schema contracts:
-
-```bash
-cpdatakit schema diff old-schema.json new-schema.json --format markdown --output schema-diff.md
-```
-
-The result labels the change as identical, backward-compatible, or breaking and provides a
-read-only comparison of the two schema contracts.
-
-Start the local workbench (it binds to loopback and opens the default browser):
-
-```bash
-cpdatakit ui
-cpdatakit ui --workspace ./cpdatakit-workspace --no-browser
-```
-
-The project page guides uploads, bounded inspection, validation, conversion, reports, and
-two-dimensional array slices. It identifies the input and schema behind each result, marks older
-validation results when the selection changes, and explains same-name output conflicts.
-Job records expose pending persistence, and interrupted outputs have a recovery view that copies
-verified evidence to a new location. `--no-browser` is useful for headless or CI smoke checks.
-The API also exposes report comparison, declared-field plots, and capability discovery.
-
-Compare two JSON validation reports and write an offline bundle:
-
-```bash
-cpdatakit compare left-report.json right-report.json --output comparison-bundle
-```
-
-The bundle contains JSON, Markdown, HTML, and a manifest with member hashes. It compares declared
-schema, validation, structure, and scalar descriptive aggregates.
-
-When you need a quick look at a file, run:
-
-```bash
-cpdatakit inspect curve.h5 --format json --output inspect.json
-cpdatakit report curve.h5 --schema curve --output report.html
-cpdatakit report curve.h5 --schema curve --format markdown --output report.md
-```
-
-`inspect` accepts an optional schema. It prints the detected format, fields, dtype, shape,
-units, missing values, HDF5 chunks, provenance, adapter, and structural risks. `report` needs a
-schema and writes HTML by default. Markdown and JSON are available through `--format`. The HTML file
-contains its own styles, so it opens and prints offline. Its Chinese overview shows validation
-status, counts, field and statistics tables, and source information; complete metadata is expandable.
-Unknown statistics use an unavailable marker; dimensionless units retain an explicit declaration.
-JSON and Markdown retain their existing structures. Reports contain aggregate metadata while source
-records remain in the input dataset. Pass `--force` to replace an existing output file.
-
-CLI errors are concise. Put the global `--debug` option before the
-subcommand when an unexpected failure needs more detail. `validate`, `summary`, `inspect`, and
-`report` return `0` when processing succeeds with zero validation errors. They return `1` for
-validation errors, or for the `inspect` command's declared structural and missing-value risks.
-Warning-only findings are reported and the result remains valid. Usage, read, schema,
-and output failures return `2`. A passing report indicates successful completion of the declared
-checks. Run
-`cpdatakit --help` or
-`cpdatakit <command> --help` for command details.
-
-## Python API
+Run the generator above first, then execute this code in the same environment:
 
 ```python
-from cpdatakit import (
-    FieldMapping,
-    build_report,
-    inspect_dataset,
-    load_hdf5,
-    load_dataset,
-    normalize_dataset,
-    summarize_dataset,
-    validate_dataset,
-)
-from cpdatakit.adapters import DamaskDADF5Adapter
+from cpdatakit import load_dataset, validate_dataset, summarize_dataset
 
-raw = load_dataset("raw.csv")
-normalized = normalize_dataset(
-    raw,
-    "curve",
-    [
-        FieldMapping("increment", "step", "1", "dimensionless"),
-        FieldMapping("eps", "strain", "1", "dimensionless"),
-        FieldMapping("sigma_pa", "stress", "Pa", "MPa", "export specification"),
-    ],
-)
-report = validate_dataset(normalized, "curve")
-summary = summarize_dataset(normalized, "curve", validation=report)
-print(report.valid, summary["record_count"])
-inspection = inspect_dataset("curve.h5", schema="curve")
-offline_report = build_report("curve.h5", "curve")
-print(inspection["record_count"], offline_report["validation"]["valid"])
-
-dadf5 = DamaskDADF5Adapter(
-    kind="homogenization", label="Taylor", field="mechanical", datasets=["F", "P"]
-).load("result.hdf5")
-window = load_hdf5("curve.h5", fields=["step", "stress"], start=10, stop=20)
+dataset = load_dataset("cpdatakit-demo/synthetic_curve.csv")
+validation = validate_dataset(dataset, "curve")
+summary = summarize_dataset(dataset, "curve", validation=validation)
+print(validation.valid)
+print(summary)
 ```
 
-Mapping conflicts, unknown fields, and incompatible units raise documented subclasses of
-`CPDataKitError`. Normalization returns a copy and preserves unmapped columns unless
-`drop_unmapped=True`.
+See the [schema and mapping guide](docs/schema-authoring.md) for custom fields and units,
+the [five-minute quickstart](docs/quickstart.md) for more complete commands,
+and [advanced workflows](docs/post-v07-workflows.md) for selective reads,
+multidimensional viewing, schema drafts, and batches.
 
-## Example outputs
+## Input formats and scope
 
-After running the commands above, `stress-strain.png` and `stress-strain.svg` contain a titled,
-unit-labeled synthetic curve with a legend. Plotting functions in `cpdatakit.plotting` return
-Matplotlib `(Figure, Axes)` for further editing and use the non-interactive `Agg` backend.
+| Data path | Scope and requirements |
+|---|---|
+| Confirmed CSV import | Comma, semicolon, or Tab; UTF-8/BOM or GB18030; explicit fields, types, units, and roles; default limits of 64 MiB and 100,000 records |
+| Regular CSV / JSON records | UTF-8 CSV or JSON arrays of objects with a built-in or external schema; absent source units produce schema-assumption warnings |
+| CPDataKit HDF5 | Tabular HDF5 1.0 and multidimensional HDF5 2.0; schemas, units, provenance, and selective reads |
+| Multidimensional and other formats | Numeric N-dimensional `ScientificDataset` data, NetCDF, Zarr 3, and tabular Parquet; operations depend on adapter capabilities, not unrestricted conversion between formats |
+| DAMASK DADF5 | A documented read-only selection adapter; specify kind, label, field, and datasets; it does not promise to read every DAMASK output |
 
-## Development
+Built-in `curve`, `point`, and `field2d` schemas come from the original CP workflows.
+External JSON schemas may use other non-empty profile names,
+but types, shapes, units, and conventions must remain explicit.
+See the [data-format documentation](docs/data-format.md) for contracts and adapter boundaries.
 
-```bash
-pytest --cov=cpdatakit
-ruff check .
-ruff format --check .
-python -m build
-```
+Keep these limits in mind:
 
-Architecture, extension boundaries, and maintainer checks are in the
-[architecture documentation](https://github.com/koocmitwho/cpdatakit/blob/main/docs/architecture.md).
-Contributions follow
-[CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/main/CONTRIBUTING.md) and the
-[Code of Conduct](https://github.com/koocmitwho/cpdatakit/blob/main/CODE_OF_CONDUCT.md).
+- The data provider confirms numeric units, stress/strain definitions, tensor component order,
+  orientation representations, and identifier meanings. Unknown scientific semantics are not inferred.
+- Confirmed CSV import stops on malformed rows, missing numeric units, or conversions whose precision
+  cannot be guaranteed. It does not discard bad rows to obtain a passing result.
+- Newly written HDF5 retains column creation order. Older files without order metadata cannot recover
+  their original input order. Specify fields and order explicitly when building positional feature arrays.
+- Native NetCDF3 reading and date-coordinate schemas still have known compatibility problems.
+  The CSV release did not fix or retest either path.
+  See the [known issue](docs/known-issues/netcdf3-datetime.md).
+- CPDataKit does not run crystal-plasticity or finite-element solvers.
+  Existing integration examples demonstrate data preparation and handoff, not automatic integration
+  between independent projects.
 
-When you need a new data contract or input format, open an issue with a small synthetic sample and
-the field rules it should follow. That gives the next change something concrete to test.
+## Examples and verification
 
-## Scope and roadmap
+Start with synthetic data, then build schemas from your own source records.
 
-Version 0.6.0 adds the local workbench, shared application services, explicit N-dimensional data and
-schema/HDF5 2.0 contracts, open-format adapters, and a local SQLite/job boundary while retaining the
-v0.5 tabular, schema 1.0, HDF5 1.0, and CLI contracts. Native HDF5 inspection uses bounded reads.
-The bundled DAMASK DADF5 reader covers a documented read-only selection. New adapters use the
-documented format evidence, license review, and reproducible-fixture process. See the
-[roadmap](https://github.com/koocmitwho/cpdatakit/blob/main/docs/roadmap.md) for follow-up priorities.
+- [Three-row instrument CSV](examples/csv-intake/README.md):
+  column confirmation, unit conversion, original-byte retention, and conversion-result reuse.
+- [Thermal cycle](examples/thermal-cycle/README.md):
+  a custom profile, Celsius/kelvin and time-unit conversions, HDF5 round trips, and general x-y plots.
+- [KupferDigital/FE tensile case](examples/cpfe-tensile/README.md):
+  attributed CC BY 4.0 processed data demonstrating experimental-data handoff.
+- [Surfalex HF public reference workflow](examples/public-datasets/surfalex-aa6016a/README.md):
+  explicit tensor mappings and source checks, with third-party raw data fetched from upstream on request.
 
-## Citation and license
+For the v0.10.0 release commit `7ef4ece`,
+[full CI](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526428) passed:
+all six Windows/Linux/macOS and Python 3.12/3.13 combinations had **1559 passing tests** each.
+All 12 [lower/latest dependency-matrix checks](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526427)
+also passed. These results describe the release commit checked on 2026-10-01.
 
-Use [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/main/CITATION.cff) to cite the
-software. CPDataKit is licensed under Apache-2.0. See
-[LICENSE](https://github.com/koocmitwho/cpdatakit/blob/main/LICENSE). Direct runtime dependency
-licenses and review notes are in
-[NOTICE](https://github.com/koocmitwho/cpdatakit/blob/main/NOTICE). Bundled examples use fixed-seed
-synthetic data, and public reference files remain available from their upstream records.
+Release acceptance also checked a clean installation, the three-row CSV browser workflow,
+and the source bytes, declared units, and numeric values of 12 CSV files with 24,073 rows
+in the original IN718 archive from
+[Mendeley DOI 10.17632/nx55jj48rx.2](https://doi.org/10.17632/nx55jj48rx.2).
+That raw archive is not included in the repository; only its source fingerprint and a synthetic CSV
+are included. Passing tests establish that the tested paths satisfy their declarations and assertions,
+not that experimental data is physically correct.
+Historical review snapshots and measurement conditions are in the
+[verification directory](docs/verification/).
+Prepublication snapshots are distinct from final publication receipts.
 
-See the [v0.10.0 release notes](https://github.com/koocmitwho/cpdatakit/blob/main/.github/release-notes/v0.10.0.md) and the
-[current workbench guide](https://github.com/koocmitwho/cpdatakit/blob/main/docs/workbench-guide.md). Historical validation records remain in
-[`docs/verification/`](https://github.com/koocmitwho/cpdatakit/tree/main/docs/verification/).
+## Contributions and license
+
+Report issues and suggest features through [Issues](https://github.com/koocmitwho/cpdatakit/issues).
+Include a minimal synthetic sample, expected fields and units, and reproduction steps.
+Do not submit private experimental data or credentials.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for code contributions,
+[SECURITY.md](SECURITY.md) for security reports, and [CHANGELOG.md](CHANGELOG.md) for version history.
+
+CPDataKit uses the [Apache-2.0 license](LICENSE).
+See [NOTICE](NOTICE) for dependencies and third-party materials,
+and [CITATION.cff](CITATION.cff) for citation details.
+Third-party data follows its own license and attribution requirements.
