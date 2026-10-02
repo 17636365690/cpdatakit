@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -22,7 +23,7 @@ from ..exceptions import (
     OutputExistsError,
     SchemaError,
 )
-from ..formats import NetCDFWriter, ParquetWriter, ReadLimits, ZarrWriter
+from ..formats import NetCDFWriter, ParquetWriter, ZarrWriter
 from ..inspection import sanitize_error_message
 from ..io import write_hdf5, write_hdf5_v2
 from ..normalization import load_mapping_file
@@ -34,9 +35,10 @@ from ..plotting import (
     plot_xy,
     save_figure,
 )
+from ..provenance import build_provenance
 from ..reporting import SCOPE_NOTE, write_report
-from ..reporting import build_report as build_core_report
-from ..schema import ProfileSchema
+from ..reporting import _build_report as build_core_report
+from ..schema import ProfileSchema, schema_sha256
 from ..schema_diff import (
     diff_schemas as diff_schema_values,
 )
@@ -45,6 +47,7 @@ from ..schema_diff import (
     render_schema_diff_markdown,
     write_schema_diff,
 )
+from ..schemas import schema_v2_sha256
 from .contracts import (
     ComparisonOutcome as ComparisonOutcome,
 )
@@ -341,9 +344,18 @@ def convert_and_write(request: ConvertRequest, *, context=None) -> ServiceResult
             provenance=provenance,
         )
     try:
+        dataset.metadata["conversion_parameters"] = {
+            "mappings": [asdict(item) for item in resolved.mappings],
+            "drop_unmapped": resolved.drop_unmapped,
+            "output_format": request.output_format,
+        }
+        applied_mapping = dataset.metadata.get("field_mapping", {}) if resolved.mappings else {}
+        applied_mapping_sha256 = (
+            path_sha256(request.mapping) if request.mapping is not None else None
+        )
+        if request.mapping is not None:
+            dataset.metadata["mapping_sha256"] = applied_mapping_sha256
         if request.output_format == "hdf5" and not isinstance(dataset, ScientificDataset):
-            if request.mapping is not None:
-                dataset.metadata["mapping_sha256"] = path_sha256(request.mapping)
             if context is not None:
                 context.checkpoint("write")
             write_hdf5(
@@ -353,19 +365,28 @@ def convert_and_write(request: ConvertRequest, *, context=None) -> ServiceResult
                 validation,
                 source_description=request.source_description,
                 operation_log=list(provenance["operation_log"]),
+                operation_mapping=applied_mapping,
+                operation_mapping_sha256=applied_mapping_sha256,
+                operation_parameters=dataset.metadata["conversion_parameters"],
                 force=request.force,
                 allow_invalid=request.allow_invalid,
             )
         else:
-            if request.mapping is not None:
-                dataset.metadata["mapping_sha256"] = path_sha256(request.mapping)
-            dataset.metadata["provenance"] = {
-                **dataset.metadata.get("provenance", {}),
-                **provenance,
-                "input_sha256": path_sha256(request.data),
-            }
-            if request.source_description is not None:
-                dataset.metadata["provenance"]["source_description"] = request.source_description
+            dataset.metadata["provenance"] = build_provenance(
+                dataset.source,
+                source_description=request.source_description,
+                operation_log=list(provenance["operation_log"]),
+                parent_provenance=dataset.metadata.get("provenance", {}),
+                schema_sha256=(
+                    schema_sha256(resolved.schema)
+                    if isinstance(resolved.schema, ProfileSchema)
+                    else schema_v2_sha256(resolved.schema)
+                ),
+                field_mapping=applied_mapping,
+                mapping_sha256=applied_mapping_sha256,
+                parameters=dataset.metadata["conversion_parameters"],
+                input_sha256=path_sha256(request.data),
+            )
             dataset.metadata["validation_summary"] = {
                 "valid": validation.valid,
                 "error_count": len(validation.errors),
@@ -470,7 +491,7 @@ def plot_declared_fields(request: PlotRequest) -> ServiceResult[PlotOutcome]:
     )
 
 
-def build_report(request: ReportRequest) -> ServiceResult[ReportOutcome]:
+def build_report(request: ReportRequest, *, context=None) -> ServiceResult[ReportOutcome]:
     """Build and render an offline report through the shared service boundary."""
 
     provenance = _provenance(
@@ -481,15 +502,16 @@ def build_report(request: ReportRequest) -> ServiceResult[ReportOutcome]:
     )
     try:
         if reader_for(request.data) is None and not is_hdf5_v2(request.data):
-            report = build_core_report(request.data, request.schema)
+            report = build_core_report(request.data, request.schema, context=context)
         else:
             contract = resolve_contract(request.schema)
-            dataset = load_value(request.data)
+            dataset = load_value(request.data, context=context)
             validation = validate_value(dataset, contract)
             summary = summarize_value(dataset, contract, validation)
-            inspection = inspect_input(request.data, None, ReadLimits(2**63 - 1, 2**63 - 1))
+            inspection = inspect_input(request.data, None, None, context=context)
             report = {
                 **inspection,
+                "summary_scope": "full_dataset",
                 "schema": contract_dict(contract),
                 "validation": validation.to_dict(),
                 "statistics": summary,
@@ -500,6 +522,8 @@ def build_report(request: ReportRequest) -> ServiceResult[ReportOutcome]:
                 report["fields"] = [
                     {"name": name, **info} for name, info in summary["fields"].items()
                 ]
+        if context is not None:
+            context.checkpoint("publish report")
         write_report(report, request.output, format=request.format, force=request.force)
     except Exception as exc:
         return _failure("build_report", exc, provenance=provenance)

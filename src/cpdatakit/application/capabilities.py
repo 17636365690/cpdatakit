@@ -101,8 +101,6 @@ def _item(
 
 def _format_items(kind: str, capability: str) -> list[CapabilityItem]:
     items = [
-        _item(kind, "csv", "CSV", (capability,)),
-        _item(kind, "json", "JSON records", (capability,)),
         _item(kind, "hdf5-v1", "CPDataKit HDF5 1.0", (capability,)),
         _item(kind, "hdf5-v2", "CPDataKit HDF5 2.0", (capability,), modules=("xarray",)),
         _item(
@@ -138,6 +136,19 @@ def _format_items(kind: str, capability: str) -> list[CapabilityItem]:
             distributions=("xarray", "zarr"),
         ),
     ]
+    for name, format_name in (("csv", "CSV"), ("json", "JSON records")):
+        items.append(
+            _item(kind, name, format_name, (capability,))
+            if kind == "reader"
+            else CapabilityItem(
+                kind,
+                name,
+                format_name,
+                (),
+                available=False,
+                reason="Data export is not implemented; original-file download is unchanged.",
+            )
+        )
     return items
 
 

@@ -5,10 +5,14 @@ from __future__ import annotations
 import importlib
 import os
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+import h5py
+
 from .._atomic import cleanup_staged_file, publish_file
+from .._hdf5_safety import assert_self_contained_hdf5
 from ..data import ScientificDataset
 from ..exceptions import DataReadError, DataValidationError, OutputExistsError
 from ._metadata import scientific_for_write, scientific_metadata
@@ -53,6 +57,60 @@ def _metadata(dataset: Any, engine: str) -> dict[str, Any]:
     return scientific_metadata(dataset, format="NetCDF", engine=engine)
 
 
+def _check_hdf5_storage(path: Path) -> None:
+    """Check NetCDF4 containers before a backend can follow external storage."""
+    try:
+        if h5py.is_hdf5(path):
+            with h5py.File(path, "r") as handle:
+                assert_self_contained_hdf5(handle)
+    except OSError as exc:
+        raise DataReadError("Cannot verify NetCDF HDF5 storage") from exc
+
+
+@contextmanager
+def _backend_source(path: Path, engine: str, limits: ReadLimits | None, context=None):
+    """Give the Windows C backend an ASCII snapshot without changing the source.
+
+    Unlike a memory-buffer fallback, this releases all file handles even when the
+    native parser rejects malformed input. The copy is streamed and exists only
+    for the backend's context lifetime; Python and h5netcdf handle Unicode paths.
+    """
+    if os.name != "nt" or engine != "netcdf4" or str(path.absolute()).isascii():
+        yield path
+        return
+    temporary_root = tempfile.gettempdir()
+    if not temporary_root.isascii():
+        # Short paths, when enabled, let a Unicode account use its existing temp
+        # directory. Do not create a global directory or change environment state.
+        import ctypes
+
+        buffer = ctypes.create_unicode_buffer(32768)
+        length = ctypes.windll.kernel32.GetShortPathNameW(temporary_root, buffer, len(buffer))
+        if 0 < length < len(buffer) and buffer.value.isascii():
+            temporary_root = buffer.value
+        else:
+            raise DataReadError(
+                "The netCDF4 backend needs an ASCII temporary directory on Windows; "
+                "choose an ASCII TEMP directory or use h5netcdf for NetCDF4 files."
+            )
+    with tempfile.TemporaryDirectory(prefix="cpdatakit-netcdf-", dir=temporary_root) as directory:
+        native_path = Path(directory) / "input.nc"
+        copied = 0
+        with path.open("rb") as source, native_path.open("xb") as target:
+            while True:
+                if context is not None:
+                    context.checkpoint("netcdf-path-copy")
+                block = source.read(1024 * 1024)
+                if not block:
+                    break
+                copied += len(block)
+                if limits is not None and copied > limits.max_bytes:
+                    raise DataReadError("NetCDF input exceeds the configured byte limit")
+                target.write(block)
+        _check_hdf5_storage(native_path)
+        yield native_path
+
+
 class NetCDFReader:
     """Read NetCDF files through one explicitly selected xarray engine."""
 
@@ -80,13 +138,17 @@ class NetCDFReader:
         xarray = _xarray()
         _backend(self.engine)
         try:
-            with xarray.open_dataset(
-                input_path,
-                engine=self.engine,
-                create_default_indexes=False,
-                decode_times=False,
-                mask_and_scale=False,
-            ) as dataset:
+            _check_hdf5_storage(input_path)
+            with (
+                _backend_source(input_path, self.engine, limits) as native_path,
+                xarray.open_dataset(
+                    native_path,
+                    engine=self.engine,
+                    create_default_indexes=False,
+                    decode_times=False,
+                    mask_and_scale=False,
+                ) as dataset,
+            ):
                 dimensions = {name: int(length) for name, length in dataset.sizes.items()}
                 data_variables = tuple(dataset.data_vars)
                 record_count = (
@@ -123,17 +185,30 @@ class NetCDFReader:
         xarray = _xarray()
         _backend(self.engine)
         try:
-            with xarray.open_dataset(
-                input_path,
-                engine=self.engine,
-                create_default_indexes=False,
-                decode_times=False,
-                mask_and_scale=False,
-            ) as opened:
+            _check_hdf5_storage(input_path)
+            with (
+                _backend_source(input_path, self.engine, limits, context) as native_path,
+                xarray.open_dataset(
+                    native_path,
+                    engine=self.engine,
+                    create_default_indexes=False,
+                    decode_times=False,
+                    mask_and_scale=False,
+                ) as opened,
+            ):
                 check_record_limit(opened, limits, label="NetCDF", selection=selection)
                 dataset = materialize_cf_selection(
                     opened, selection, label="NetCDF", context=context
                 )
+                if native_path != input_path:
+                    # Only replace backend-generated source hints. Keep CF,
+                    # dtype and shape encoding, and do not invent absent hints.
+                    for encoding in [
+                        dataset.encoding,
+                        *(array.encoding for array in dataset.variables.values()),
+                    ]:
+                        if "source" in encoding:
+                            encoding["source"] = str(input_path.absolute())
             metadata = _metadata(dataset, self.engine)
             return ScientificDataset(dataset, metadata, input_path)
         except DataReadError:

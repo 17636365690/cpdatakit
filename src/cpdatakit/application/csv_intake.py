@@ -24,7 +24,7 @@ from pint.errors import PintError
 
 from ..exceptions import CPDataKitError, DataValidationError
 from ..model import Dataset
-from ..normalization import FieldMapping, normalize_dataset
+from ..normalization import FieldMapping, _UnitConversionError, normalize_dataset
 from ..schema import FieldSchema, ProfileSchema, load_schema
 from ..validation import validate_dataset
 
@@ -381,6 +381,10 @@ def prepare_csv(
         # The location-aware checks below turn overflow into an actionable error.
         with np.errstate(over="ignore", under="ignore", invalid="ignore"):
             value = normalize_dataset(source, schema, mappings, drop_unmapped=True)
+    except _UnitConversionError as exc:
+        item = next(item for item in included if item["target"] == exc.source)
+        line, cells = parsed.rows[exc.record]
+        raise _cell_error(line, item, cells[item["index"]], exc.reason) from exc
     except (CPDataKitError, ValueError, TypeError) as exc:
         raise DataValidationError(f"CSV unit normalization failed: {exc}") from exc
     for item in included:

@@ -22,6 +22,28 @@ record the scientific conventions used by the workflow.
 Aliases document accepted source names and take effect through an explicit `FieldMapping`. Custom
 fields are fully declared in a custom schema or begin with `user_`.
 
+## Text input and numeric precision
+
+The ordinary `load_dataset` CSV path uses comma-separated UTF-8 input and the existing pandas
+missing-token and header conventions. For example, `001` is inferred as integer `1`, `NA` is
+missing, and duplicate headers receive suffixes. Use the CSV confirmation workflow with explicit
+string declarations when these tokens are identifiers or literal text, or when a file uses a
+different encoding, delimiter, decimal mark, header row or unit row. Ordinary inferred input and
+explicit lexical input are distinct contracts.
+
+CSV and JSON numeric values are checked before DataFrame construction. Integer columns use
+signed or unsigned 64-bit storage, including nullable integer storage when records are missing.
+An integer such as `9007199254740993` must not pass through a float column merely because another
+record is empty. Floating values use round-trip float64 parsing; binary floating rounding of
+nonintegral decimal values remains part of that representation. An unrepresentable integer/float
+mixture, a nonzero value underflowing to zero, or numeric overflow produces a `DataReadError`
+with field and record context. Integers outside a compatible 64-bit range are rejected.
+
+Nullable integer input does not imply every output format can encode it. A writer that cannot
+preserve the values and missingness rejects conversion without publishing a partial output.
+The original source remains unchanged. Explicit infinity values remain subject to schema
+validation, rather than being treated as overflow caused by parsing a finite number.
+
 ## Tensor-valued tabular encoding
 
 JSON records and CPDataKit HDF5 represent a vector or tensor as one value per record. The value
@@ -75,6 +97,57 @@ String fields require a text value for every record. Missing text produces `miss
 when `allow_missing=True`, or the existing `missing_value` error when `allow_missing=False`.
 Fill the missing entries or remove the incomplete records before validation and HDF5 conversion.
 Numeric fields retain their schema-declared missing-value policy.
+
+Identity or equivalent-unit mappings preserve numeric values and storage types. Nonidentity
+mappings reject integer precision loss and finite-to-infinite or nonzero-to-zero underflow;
+legitimate offset results such as `273.15 K -> 0 degC` are accepted. Numeric errors retain field
+and record context, and CSV confirmation translates that context to source row and column.
+These checks also apply to scientific-array mappings. Existing nonfinite input is still reported
+by validation; a unit conversion does not make invalid input valid.
+
+## Self-contained HDF5 input
+
+Readers and inspection require self-contained HDF5 files, including CPDataKit v1/v2, the DAMASK
+adapter and HDF5-backed NetCDF. Before reading dataset payloads, they reject ExternalLink,
+external raw storage and virtual datasets (VDS), including unused branches. SoftLinks are also
+rejected in this policy; internal HardLink aliases and cycles are supported. Classic NetCDF3
+is unaffected. There is no implicit trusted-path exception.
+
+A root-file hash cannot authenticate data stored in another file. To import such a source,
+produce a new self-contained file using a trusted producer, explicitly choosing the source
+dependencies, and retain the original files separately. CPDataKit does not follow or copy those
+dependencies automatically. Errors identify the link/storage category without exposing its
+external target path.
+
+### Bounded reads and conversion receipts
+
+Application services accept `ReadLimits` and cooperative execution contexts and pass them to
+internal reader helpers. Historical public reader signatures and export identities remain unchanged.
+Bounded readers inspect source
+record counts and selected fixed-width storage requirements before reading payloads. A byte limit
+estimates materialized array storage, not total process RSS. Simple variable-length strings use a
+conservative selected-count times whole-file-size estimate, including Unicode/object overhead;
+small text tables remain usable and oversized estimates are rejected before reads. Numeric,
+nested and compound variable-length payloads remain unsupported under explicit memory bounds;
+ordinary reads without limits retain existing support. This is not a native-parser memory sandbox.
+Read checkpoints run between slabs;
+complete/global schema checks are not replaced with per-slab approximations.
+
+Conversion provenance can contain optional `lineage` version 1 with a flat list of SHA-256-linked
+receipts. Writers preserve the original CSV manifest, excluded columns, source description and
+ordered prior operations, then append current input/schema/mapping digests and conversion
+parameters. The origin is marked `recorded_from_csv_import` only when its source digest is known
+to match the first input; older/incomplete histories remain `historical_unknown`.
+Each new receipt records only the mapping applied in that operation. Previously applied mappings
+remain in their earlier receipts or effective dataset metadata, and are not counted as a new
+mapping when a later conversion performs no mapping.
+
+Readers verify receipt hashes, parent links and mirrored metadata before exposing the data.
+The limits are 64 receipts including the origin, 1 MiB of canonical provenance JSON and nesting
+depth 32. Exceeding a limit rejects the new write instead of silently dropping history. These
+hashes check consistency, not authorship or authenticity. A completed output digest belongs in an
+external job/catalog receipt, not inside the file whose bytes it hashes. Reports sanitize their
+displayed copy for privacy; the artifact's embedded receipts are the authoritative integrity copy.
 
 ## In-memory stability
 

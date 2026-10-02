@@ -13,9 +13,18 @@ import numpy as np
 import pandas as pd
 
 from ._atomic import write_text_atomic
+from ._hdf5_reading import check_hdf5_budget, read_hdf5_array
+from ._hdf5_safety import assert_self_contained_hdf5
 from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import AdapterError, CPDataKitError, DataReadError, OutputExistsError
-from .io import _ensure_readable, _read_hdf5_metadata, iter_hdf5_chunks, load_dataset
+from .io import (
+    _ensure_readable,
+    _iter_hdf5_chunks,
+    _load_dataset,
+    _read_hdf5_metadata,
+    iter_hdf5_chunks,
+    load_dataset,
+)
 from .model import Dataset, ValidationResult
 from .provenance import sha256_file
 from .schema import ProfileSchema, load_schema, schema_to_dict
@@ -231,6 +240,9 @@ def _portable_provenance(
         "operation_log",
         "input_filename",
         "input_sha256",
+        "csv_import",
+        "lineage",
+        "history_status",
     ):
         if key not in source:
             continue
@@ -383,7 +395,16 @@ def _dadf5_column_name(kind: str, label: str, field: str, dataset: str) -> str:
     return "user_dadf5_" + "_".join(parts)
 
 
-def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
+def _inspect_native_hdf5(
+    handle: h5py.File,
+    path: Path,
+    *,
+    limits=None,
+    context=None,
+    contract=None,
+    loaded=None,
+    validation=None,
+) -> dict[str, Any]:
     metadata = _read_hdf5_metadata(handle, path)
     data_group = handle.get("data")
     if not isinstance(data_group, h5py.Group):
@@ -401,6 +422,22 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
             raise DataReadError("CPDataKit HDF5 fields have inconsistent record counts")
     if record_count is None or record_count == 0:
         raise DataReadError("CPDataKit HDF5 contains no records")
+    check_hdf5_budget([array for _, array in datasets], limits)
+    counts = {}
+    if loaded is not None:
+        counts = {name: _missing_count(loaded.data[name].tolist()) for name, _ in datasets}
+    elif contract is not None:
+        counts = dict.fromkeys((name for name, _ in datasets), 0)
+
+        def counted_chunks():
+            for chunk in _iter_hdf5_chunks(
+                path, chunk_size=_INSPECTION_CHUNK_SIZE, limits=limits, context=context
+            ):
+                for name in counts:
+                    counts[name] += _missing_count(chunk.data[name].tolist())
+                yield chunk
+
+        validation = _validate_dataset_chunks(counted_chunks(), contract)
     units = metadata.get("units", {})
     units = units if isinstance(units, Mapping) else {}
     mapping = metadata.get("field_mapping", {})
@@ -411,10 +448,12 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
     for name, dataset in datasets:
         chunk_shape = list(dataset.chunks) if dataset.chunks is not None else None
         chunks[name] = chunk_shape
-        missing_count = 0
-        for offset in range(0, record_count, _INSPECTION_CHUNK_SIZE):
-            stop = min(offset + _INSPECTION_CHUNK_SIZE, record_count)
-            missing_count += _missing_count(dataset[offset:stop])
+        missing_count = counts.get(name, 0)
+        if name not in counts:
+            for offset in range(0, record_count, _INSPECTION_CHUNK_SIZE):
+                stop = min(offset + _INSPECTION_CHUNK_SIZE, record_count)
+                indices = (slice(offset, stop), *(slice(None) for _ in dataset.shape[1:]))
+                missing_count += _missing_count(read_hdf5_array(dataset, indices, context=context))
         description = _field_description(mapping, name)
         field = {
             "name": _safe_text(name),
@@ -457,6 +496,7 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
         if "uri" in snapshot:
             snapshot_summary["uri"] = _safe_uri(snapshot["uri"])
     result["hdf5"]["schema_snapshot"] = snapshot_summary
+    result["provenance"].setdefault("history_status", "historical_unknown")
     result["record_count"] = record_count
     snapshot_fields: dict[str, Mapping[str, Any]] = {}
     if isinstance(snapshot, Mapping):
@@ -489,10 +529,14 @@ def _inspect_native_hdf5(handle: h5py.File, path: Path) -> dict[str, Any]:
                 "message": "The stored HDF5 validation summary contains errors.",
             }
         )
+    if contract is not None and validation is not None:
+        _attach_schema(result, contract, validation)
     return result
 
 
-def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
+def _inspect_dadf5(
+    handle: h5py.File, path: Path, *, limits=None, context=None, loaded=None
+) -> dict[str, Any]:
     adapter = DamaskDADF5Adapter()
     major, minor = adapter._validate_root(handle, path)
     increment_name = adapter._resolve_increment(handle, path)
@@ -523,6 +567,7 @@ def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
     ]
     if not datasets:
         raise AdapterError(f"DAMASK DADF5 field group contains no datasets: {path}")
+    check_hdf5_budget([array for _, array in datasets], limits)
     record_count: int | None = None
     fields: list[dict[str, Any]] = []
     chunks: dict[str, list[int] | None] = {}
@@ -544,9 +589,13 @@ def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
         chunk_shape = list(dataset.chunks) if dataset.chunks is not None else None
         chunks[column] = chunk_shape
         missing_count = 0
-        for offset in range(0, dataset.shape[0], _INSPECTION_CHUNK_SIZE):
-            stop = min(offset + _INSPECTION_CHUNK_SIZE, dataset.shape[0])
-            missing_count += _missing_count(dataset[offset:stop])
+        if loaded is not None:
+            missing_count = _missing_count(loaded.data[column].tolist())
+        else:
+            for offset in range(0, dataset.shape[0], _INSPECTION_CHUNK_SIZE):
+                stop = min(offset + _INSPECTION_CHUNK_SIZE, dataset.shape[0])
+                indices = (slice(offset, stop), *(slice(None) for _ in dataset.shape[1:]))
+                missing_count += _missing_count(read_hdf5_array(dataset, indices, context=context))
         fields.append(
             {
                 "name": column,
@@ -619,15 +668,33 @@ def _inspect_dadf5(handle: h5py.File, path: Path) -> dict[str, Any]:
 
 def inspect_hdf5_structure(path: str | Path) -> dict[str, Any]:
     """Inspect CPDataKit or DAMASK HDF5 structure through bounded table reads."""
+    return _inspect_hdf5_structure(path)
+
+
+def _inspect_hdf5_structure(
+    path: str | Path, *, limits=None, context=None, _contract=None, _loaded=None, _validation=None
+) -> dict[str, Any]:
+    """Inspect CPDataKit or DAMASK HDF5 structure through bounded table reads."""
 
     input_path = Path(path)
     _ensure_readable(input_path)
     detected_adapters = DEFAULT_ADAPTER_REGISTRY.detect(input_path)
     try:
         with h5py.File(input_path, "r") as handle:
+            assert_self_contained_hdf5(handle)
             if DamaskDADF5Adapter in detected_adapters:
-                return _inspect_dadf5(handle, input_path)
-            return _inspect_native_hdf5(handle, input_path)
+                return _inspect_dadf5(
+                    handle, input_path, limits=limits, context=context, loaded=_loaded
+                )
+            return _inspect_native_hdf5(
+                handle,
+                input_path,
+                limits=limits,
+                context=context,
+                contract=_contract,
+                loaded=_loaded,
+                validation=_validation,
+            )
     except (DataReadError, AdapterError):
         raise
     except (OSError, KeyError, TypeError, ValueError, UnicodeError) as exc:
@@ -640,20 +707,48 @@ def inspect_dataset(
     schema: SchemaInput | None = None,
 ) -> dict[str, Any]:
     """Inspect a supported dataset and optionally attach schema validation."""
+    return _inspect_dataset(path, schema=schema)
+
+
+def _inspect_dataset(
+    path: str | Path,
+    *,
+    schema: SchemaInput | None = None,
+    limits=None,
+    context=None,
+    _loaded=None,
+    _validation=None,
+) -> dict[str, Any]:
+    """Inspect a supported dataset and optionally attach schema validation."""
 
     input_path = Path(path)
+    contract = load_schema(schema) if schema is not None else None
     if input_path.suffix.lower() in {".h5", ".hdf5"}:
-        result = inspect_hdf5_structure(input_path)
-        if schema is not None:
-            contract = load_schema(schema)
+        result = _inspect_hdf5_structure(
+            input_path,
+            limits=limits,
+            context=context,
+            _contract=contract,
+            _loaded=_loaded,
+            _validation=_validation,
+        )
+        if contract is not None and "schema" not in result:
             if result["file"]["format"] == "DAMASK DADF5":
-                dataset = DamaskDADF5Adapter().load(input_path)
-                validation = validate_dataset(dataset, contract)
+                dataset = _loaded if _loaded is not None else DamaskDADF5Adapter().load(input_path)
+                validation = (
+                    _validation if _validation is not None else validate_dataset(dataset, contract)
+                )
             else:
                 validation = _validate_native_hdf5(input_path, contract)
             _attach_schema(result, contract, validation)
         return result
-    dataset = load_dataset(input_path)
+    dataset = _loaded
+    if dataset is None:
+        dataset = (
+            load_dataset(input_path)
+            if context is None
+            else _load_dataset(input_path, context=context)
+        )
     result = _inspect_frame(
         input_path,
         dataset,
@@ -662,9 +757,9 @@ def inspect_dataset(
             input_path.suffix.lower().upper(),
         ),
     )
-    if schema is not None:
-        contract = load_schema(schema)
-        _attach_schema(result, contract, validate_dataset(dataset, contract))
+    if contract is not None:
+        validation = _validation if _validation is not None else validate_dataset(dataset, contract)
+        _attach_schema(result, contract, validation)
     return result
 
 

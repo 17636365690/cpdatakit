@@ -12,8 +12,8 @@ from typing import Any
 from ._atomic import write_text_atomic
 from .adapters import DEFAULT_ADAPTER_REGISTRY, DamaskDADF5Adapter
 from .exceptions import CPDataKitError, OutputExistsError
-from .inspection import inspect_dataset, sanitize_for_output
-from .io import load_dataset
+from .inspection import _inspect_dataset, sanitize_for_output
+from .io import _load_dataset
 from .schema import ProfileSchema, load_schema, schema_to_dict
 from .statistics import summarize_dataset
 from .validation import validate_dataset
@@ -518,14 +518,19 @@ def render_report_html(report: Mapping[str, Any]) -> str:
     return "\n".join(html)
 
 
-def _load_for_report(path: Path, inspection: Mapping[str, Any]):
+def _load_for_report(path: Path, inspection: Mapping[str, Any], *, context=None):
     adapter = inspection.get("adapter", {})
     if isinstance(adapter, Mapping) and adapter.get("registry_name") == "damask-dadf5":
         implementation = DEFAULT_ADAPTER_REGISTRY.get("damask-dadf5")
         return implementation().load(path)
     if inspection.get("file", {}).get("format") == "DAMASK DADF5":
         return DamaskDADF5Adapter().load(path)
-    return load_dataset(path)
+    if path.suffix.lower() in {
+        ".h5",
+        ".hdf5",
+    } and DamaskDADF5Adapter in DEFAULT_ADAPTER_REGISTRY.detect(path):
+        return DamaskDADF5Adapter().load(path)
+    return _load_dataset(path, context=context)
 
 
 def build_report(
@@ -533,13 +538,29 @@ def build_report(
     schema: str | Path | ProfileSchema | Mapping[str, Any],
 ) -> dict[str, Any]:
     """Build a complete validation report for one input file."""
+    return _build_report(path, schema)
+
+
+def _build_report(
+    path: str | Path,
+    schema: str | Path | ProfileSchema | Mapping[str, Any],
+    *,
+    context=None,
+) -> dict[str, Any]:
+    """Build a complete validation report for one input file."""
 
     input_path = Path(path)
     contract = load_schema(schema)
-    inspection = inspect_dataset(input_path, schema=contract)
-    dataset = _load_for_report(input_path, inspection)
+    if context is not None:
+        context.checkpoint("load report")
+    dataset = _load_for_report(input_path, {}, context=context)
     validation = validate_dataset(dataset, contract)
+    inspection = _inspect_dataset(
+        input_path, schema=contract, context=context, _loaded=dataset, _validation=validation
+    )
     statistics = summarize_dataset(dataset, contract, validation=validation)
+    if context is not None:
+        context.checkpoint("report complete")
     report = {
         "file": inspection.get("file", {}),
         "schema": schema_to_dict(contract),

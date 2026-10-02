@@ -5,7 +5,7 @@ CSV 确认导入和“使用此结果继续处理”从 v0.10.0 开始提供；v
 
 ## 安装软件包或源码
 
-要求 Python 3.12 或更高版本。可用 `python -m pip install "cpdatakit==0.10.0"` 安装软件包，
+要求 Python 3.12 或更高版本。可用 `python -m pip install "cpdatakit==0.10.1"` 安装软件包，
 或在包含 `pyproject.toml` 的源码目录执行下面的独立环境安装。
 使用独立环境和完整解释器路径即可，不必修改 PowerShell 的脚本执行策略：
 

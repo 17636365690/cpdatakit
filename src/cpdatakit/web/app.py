@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import html
 import os
 import secrets
@@ -47,6 +48,7 @@ from .operations import install_output_operations
 from .ownership import OwnershipMiddleware, RequestDrain, WorkspaceOwnership
 from .persistence import TERMINAL, JobPersistence
 from .recovery import install_recovery
+from .request_limits import upload_route_class
 from .slices import install_slices
 from .uploads import UploadPublication, upload_failure
 from .workbench import install_workbench, select_schema
@@ -146,9 +148,9 @@ def _json_error(status_code: int, code: str, message: str, action: str) -> JSONR
     )
 
 
-def _set_session_cookie(response: Response, session_token: str) -> Response:
+def _set_session_cookie(response: Response, session_token: str, cookie_name: str) -> Response:
     response.set_cookie(
-        _SESSION_COOKIE,
+        cookie_name,
         session_token,
         httponly=True,
         samesite="lax",
@@ -270,6 +272,14 @@ def _create_owned_app(
     catalog_job_lock = threading.RLock()
     session_token = secrets.token_urlsafe(32)
     csrf_token = secrets.token_urlsafe(32)
+    session_cookie = (
+        _SESSION_COOKIE
+        + "_"
+        + hashlib.sha256(os.path.normcase(str(workspace_path)).encode("utf-8")).hexdigest()[:24]
+    )
+
+    def set_session_cookie(response):
+        return _set_session_cookie(response, session_token, session_cookie)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -293,6 +303,7 @@ def _create_owned_app(
     app.state.upload_limit = upload_limit
     app.state.preview_limit = preview_limit
     app.state.close = jobs.shutdown
+    app.state.session_cookie = session_cookie
 
     def project_job_summaries(project_id: int) -> dict[str, dict[str, object]]:
         # The manager is bounded by admission/retention limits. Never infer current
@@ -334,16 +345,24 @@ def _create_owned_app(
             )
         return await call_next(request)
 
-    def require_csrf(request: Request, form_token: str | None = None) -> Response | None:
-        if request.cookies.get(_SESSION_COOKIE) != session_token:
+    def require_session(request: Request) -> Response | None:
+        if request.cookies.get(session_cookie) != session_token:
             return _json_error(
                 403,
                 "invalid_session",
                 "The local UI session is missing or invalid.",
                 "Reload the local UI and retry the operation.",
             )
-        supplied = request.headers.get(_CSRF_HEADER) or form_token
-        if not supplied or not secrets.compare_digest(supplied, csrf_token):
+        return None
+
+    def require_csrf(request: Request, form_token: str | None = None) -> Response | None:
+        error = require_session(request)
+        if error is not None:
+            return error
+        supplied = request.headers.get(_CSRF_HEADER, form_token)
+        if not isinstance(supplied, str) or not secrets.compare_digest(
+            supplied.encode("utf-8"), csrf_token.encode("utf-8")
+        ):
             return _json_error(
                 403,
                 "csrf_required",
@@ -351,6 +370,13 @@ def _create_owned_app(
                 "Reload the local UI and submit the operation from its form.",
             )
         return None
+
+    app.router.route_class = upload_route_class(
+        upload_limit=upload_limit,
+        require_session=require_session,
+        require_csrf=require_csrf,
+        json_error=_json_error,
+    )
 
     def project_root(project_id: int) -> Path:
         catalog.get_project(project_id)
@@ -481,7 +507,7 @@ def _create_owned_app(
             {"job_id": handle.id, "operation": operation, "status": "queued"},
             status_code=202,
         )
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     def sync_catalog_job(record) -> None:
         with catalog_job_lock:
@@ -556,7 +582,7 @@ def _create_owned_app(
 
     @app.get("/health")
     async def health() -> Response:
-        return _set_session_cookie(JSONResponse({"status": "ok"}), session_token)
+        return set_session_cookie(JSONResponse({"status": "ok"}))
 
     @app.get("/", response_class=HTMLResponse)
     def home(request: Request) -> Response:
@@ -566,13 +592,13 @@ def _create_owned_app(
             name="index.html",
             context={"projects": projects, "csrf_token": csrf_token},
         )
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     @app.get("/api/capabilities")
     def capabilities() -> Response:
         result = discover_capabilities(CapabilityRequest())
         response = JSONResponse(result.to_dict())
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     @app.get("/api/projects/{project_id}")
     def project_detail(
@@ -662,7 +688,7 @@ def _create_owned_app(
                     name: offset + len(rows) < counts[name] for name, rows in resources.items()
                 },
             }
-        return _set_session_cookie(JSONResponse(payload), session_token)
+        return set_session_cookie(JSONResponse(payload))
 
     @app.post("/api/projects")
     def create_project(
@@ -688,7 +714,7 @@ def _create_owned_app(
             {"id": project.id, "name": project.name, "workspace": project.workspace},
             status_code=201,
         )
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     @app.post("/api/projects/{project_id}/inspect")
     def inspect_upload(
@@ -807,7 +833,7 @@ def _create_owned_app(
                 413 if result.error and result.error.code == "read_limit_exceeded" else 400
             )
             response = JSONResponse(result.to_dict(), status_code=status_code)
-            return _set_session_cookie(response, session_token)
+            return set_session_cookie(response)
         try:
             dataset_record = publication.register(
                 catalog,
@@ -817,7 +843,7 @@ def _create_owned_app(
         except (CPDataKitError, OSError):
             return upload_failure(publication)
         response = JSONResponse({**result.to_dict(), "dataset_id": dataset_record.id})
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     @app.post("/api/projects/{project_id}/validate")
     def validate_project(
@@ -852,7 +878,7 @@ def _create_owned_app(
             DatasetRequest(data=source, schema=schema, workspace=workspace_path)
         )
         response = JSONResponse(result.to_dict(), status_code=200 if result.ok else 400)
-        return _set_session_cookie(response, session_token)
+        return set_session_cookie(response)
 
     def stored_job(job_id):
         pending = persistence.record(job_id)
@@ -885,9 +911,8 @@ def _create_owned_app(
                 "The requested job does not exist.",
                 "Refresh the project and choose a known job.",
             )
-        return _set_session_cookie(
-            JSONResponse({**_job_payload(record), "persistence": persistence.status(job_id)}),
-            session_token,
+        return set_session_cookie(
+            JSONResponse({**_job_payload(record), "persistence": persistence.status(job_id)})
         )
 
     @app.post("/api/jobs/{job_id}/cancel")
@@ -913,7 +938,7 @@ def _create_owned_app(
                 "The requested job does not exist.",
                 "Refresh the project and choose a known job.",
             )
-        return _set_session_cookie(JSONResponse(_job_payload(record)), session_token)
+        return set_session_cookie(JSONResponse(_job_payload(record)))
 
     install_output_operations(
         app,

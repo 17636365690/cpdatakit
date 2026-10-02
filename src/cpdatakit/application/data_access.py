@@ -13,8 +13,8 @@ import h5py
 from ..data import ScientificDataset
 from ..exceptions import DataReadError, DataValidationError, SchemaError
 from ..formats import NetCDFReader, ParquetReader, ReadLimits, Selection, ZarrReader
-from ..inspection import inspect_dataset
-from ..io import load_dataset, load_hdf5_v2
+from ..inspection import _inspect_dataset
+from ..io import _load_dataset, _load_hdf5_v2
 from ..model import Dataset
 from ..provenance import sha256_file
 from ..schema import ProfileSchema, load_schema, schema_to_dict
@@ -109,13 +109,15 @@ def load_value(
     reader = reader_for(path)
     if reader is not None:
         return reader.load(path, selection=selection, limits=limits, context=context)
-    if limits is not None:
-        inspect_input(path, None, limits)
+    if limits is not None and path.is_file() and path.stat().st_size > limits.max_bytes:
+        raise ReadLimitError("Input exceeds the configured byte limit")
     if is_hdf5_v2(path):
-        return load_hdf5_v2(path, selection=selection)
+        return _load_hdf5_v2(path, selection=selection, limits=limits, context=context)
+    if limits is not None and path.suffix.lower() not in {".h5", ".hdf5"}:
+        inspect_input(path, None, limits)
     if selection is not None:
         raise DataReadError("Selective application reads require NetCDF, Zarr, Parquet or HDF5 2.0")
-    return load_dataset(path)
+    return _load_dataset(path, limits=limits, context=context)
 
 
 def validate_value(value, contract: Contract):
@@ -132,7 +134,9 @@ def summarize_value(value, contract: Contract, validation):
     return summarize_dataset(value, contract, validation=validation)
 
 
-def inspect_input(path: Path, schema: SchemaInput | None, limits: ReadLimits) -> dict[str, Any]:
+def inspect_input(
+    path: Path, schema: SchemaInput | None, limits: ReadLimits | None, *, context=None
+) -> dict[str, Any]:
     size = 0
     if path.is_dir() and path.suffix.lower() != ".zarr":
         for item in path.rglob("*"):
@@ -140,21 +144,26 @@ def inspect_input(path: Path, schema: SchemaInput | None, limits: ReadLimits) ->
                 raise DataReadError("Dataset directories must not contain symbolic links")
             if item.is_file():
                 size += item.stat().st_size
-                if size > limits.max_bytes:
+                if limits is not None and size > limits.max_bytes:
                     raise ReadLimitError("Input exceeds the configured byte limit")
     elif path.is_file():
         size = path.stat().st_size
-    if size > limits.max_bytes:
+    if limits is not None and size > limits.max_bytes:
         raise ReadLimitError("Input exceeds the configured byte limit")
     reader = reader_for(path)
     if reader is None and not is_hdf5_v2(path):
-        result = inspect_dataset(path, schema=schema)
-        if result.get("record_count", 0) > limits.max_records:
+        try:
+            result = _inspect_dataset(path, schema=schema, limits=limits, context=context)
+        except DataReadError as exc:
+            if "configured" in str(exc) and "limit" in str(exc):
+                raise ReadLimitError(str(exc)) from exc
+            raise
+        if limits is not None and result.get("record_count", 0) > limits.max_records:
             raise ReadLimitError("Input exceeds the configured record limit")
         return result
     if reader is not None:
         try:
-            info = reader.inspect(path, limits=limits)
+            info = reader.inspect(path, limits=limits or ReadLimits(2**63 - 1, 2**63 - 1))
         except DataReadError as exc:
             if "exceeds the configured" in str(exc):
                 raise ReadLimitError(str(exc)) from exc
@@ -165,37 +174,17 @@ def inspect_input(path: Path, schema: SchemaInput | None, limits: ReadLimits) ->
         ]
         version = "3" if isinstance(reader, ZarrReader) else "not applicable"
     else:
-        with h5py.File(path, "r") as handle:
-            if handle.attrs.get("format") not in {"CPDataKit", b"CPDataKit"}:
-                raise DataReadError("HDF5 is not a CPDataKit file")
-            try:
-                dimensions = {
-                    name: int(item.attrs["length"]) for name, item in handle["dimensions"].items()
-                }
-                fields = [
-                    {
-                        "name": name,
-                        "dims": json.loads(array.attrs["dims_json"]),
-                        "shape": list(array.shape),
-                        "dtype": str(array.dtype),
-                        "unit": array.attrs.get("unit", ""),
-                        "role": array.attrs.get("role"),
-                        "kind": "coordinate" if group == "coordinates" else "variable",
-                    }
-                    for group in ("coordinates", "variables")
-                    for name, array in handle[group].items()
-                ]
-            except (KeyError, ValueError, TypeError) as exc:
-                raise DataReadError("Invalid HDF5 2.0 structure") from exc
-            info = {
-                "format": "CPDataKit",
-                "dimensions": dimensions,
-                "record_count": next(
-                    (array.shape[0] for array in handle["variables"].values() if array.shape), 0
-                ),
-            }
-            version = "2.0"
-    if info["record_count"] > limits.max_records:
+        from ..io.hdf5_v2 import _load_hdf5_v2 as read_v2
+
+        try:
+            info = read_v2(path, limits=limits, context=context, _inspect_only=True)
+        except DataReadError as exc:
+            if "configured" in str(exc) and "limit" in str(exc):
+                raise ReadLimitError(str(exc)) from exc
+            raise
+        fields = info["fields"]
+        version = "2.0"
+    if limits is not None and info["record_count"] > limits.max_records:
         raise ReadLimitError("Input exceeds the configured record limit")
     result = {
         "file": {
@@ -205,6 +194,7 @@ def inspect_input(path: Path, schema: SchemaInput | None, limits: ReadLimits) ->
             "format_version": version,
         },
         "record_count": info["record_count"],
+        "summary_scope": "metadata_only",
         "dimensions": info.get("dimensions", {}),
         "fields": fields,
         "adapter": {"format": info["format"]},

@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 
 from .._atomic import cleanup_staged_file, publish_file
+from .._hdf5_reading import check_hdf5_budget, read_hdf5_array
+from .._hdf5_safety import assert_self_contained_hdf5
 from ..exceptions import (
     DataReadError,
     DataValidationError,
@@ -24,7 +26,7 @@ from ..exceptions import (
     ScientificDataError,
 )
 from ..model import Dataset, ValidationResult
-from ..provenance import build_provenance
+from ..provenance import build_provenance, validate_provenance
 from ..schema import (
     BUILTIN_PROFILES,
     SUPPORTED_SCHEMA_VERSION,
@@ -34,6 +36,7 @@ from ..schema import (
     schema_to_dict,
     validate_schema,
 )
+from ._tabular_text import read_csv_frame, read_json_frame
 
 _SUPPORTED = {".csv", ".json", ".h5", ".hdf5"}
 
@@ -148,6 +151,7 @@ def _read_hdf5_metadata(handle: h5py.File, path: Path) -> dict[str, Any]:
         "provenance": _required_json_object(handle, "provenance_json", path),
         "validation_summary": _required_json_object(handle, "validation_summary_json", path),
     }
+    metadata["provenance"] = validate_provenance(metadata["provenance"], reading=True)
     sources = (
         _required_json_object(handle, "units_source_json", path)
         if "units_source_json" in handle.attrs
@@ -246,14 +250,16 @@ def _decode_hdf5_value(value: Any) -> Any:
 
 
 def _read_hdf5_columns(
-    group: h5py.Group, names: Iterable[str], start: int, stop: int
+    group: h5py.Group, names: Iterable[str], start: int, stop: int, *, context=None
 ) -> dict[str, Any]:
     columns: dict[str, Any] = {}
     for name in names:
         item = group[name]
         if not isinstance(item, h5py.Dataset) or item.ndim == 0:
             raise DataReadError(f"CPDataKit HDF5 field {name!r} must contain records")
-        values = item[start:stop]
+        values = read_hdf5_array(
+            item, (slice(start, stop), *(slice(None) for _ in item.shape[1:])), context=context
+        )
         decoded = _decode_hdf5_value(values)
         if isinstance(decoded, np.ndarray) and decoded.ndim > 1:
             columns[name] = list(decoded)
@@ -269,6 +275,7 @@ def _prepare_hdf5_read(
     start: int | None,
     stop: int | None,
 ) -> tuple[dict[str, Any], h5py.Group, list[str], int, int]:
+    assert_self_contained_hdf5(handle)
     metadata = _read_hdf5_metadata(handle, path)
     data_group = handle.get("data")
     if not isinstance(data_group, h5py.Group):
@@ -286,6 +293,19 @@ def load_hdf5(
     stop: int | None = None,
 ) -> Dataset:
     """Load a CPDataKit HDF5 dataset with optional field and row selection."""
+    return _load_hdf5(path, fields=fields, start=start, stop=stop)
+
+
+def _load_hdf5(
+    path: str | Path,
+    *,
+    fields: Iterable[str] | None = None,
+    start: int | None = None,
+    stop: int | None = None,
+    limits=None,
+    context=None,
+) -> Dataset:
+    """Load a CPDataKit HDF5 dataset with optional field and row selection."""
     input_path = Path(path)
     _ensure_readable(input_path)
     try:
@@ -293,8 +313,19 @@ def load_hdf5(
             metadata, data_group, names, resolved_start, resolved_stop = _prepare_hdf5_read(
                 handle, input_path, fields, start, stop
             )
+            arrays = [data_group[name] for name in names]
+            selections = {
+                item.name: (
+                    slice(resolved_start, resolved_stop),
+                    *(slice(None) for _ in item.shape[1:]),
+                )
+                for item in arrays
+            }
+            check_hdf5_budget(arrays, limits, selections=selections)
             frame = pd.DataFrame(
-                _read_hdf5_columns(data_group, names, resolved_start, resolved_stop)
+                _read_hdf5_columns(
+                    data_group, names, resolved_start, resolved_stop, context=context
+                )
             )
     except DataReadError:
         raise
@@ -316,6 +347,18 @@ def iter_hdf5_chunks(
     chunk_size: int = 10_000,
 ) -> Iterator[Dataset]:
     """Lazily yield fixed-size CPDataKit HDF5 dataset chunks."""
+    return _iter_hdf5_chunks(path, fields=fields, chunk_size=chunk_size)
+
+
+def _iter_hdf5_chunks(
+    path: str | Path,
+    *,
+    fields: Iterable[str] | None = None,
+    chunk_size: int = 10_000,
+    limits=None,
+    context=None,
+) -> Iterator[Dataset]:
+    """Lazily yield fixed-size CPDataKit HDF5 dataset chunks."""
     input_path = Path(path)
     _ensure_readable(input_path)
     resolved_chunk_size = _resolve_hdf5_chunk_size(chunk_size)
@@ -324,9 +367,12 @@ def iter_hdf5_chunks(
             metadata, data_group, names, start, stop = _prepare_hdf5_read(
                 handle, input_path, fields, None, None
             )
+            check_hdf5_budget([data_group[name] for name in names], limits)
             for offset in range(start, stop, resolved_chunk_size):
                 chunk_stop = min(offset + resolved_chunk_size, stop)
-                frame = pd.DataFrame(_read_hdf5_columns(data_group, names, offset, chunk_stop))
+                frame = pd.DataFrame(
+                    _read_hdf5_columns(data_group, names, offset, chunk_stop, context=context)
+                )
                 yield Dataset(frame, dict(metadata), input_path)
     except DataReadError:
         raise
@@ -336,24 +382,20 @@ def iter_hdf5_chunks(
 
 def load_dataset(path: str | Path) -> Dataset:
     """Load CSV, JSON records, or CPDataKit HDF5 from a filesystem path."""
+    return _load_dataset(path)
+
+
+def _load_dataset(path: str | Path, *, limits=None, context=None) -> Dataset:
+    """Load CSV, JSON records, or CPDataKit HDF5 from a filesystem path."""
     input_path = Path(path)
     _ensure_readable(input_path)
     suffix = input_path.suffix.lower()
     try:
         if suffix == ".csv":
-            frame = pd.read_csv(input_path)
-            if frame.empty:
-                raise DataReadError(f"CSV has no records: {input_path}")
-            return Dataset(frame, {}, input_path)
+            return Dataset(read_csv_frame(input_path), {}, input_path)
         if suffix == ".json":
-            with input_path.open(encoding="utf-8") as stream:
-                payload = json.load(stream)
-            if not isinstance(payload, list) or any(not isinstance(row, dict) for row in payload):
-                raise DataReadError("JSON input must be an array of record objects")
-            if not payload:
-                raise DataReadError("JSON records input is empty")
-            return Dataset(pd.DataFrame.from_records(payload), {}, input_path)
-        return load_hdf5(input_path)
+            return Dataset(read_json_frame(input_path), {}, input_path)
+        return _load_hdf5(input_path, limits=limits, context=context)
     except DataReadError:
         raise
     except UnicodeError as exc:
@@ -403,12 +445,19 @@ def write_hdf5(
     field_mapping: dict[str, str] | None = None,
     source_description: str | None = None,
     operation_log: list[str] | None = None,
+    operation_mapping: dict[str, Any] | None = None,
+    operation_mapping_sha256: str | None = None,
+    operation_parameters: dict[str, Any] | None = None,
     force: bool = False,
     allow_invalid: bool = False,
     hdf5_chunk_size: int | None = None,
     schema_uri: str | None = None,
 ) -> Path:
-    """Write the documented CPDataKit HDF5 interchange format."""
+    """Write the documented CPDataKit HDF5 interchange format.
+
+    ``operation_*`` arguments describe only the current event. Inherited field
+    mapping metadata is preserved as data history, never treated as a new mapping.
+    """
     resolved_chunk_size = _resolve_hdf5_storage_chunk_size(hdf5_chunk_size)
     if schema_uri is not None and (not isinstance(schema_uri, str) or not schema_uri.strip()):
         raise ValueError("schema_uri must be a non-empty string or None")
@@ -449,7 +498,14 @@ def write_hdf5(
         field_mapping if field_mapping is not None else dataset.metadata.get("field_mapping", {})
     )
     provenance = build_provenance(
-        dataset.source, source_description=source_description, operation_log=operation_log
+        dataset.source,
+        source_description=source_description,
+        operation_log=operation_log,
+        parent_provenance=dataset.metadata.get("provenance", {}),
+        schema_sha256=schema_digest,
+        field_mapping=operation_mapping,
+        mapping_sha256=operation_mapping_sha256,
+        parameters=operation_parameters,
     )
     temp_path: Path | None = None
     try:
@@ -496,10 +552,14 @@ def write_hdf5(
 
 def load_hdf5_v2(path: str | Path, *, selection: Any | None = None):
     """Lazily load an HDF5 2.0 ScientificDataset."""
-
-    from .hdf5_v2 import load_hdf5_v2 as _load_hdf5_v2
-
     return _load_hdf5_v2(path, selection=selection)
+
+
+def _load_hdf5_v2(path: str | Path, *, selection: Any | None = None, limits=None, context=None):
+    """Load HDF5 2.0 with application-owned resource limits and cancellation."""
+    from .hdf5_v2 import _load_hdf5_v2 as read_v2
+
+    return read_v2(path, selection=selection, limits=limits, context=context)
 
 
 def write_hdf5_v2(

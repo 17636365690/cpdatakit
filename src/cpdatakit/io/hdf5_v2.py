@@ -15,11 +15,14 @@ import numpy as np
 import xarray as xr
 
 from .._atomic import cleanup_staged_file, publish_file
+from .._hdf5_reading import check_hdf5_budget, read_hdf5_array
+from .._hdf5_safety import assert_self_contained_hdf5
 from ..data import ScientificDataset
 from ..data.validation import validate_scientific
 from ..exceptions import DataReadError, DataValidationError, OutputExistsError
 from ..formats import Selection
 from ..formats._selection import dimension_slices
+from ..provenance import validate_provenance
 from ..schemas import ResolvedSchemaV2, SchemaV2, resolve_schema_v2, schema_v2_sha256
 
 _ROOT_ATTRIBUTES = (
@@ -202,6 +205,9 @@ def write_hdf5_v2(
     provenance = metadata.get("provenance", {})
     if not isinstance(provenance, dict):
         raise DataValidationError("HDF5 2.0 provenance metadata must be an object")
+    from ..provenance import validate_provenance
+
+    validate_provenance(provenance)
     if not isinstance(metadata.get("validation_summary", {}), dict):
         raise DataValidationError("HDF5 2.0 validation summary metadata must be an object")
     validation = validate_scientific(value, resolved_schema)
@@ -303,6 +309,7 @@ def _read_group_array(
     *,
     selected: bool,
     indices: dict[str, slice],
+    context=None,
 ) -> tuple[tuple[str, ...], Any, dict[str, Any]] | None:
     item = group.get(name)
     if not isinstance(item, h5py.Dataset):
@@ -318,7 +325,9 @@ def _read_group_array(
         raise DataReadError(f"HDF5 2.0 field {name!r} shape does not match dimensions")
     if not selected:
         return None
-    values = item[tuple(indices.get(d, slice(None)) for d in dimensions)]
+    values = read_hdf5_array(
+        item, tuple(indices.get(d, slice(None)) for d in dimensions), context=context
+    )
     values = _decode_array(values)
     attributes: dict[str, Any] = {}
     unit = _text_attribute(item.attrs, "unit", path)
@@ -358,6 +367,18 @@ def _schema_hash(schema_payload: dict[str, Any]) -> str:
 
 def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> ScientificDataset:
     """Read an HDF5 2.0 ScientificDataset with optional bounded selection."""
+    return _load_hdf5_v2(path, selection=selection)
+
+
+def _load_hdf5_v2(
+    path: str | Path,
+    *,
+    selection: Selection | None = None,
+    limits=None,
+    context=None,
+    _inspect_only=False,
+) -> ScientificDataset:
+    """Read an HDF5 2.0 ScientificDataset with optional bounded selection."""
 
     input_path = Path(path)
     if not input_path.exists():
@@ -366,6 +387,7 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
         raise DataReadError(f"Input path is not a file: {input_path}")
     try:
         with h5py.File(input_path, "r") as handle:
+            assert_self_contained_hdf5(handle)
             for name in _ROOT_ATTRIBUTES:
                 _text_attribute(handle.attrs, name, input_path)
             if _text_attribute(handle.attrs, "format", input_path) != "CPDataKit":
@@ -394,11 +416,26 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
                     f"HDF5 2.0 schema metadata does not match root attributes: {input_path}"
                 )
             units = _json_attribute(handle.attrs, "units_json", input_path)
-            provenance = _json_attribute(handle.attrs, "provenance_json", input_path)
+            provenance = validate_provenance(
+                _json_attribute(handle.attrs, "provenance_json", input_path), reading=True
+            )
             validation_summary = _json_attribute(
                 handle.attrs, "validation_summary_json", input_path
             )
             metadata_group = handle.get("metadata")
+            extra_metadata = {}
+            if isinstance(metadata_group, h5py.Group) and "metadata_json" in metadata_group.attrs:
+                extra_metadata = _json_attribute(metadata_group.attrs, "metadata_json", input_path)
+                if "provenance" in extra_metadata:
+                    envelope_provenance = validate_provenance(
+                        extra_metadata["provenance"], reading=True
+                    )
+                    if (
+                        "lineage" in provenance or "lineage" in envelope_provenance
+                    ) and envelope_provenance != provenance:
+                        raise DataReadError(
+                            "HDF5 2.0 provenance metadata disagrees with root provenance"
+                        )
             global_attributes = {}
             if isinstance(metadata_group, h5py.Group) and "attributes_json" in metadata_group.attrs:
                 global_attributes = _json_attribute(
@@ -429,6 +466,11 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
             all_coordinates = tuple(
                 name for name, item in coordinates_group.items() if isinstance(item, h5py.Dataset)
             )
+            # Validate every field's rank and dimension references before any
+            # selected payload can be materialized, including later fields.
+            for group in (variables_group, coordinates_group):
+                for name in group:
+                    _read_group_array(group, name, lengths, input_path, selected=False, indices={})
             known_fields = set(all_variables) | set(all_coordinates)
             has_field_filter = bool(selection and selection.fields)
             selected_fields = tuple(selection.fields) if has_field_filter else all_variables
@@ -466,6 +508,49 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
                 else ()
             )
             indices = dimension_slices(lengths, first_dims, selection, label="HDF5 2.0")
+            arrays = [variables_group[name] for name in selected_variables] + [
+                coordinates_group[name] for name in selected_coordinates
+            ]
+            array_selections = {
+                array.name: tuple(
+                    indices.get(d, slice(None))
+                    for d in _json_attribute(
+                        array.attrs, "dims_json", input_path, object_only=False
+                    )
+                )
+                for array in arrays
+            }
+            record_arrays = [variables_group[name] for name in selected_variables]
+            check_hdf5_budget(
+                arrays, limits, selections=array_selections, record_arrays=record_arrays or arrays
+            )
+            if _inspect_only:
+                return {
+                    "format": "CPDataKit",
+                    "dimensions": lengths,
+                    "record_count": next(
+                        (array.shape[0] for array in record_arrays if array.shape),
+                        1 if record_arrays else 0,
+                    ),
+                    "fields": [
+                        {
+                            "name": name,
+                            "dims": _json_attribute(
+                                array.attrs, "dims_json", input_path, object_only=False
+                            ),
+                            "shape": list(array.shape),
+                            "dtype": str(array.dtype),
+                            "unit": array.attrs.get("unit", ""),
+                            "role": array.attrs.get("role"),
+                            "kind": kind,
+                        }
+                        for group, kind in (
+                            (coordinates_group, "coordinate"),
+                            (variables_group, "variable"),
+                        )
+                        for name, array in group.items()
+                    ],
+                }
             data_vars: dict[str, Any] = {}
             for name in selected_variables:
                 result = _read_group_array(
@@ -475,6 +560,7 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
                     input_path,
                     selected=True,
                     indices=indices,
+                    context=context,
                 )
                 if result is None:
                     continue
@@ -489,6 +575,7 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
                     input_path,
                     selected=True,
                     indices=indices,
+                    context=context,
                 )
                 if result is None:
                     continue
@@ -502,8 +589,7 @@ def load_hdf5_v2(path: str | Path, *, selection: Selection | None = None) -> Sci
             }
             metadata_group = handle.get("metadata")
             if isinstance(metadata_group, h5py.Group) and "metadata_json" in metadata_group.attrs:
-                extra = _json_attribute(metadata_group.attrs, "metadata_json", input_path)
-                metadata.update(extra)
+                metadata.update(extra_metadata)
                 metadata["units"] = units
                 metadata["provenance"] = provenance
                 metadata["validation_summary"] = validation_summary
