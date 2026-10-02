@@ -138,6 +138,7 @@ def install_csv_workflow(app, *, require_csrf):
             (staged / "source.csv").write_bytes(payload)
             prepared.value.source = staged / "source.csv"
             manifest = {**prepared.manifest, "confirmed_source_definition": conventions.strip()}
+            prepared.value.metadata["provenance"]["csv_import"] = manifest
             (staged / "schema.json").write_text(
                 json.dumps(schema_to_dict(schema), ensure_ascii=False, indent=2), encoding="utf-8"
             )

@@ -1,6 +1,6 @@
 # Roadmap
 
-The current release documented here is **v0.10.0**. Start with the
+The current release documented here is **v0.10.1**. Start with the
 [Chinese workbench guide](workbench-guide.md) or the [command-line quickstart](quickstart.md).
 v0.9.2 fixes validation/write consistency, records unit origins, extends explicit load limits,
 and improves catalog concurrency, atomic text output, and cancellation diagnostics.
@@ -52,8 +52,8 @@ See [usage](post-v07-workflows.md), [dependency combinations](v0.8-dependencies.
 
 - **First successful research task:** make an existing licensed example accessible after a normal
   package installation, guide users through field/unit confirmation, and connect conversion output
-  directly to validation and reporting. The current workbench still requires converted files to be
-  uploaded again before they can be selected as inputs. Acceptance should exercise a real case and
+  directly to validation and reporting. Since v0.10.0, verified conversion snapshots can be reused
+  directly as inputs without uploading them again. Remaining acceptance should exercise a real case and
   reuse its reviewed schema/mapping while preserving the original values, units and provenance.
 - **Mesh topology:** use a licensed mesh and matching scalar or tensor field to define node/element
   IDs, connectivity, element types, coordinate frame, units and field association (node, cell or

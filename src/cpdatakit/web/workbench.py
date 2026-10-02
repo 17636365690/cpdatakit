@@ -118,7 +118,7 @@ def install_workbench(app, templates, *, csrf_token, session_token, require_csrf
         except CatalogError:
             return _json_error(404, "project_not_found", "Project not found.", "Choose a project.")
         response = templates.TemplateResponse(request=request, name="project.html", context=context)
-        return _set_session_cookie(response, session_token)
+        return _set_session_cookie(response, session_token, app.state.session_cookie)
 
     @app.post("/api/projects/{project_id}/schemas")
     def upload_schema(

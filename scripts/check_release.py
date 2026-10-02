@@ -81,9 +81,16 @@ def verify_release(tag: str) -> str:
 
 
 def _metadata_version(payload: bytes, source: str) -> str:
-    version = BytesParser(policy=default).parsebytes(payload).get("Version")
+    metadata = BytesParser(policy=default).parsebytes(payload)
+    version = metadata.get("Version")
     if not version:
         raise ValueError(f"Distribution metadata has no Version field: {source}")
+    readme = str(metadata.get_payload())
+    links = re.findall(r"\]\(\s*<?([^\s)>]+)", readme)
+    links += re.findall(r"^\s*\[[^\]]+\]:\s*<?([^\s>]+)", readme, re.MULTILINE)
+    for link in links:
+        if not link.startswith(("https://", "http://", "mailto:", "#")):
+            raise ValueError(f"Distribution README has a relative link in {source}: {link}")
     return str(version)
 
 

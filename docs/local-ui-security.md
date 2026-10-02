@@ -1,4 +1,4 @@
-# v0.6 local UI security and operation boundary
+# Local UI security and operation boundary
 
 The default UI is a local tool. It binds to loopback, opens a browser, and keeps project data on the
 local filesystem. The server has no cloud account, no telemetry, and no outbound requests in its
@@ -13,11 +13,12 @@ application service result envelope and stores uploaded sources under the select
 The host validation rule, path containment rule, and job cancellation rule are explicit contracts for
 the implementation and its tests.
 
-- Bind only to `127.0.0.1` by default. A caller must explicitly opt into another interface.
+- The CLI binds to loopback only (`127.0.0.1`, `localhost` or `::1`), defaulting to `127.0.0.1`.
 - Check the hostname in the `Host` header against the bound host. The comparison uses the hostname
   after parsing the optional port. Reject unexpected hosts.
 - Create a random session token when the UI starts. Store it in a SameSite, HttpOnly cookie and
-  require it on state-changing requests.
+  require it on state-changing requests. Cookie names are scoped by an opaque workspace digest;
+  separate local ports/workspaces can share a browser without overwriting each other's session.
 - Add a per-session CSRF token to forms and verify it for every state-changing route.
 - Serve bundled scripts, fonts, and CSS locally.
 
@@ -29,8 +30,19 @@ Path containment is checked after resolving every path.
   before reading or writing.
 - Normalize uploaded file names and reject empty names, symbolic-link escapes, and archive traversal
   entries such as `../secret`.
-- Enforce an upload size and a bounded preview size before parsing. Large-file operations state when
-  they will materialize records or arrays.
+- Validate the session and any supplied header CSRF token before reading an upload body. A
+  form-only token is checked after bounded multipart parsing. Enforce the configured upload size
+  limit and file payload budgets before
+  queuing spool writes, including aggregate Zarr uploads (at most 1000 files). Schema uploads use
+  the smaller of the configured upload budget and 1 MiB; other file routes accept one file.
+- Bound multipart requests to their file budget plus 3 MiB + 64 KiB of framing/form overhead;
+  allow at most 64 fields, 2 MiB + 64 KiB aggregate field bytes and 8 KiB per-part headers. Count
+  actual bytes even without a trustworthy Content-Length, and feed the parser at most 16 KiB at a
+  time. A transport may already have delivered one larger ASGI frame; it is not spooled in full.
+- Close all owned spool files on parse failure, disconnect, cancellation, rejection and completion.
+  Record and materialization limits also apply to bounded data reads. Simple variable-length HDF5
+  strings use conservative file-size/count estimates; numeric, nested and compound variable-length
+  payloads whose allocation cannot be estimated safely are rejected by bounded readers.
 - Write artifacts through the existing atomic replacement path. Existing outputs require an explicit
   overwrite confirmation and force flag.
 - Keep registered versions under the reserved `.artifacts` directory. Registration verifies the
@@ -50,6 +62,20 @@ sets `record_written` to false and supplies the available locations.
 
 The operation owns its random staging and quarantine directories. Failed cleanup of private
 staging after successful registration is logged, and the completed upload retains its result.
+
+## HDF5 container dependencies
+
+Filesystem containment is not sufficient for HDF5: links, raw external storage and virtual
+datasets can obtain values from other files while the uploaded container's hash stays unchanged.
+HDF5 inspection and readers therefore require a self-contained container before loading payloads.
+ExternalLink, external raw storage, VDS and SoftLink are rejected, including unused branches and
+dangling links. Internal HardLinks are supported with cycle detection. The policy also covers
+CPDataKit HDF5 2.0, DAMASK and HDF5-backed NetCDF; classic NetCDF3 is not affected.
+
+The default policy has no trusted-path bypass. An error reports the unsupported dependency
+category without reading or echoing an external target. Users who need data from an external
+dependency must explicitly produce a separate self-contained file with a trusted producer;
+the workbench never discovers, follows or copies arbitrary dependency paths on their behalf.
 
 ## Jobs and cancellation
 

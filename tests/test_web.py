@@ -49,7 +49,7 @@ def test_local_ui_health_and_home_use_only_bundled_assets(tmp_path: Path) -> Non
     assert style.status_code == 200
     assert script.status_code == 200
     cookie = home.headers["set-cookie"].lower()
-    assert "cpdatakit_session=" in cookie
+    assert app.state.session_cookie + "=" in cookie
     assert "httponly" in cookie
     assert "samesite=lax" in cookie
 

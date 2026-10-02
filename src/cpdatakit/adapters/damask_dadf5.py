@@ -12,6 +12,7 @@ import h5py
 import numpy as np
 import pandas as pd
 
+from .._hdf5_safety import assert_self_contained_hdf5
 from ..exceptions import AdapterError, DataReadError
 from ..model import Dataset
 from ..provenance import build_provenance
@@ -82,6 +83,7 @@ class DamaskDADF5Adapter(DatasetAdapter):
             return False
         try:
             with h5py.File(input_path, "r") as handle:
+                assert_self_contained_hdf5(handle)
                 return (
                     "DADF5_version_major" in handle.attrs or "DADF5_version_minor" in handle.attrs
                 )
@@ -265,6 +267,7 @@ class DamaskDADF5Adapter(DatasetAdapter):
             raise AdapterError(f"DAMASK DADF5 input path is not a file: {input_path}")
         try:
             with h5py.File(input_path, "r") as handle:
+                assert_self_contained_hdf5(handle)
                 major, minor = self._validate_root(handle, input_path)
                 increment_name = self._resolve_increment(handle, input_path)
                 frame, metadata = self._read_selection(handle, input_path, increment_name)

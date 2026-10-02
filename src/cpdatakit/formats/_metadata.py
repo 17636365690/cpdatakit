@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from ..exceptions import DataReadError, DataValidationError
+from ..provenance import validate_provenance
 
 METADATA_KEY = "cpdatakit_metadata_json"
 
@@ -15,6 +16,8 @@ def encode_metadata(metadata: dict[str, Any]) -> str:
     try:
         if not isinstance(metadata, dict):
             raise TypeError("metadata must be an object")
+        if "provenance" in metadata:
+            validate_provenance(metadata["provenance"])
         payload = json.dumps(
             {"version": 1, "metadata": metadata},
             ensure_ascii=False,

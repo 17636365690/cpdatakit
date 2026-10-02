@@ -4,6 +4,28 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-10-02
+
+### Fixed
+
+- Preserve signed/unsigned integer precision when CSV or JSON records include missing values;
+  reject unsafe numeric promotion, overflow and nonzero underflow before constructing tables.
+- Keep values and dtypes during equivalent-unit mappings, and reject unsafe unit conversions
+  across tabular and scientific-array workflows while retaining CSV source locations in errors.
+- Require self-contained HDF5 inputs before reading data: reject external links, external raw
+  storage, virtual datasets and soft links across inspection, CPDataKit readers, DAMASK and
+  HDF5-backed NetCDF. Internal hard links remain supported.
+- Enforce upload and multipart budgets before spooling complete requests, validate session/header
+  tokens before parsing, and isolate cookies across workspaces on different local ports.
+- Retain original CSV receipts and ordered conversion provenance with a bounded, verifiable parent
+  chain. Legacy files remain readable without inventing missing history.
+- Check HDF5 record/materialization bounds before reading payloads, add cooperative read checkpoints,
+  and reuse loaded data when producing validation reports rather than scanning repeatedly.
+- Read native NetCDF3 from Windows Unicode paths through a temporary ASCII snapshot; preserve
+  original bytes, date decoding and selection behavior, and remove the snapshot on exit.
+- Use absolute release-pinned links in the package README; report CSV/JSON data writers as unavailable
+  and document conversion result reuse consistently.
+
 ## [0.10.0] - 2026-10-01
 
 ### Added

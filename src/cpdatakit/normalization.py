@@ -4,17 +4,113 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from decimal import Decimal, localcontext
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from pint import DimensionalityError, UndefinedUnitError, UnitRegistry
 
+from .data.scientific import _same_values
 from .exceptions import NormalizationError
 from .model import Dataset
 from .schema import ProfileSchema, load_schema
 
 _UREG = UnitRegistry()
+_DECIMAL_UREG = UnitRegistry(non_int_type=Decimal)
+
+
+class _UnitConversionError(NormalizationError):
+    """Keep a numeric failure's position available to the CSV intake boundary."""
+
+    def __init__(self, source: str, record: object, reason: str, component=()):
+        self.source = source
+        self.record = record
+        self.reason = reason
+        location = f"Field {source!r} record {record!r}"
+        if component:
+            location += f" component {component}"
+        super().__init__(f"{location}: {reason}")
+
+
+@lru_cache(maxsize=128)
+def _identity_units(input_unit: str, output_unit: str) -> bool:
+    reference = _UREG.Quantity(np.array([0.0, 1.0]), input_unit).to(output_unit).magnitude
+    return bool(np.array_equal(reference, [0.0, 1.0]))
+
+
+def _convert_array_units(
+    array: np.ndarray, *, source: str, record: object, input_unit: str, output_unit: str
+) -> np.ndarray:
+    """Convert numeric values without losing integers or creating zero/infinity.
+
+    Ordinary floating-point rounding remains part of a nonidentity conversion.
+    Existing NaN/infinity values remain available to the validation layer.
+    """
+    try:
+        if _identity_units(input_unit, output_unit):
+            return array.copy()
+    except (DimensionalityError, UndefinedUnitError, TypeError, ValueError) as exc:
+        raise NormalizationError(
+            f"Cannot convert {source!r} from {input_unit!r} to {output_unit!r}: {exc}"
+        ) from exc
+
+    def reject(mask: np.ndarray, reason: str) -> None:
+        if np.any(mask):
+            component = tuple(int(i) for i in np.argwhere(mask)[0])
+            raise _UnitConversionError(source, record, reason, component)
+
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        floating = np.asarray(array, dtype=np.float64)
+    if array.dtype.kind in "iu":
+        # Comparing uint64 with float64 directly promotes both sides and can
+        # conceal the very rounding we need to detect. Python scalar comparison
+        # compares an integer with the float's exact value instead.
+        reject(
+            array.astype(object) != floating.astype(object),
+            "integer precision would be lost in float64 unit conversion",
+        )
+    elif array.dtype.itemsize > np.dtype("float64").itemsize:
+        reject(
+            np.isfinite(array) & (array != floating.astype(array.dtype)),
+            "numeric precision would be lost in float64 unit conversion",
+        )
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        converted = np.asarray(
+            _UREG.Quantity(floating, input_unit).to(output_unit).magnitude, dtype=np.float64
+        )
+    reject(np.isfinite(array) & ~np.isfinite(converted), "unit conversion overflows float64")
+    # Check only suspect zeros with decimal arithmetic: offset conversions such
+    # as 273.15 K -> 0 degC are valid and must not be mistaken for underflow.
+    suspect = np.isfinite(array) & (array != 0) & (converted == 0)
+    if array.dtype.kind in "iu":
+        suspect |= np.abs(converted) >= 2**53
+    for position in np.argwhere(suspect):
+        component = tuple(int(i) for i in position)
+        with localcontext() as context:
+            context.prec = 80
+            exact = (
+                _DECIMAL_UREG.Quantity(Decimal(str(array[component].item())), input_unit)
+                .to(output_unit)
+                .magnitude
+            )
+        if converted[component] == 0 and exact != 0:
+            raise _UnitConversionError(
+                source, record, "unit conversion underflows float64", component
+            )
+        if (
+            array.dtype.kind in "iu"
+            and exact == exact.to_integral_value()
+            and Decimal.from_float(float(converted[component])) != exact
+        ):
+            raise _UnitConversionError(
+                source,
+                record,
+                "integer result precision would be lost in unit conversion",
+                component,
+            )
+    return converted
 
 
 def _is_missing_scalar(value: object) -> bool:
@@ -43,7 +139,15 @@ def _numeric_array(
         )
     if array.dtype.kind not in {"i", "u", "f"}:
         raise NormalizationError(f"Field {source!r} record {record!r} is not numeric")
-    return np.asarray(array, dtype=np.float64)
+    if (
+        shape
+        and not isinstance(value, np.ndarray)
+        and not _same_values(np.asarray(value, dtype=object), array)
+    ):
+        raise _UnitConversionError(
+            source, record, "numeric precision would be lost forming an array"
+        )
+    return array
 
 
 def _convert_series_units(
@@ -54,21 +158,26 @@ def _convert_series_units(
     input_unit: str,
     output_unit: str,
 ) -> pd.Series:
+    try:
+        identity = _identity_units(input_unit, output_unit)
+    except (DimensionalityError, UndefinedUnitError, TypeError, ValueError) as exc:
+        raise NormalizationError(
+            f"Cannot convert {source!r} from {input_unit!r} to {output_unit!r}: {exc}"
+        ) from exc
     converted: list[object] = []
     for record, value in series.items():
         if _is_missing_scalar(value):
             converted.append(value)
             continue
         array = _numeric_array(value, source=source, record=record, shape=shape)
-        try:
-            magnitude = _UREG.Quantity(array, input_unit).to(output_unit).magnitude
-        except (DimensionalityError, UndefinedUnitError) as exc:
-            raise NormalizationError(
-                f"Cannot convert {source!r} from {input_unit!r} to {output_unit!r}: {exc}"
-            ) from exc
-        converted_array = np.asarray(magnitude, dtype=np.float64)
+        converted_array = _convert_array_units(
+            array, source=source, record=record, input_unit=input_unit, output_unit=output_unit
+        )
         converted.append(converted_array.item() if not shape else converted_array)
-    return pd.Series(converted, index=series.index, name=series.name)
+    # Explicit dtype avoids pandas re-inferring nullable integer values through
+    # a float column even though the unit transform did not change a value.
+    dtype = series.dtype if identity else None
+    return pd.Series(converted, index=series.index, name=series.name, dtype=dtype)
 
 
 @dataclass(frozen=True, slots=True)

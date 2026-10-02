@@ -2,11 +2,9 @@
 
 import json
 
-import numpy as np
-
 from ..data import ScientificDataset
 from ..exceptions import DataValidationError, NormalizationError
-from ..normalization import _UREG, normalize_dataset
+from ..normalization import _convert_array_units, normalize_dataset
 from ..schemas import ResolvedSchemaV2
 from .units import declared_unit
 
@@ -69,12 +67,16 @@ def normalize_value(value, request, resolved):
             if array.dtype.kind not in "iuf":
                 raise NormalizationError("Unit conversion requires numeric arrays")
             try:
-                converted = (
-                    _UREG.Quantity(array.values, item.input_unit).to(item.output_unit).magnitude
+                converted = _convert_array_units(
+                    array.values,
+                    source=item.source,
+                    record=None,
+                    input_unit=item.input_unit,
+                    output_unit=item.output_unit,
                 )
             except (ValueError, TypeError) as exc:
                 raise NormalizationError(f"Cannot convert units for {item.source}: {exc}") from exc
-            result.data[item.target] = array.copy(data=np.asarray(converted, dtype=float))
+            result.data[item.target] = array.copy(data=converted)
             result.data[item.target].encoding = {}
             result.data[item.target].attrs.pop("units", None)
             result.data[item.target].attrs["unit"] = item.output_unit
