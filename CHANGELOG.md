@@ -4,6 +4,18 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-10-06
+
+### Fixed
+
+- Preserve public HTTP(S) source references and recognised unit quotients such as `mol / l`,
+  `mV / s` and `kg / m / s**2` in report and inspection output.
+- Remove URL user information, sensitive query/fragment values and local-path parameters before
+  preserving references. Keep Windows, UNC and POSIX path redaction, including paths next to URLs
+  or containing unit-like text.
+- Use the same sanitisation for schema URIs and ordinary metadata; cover repeated sanitisation
+  and HTML, JSON and Markdown report rendering with regression tests.
+
 ## [0.10.1] - 2026-10-02
 
 ### Fixed

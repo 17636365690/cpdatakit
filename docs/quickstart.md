@@ -3,7 +3,7 @@
 This run uses deterministic synthetic data. It validates a declared crystal-plasticity curve,
 writes an HDF5 file with provenance, and renders a stress-strain plot.
 
-For the v0.10.1 workbench, start with the [workbench guide](workbench-guide.md).
+For the v0.10.2 workbench, start with the [workbench guide](workbench-guide.md).
 Its CSV confirmation and result-reuse workflow is included in the package and this source checkout.
 For a complete semicolon CSV walkthrough, use the [CSV first-use example](../examples/csv-intake/README.md).
 It includes a three-row source file, explicit settings, the field/unit table, and an installed-package
@@ -34,13 +34,13 @@ source .venv/bin/activate
 Install the current release from PyPI:
 
 ```bash
-python -m pip install "cpdatakit==0.10.1"
+python -m pip install "cpdatakit==0.10.2"
 ```
 
-For a pinned GitHub v0.10.1 release wheel, use:
+For a pinned GitHub v0.10.2 release wheel, use:
 
 ```bash
-python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.1/cpdatakit-0.10.1-py3-none-any.whl"
+python -m pip install "https://github.com/koocmitwho/cpdatakit/releases/download/v0.10.2/cpdatakit-0.10.2-py3-none-any.whl"
 ```
 
 ## 2. Generate a reproducible example
