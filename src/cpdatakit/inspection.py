@@ -7,10 +7,12 @@ import re
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote, unquote, unquote_plus, urlsplit, urlunsplit
 
 import h5py
 import numpy as np
 import pandas as pd
+from pint import UndefinedUnitError, get_application_registry
 
 from ._atomic import write_text_atomic
 from ._hdf5_reading import check_hdf5_budget, read_hdf5_array
@@ -41,6 +43,10 @@ _CREDENTIAL_VALUE = re.compile(
 )
 _DRIVE_OR_UNC_PATH = re.compile(r"(?i)(?<![\w])(?:[a-z]:[\\/]|\\\\)[^<>\r\n\"']+")
 _POSIX_PATH = re.compile(r"(?<![\w:<])/(?:[^<>\r\n\"']+)")
+_HTTP_URI = re.compile(r"\bhttps?://[^\s<>\"']+", re.IGNORECASE)
+_UNIT_ATOM = r"(?:[^\W\d_][\w°µμ]*|1)(?:\*\*[+-]?\d+)?"
+_UNIT_QUOTIENT = re.compile(rf"(?<![\w\\/]){_UNIT_ATOM}(?:[ \t]*/[ \t]*{_UNIT_ATOM})+")
+_URI_PATH_BOUNDARY = re.compile(r"[;,](?=(?:[a-z]:[\\/]|\\\\))", re.IGNORECASE)
 
 
 SchemaInput = str | Path | ProfileSchema | Mapping[str, Any]
@@ -50,6 +56,97 @@ def _portable_filename(value: object) -> str:
     text = str(value).replace("\\", "/")
     name = text.rsplit("/", 1)[-1]
     return name or "[redacted]"
+
+
+def _safe_uri_parameters(parameters: str) -> str:
+    """Keep ordinary query/fragment parameters, not credentials or local paths."""
+    parts = []
+    for part in parameters.split("&"):
+        name, separator, value = part.partition("=")
+        if separator:
+            if _SENSITIVE_KEY.search(unquote_plus(name)):
+                part = name + "=[redacted]"
+            else:
+                decoded = unquote_plus(value)
+                safe = _safe_text(decoded)
+                if safe != decoded:
+                    part = name + "=" + quote(safe, safe="[]")
+        else:
+            decoded = unquote_plus(part)
+            safe = _safe_text(decoded)
+            if safe != decoded:
+                part = quote(safe, safe="[]")
+        parts.append(part)
+    return "&".join(parts)
+
+
+def _safe_http_uri(value: str) -> str:
+    try:
+        uri = urlsplit(value)
+        if not uri.hostname:
+            return "[redacted]"
+    except ValueError:
+        return "[redacted]"
+    # URL user-info is never needed to identify a public source.
+    authority = uri.netloc.rsplit("@", 1)[-1]
+    path = _CREDENTIAL_VALUE.sub(r"\1\2[redacted]", unquote(uri.path))
+    path = uri.path if path == unquote(uri.path) else quote(path, safe="/=:[]")
+    safe = uri._replace(
+        netloc=authority,
+        path=path,
+        query=_safe_uri_parameters(uri.query),
+        fragment=_safe_uri_parameters(uri.fragment),
+    )
+    return value if safe == uri else urlunsplit(safe)
+
+
+def _redact_text(text: str) -> str:
+    # Protect cleaned URLs and only the division sign in recognised unit ratios.
+    # Leaving the unit words in place lets a containing filesystem path still be
+    # removed in full, e.g. C:\\Lab mV / s\\sample.csv.
+    marker = "__CPDATAKIT_LITERAL_"
+    while marker in text:
+        marker += "_"
+    literals: dict[str, str] = {}
+
+    def protect(value: str, *, uri: bool = False) -> str:
+        token = f"{marker}{len(literals)}__"
+        if uri:
+            # Angle brackets already delimit paths. A path preceding a public
+            # citation must not consume its protected URL or subsequent text.
+            token = f"<{token}>"
+        literals[token] = value
+        return token
+
+    def protect_uri(match: re.Match[str]) -> str:
+        value = match.group()
+        boundary = _URI_PATH_BOUNDARY.search(value)
+        if boundary is not None:
+            # A citation followed by ';C:\\Lab Data\\file' is not one URL.
+            # Leave the complete path prefix available to the path redactor.
+            return (
+                protect(_safe_http_uri(value[: boundary.start()]), uri=True)
+                + value[boundary.start() :]
+            )
+        return protect(_safe_http_uri(value), uri=True)
+
+    text = _HTTP_URI.sub(protect_uri, text)
+
+    def protect_unit_division(match: re.Match[str]) -> str:
+        expression = match.group()
+        try:
+            get_application_registry().parse_units(expression)
+        except (UndefinedUnitError, ValueError, TypeError):
+            return expression
+        return expression.replace("/", protect("/"))
+
+    text = _UNIT_QUOTIENT.sub(protect_unit_division, text)
+    text = _CREDENTIAL_VALUE.sub(r"\1\2[redacted]", text)
+    text = _DRIVE_OR_UNC_PATH.sub("[path]", text)
+    text = _POSIX_PATH.sub("[path]", text)
+    for token, value in literals.items():
+        text = text.replace(token, value)
+    return text
 
 
 def _safe_text(value: object, *, key: str | None = None) -> str:
@@ -66,17 +163,11 @@ def _safe_text(value: object, *, key: str | None = None) -> str:
             return "[redacted]"
     else:
         text = str(value)
-    text = _CREDENTIAL_VALUE.sub(r"\1\2[redacted]", text)
-    text = _DRIVE_OR_UNC_PATH.sub("[path]", text)
-    text = _POSIX_PATH.sub("[path]", text)
-    return text
+    return _redact_text(text)
 
 
 def _safe_uri(value: object) -> str:
-    if not isinstance(value, str):
-        return _safe_text(value)
-    marker = "__CPDATAKIT_URI_SCHEME__"
-    return _safe_text(value.replace("://", marker)).replace(marker, "://")
+    return _safe_text(value)
 
 
 def _safe_metadata(value: object, *, key: str | None = None) -> object:
