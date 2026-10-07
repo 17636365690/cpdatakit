@@ -1,6 +1,6 @@
 # CPDataKit
 
-简体中文 | [English](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/README.md)
+简体中文 | [English](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/README.md)
 
 [![CI](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/releases/latest)
@@ -17,18 +17,18 @@ CPDataKit 是 Python 工具，提供本地中文工作台、命令行和 Python 
 你可以预览实际列，确认字段名、类型、来源单位和输出单位，再保存转换数据、原始文件与规则。
 后来检查或交接时，可以核对这次换算采用了什么声明。
 
-本文对应 **v0.10.2**：修复公开来源链接及 `mol / l`、`mV / s` 等已识别单位商式被误当作路径遮盖的问题。
-真实路径与凭据仍会被遮盖。
-CSV 逐列确认导入及转换结果复用流程保持不变。
-安装入口见 [PyPI](https://pypi.org/project/cpdatakit/0.10.2/)，变更见
-[发行说明](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/.github/release-notes/v0.10.2.md)和
-[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.2)。
+本文对应 **v0.11.0**：保存、载入已确认的 CSV 导入设置，并在新文件预览中显示结构差异。
+同结构文件复用列名、单位和用途；每份文件的来源说明、实验事实和哈希独立保留。
+安装入口见 [PyPI](https://pypi.org/project/cpdatakit/0.11.0/)，变更见
+[发行说明](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/.github/release-notes/v0.11.0.md)和
+[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.11.0)。
 
 > 工具检查你声明的数据规则与换算，不判断实验是否正确，也不自动推断工程/真实应力应变等科学定义。
 
 ## 主要作用
 
 - **确认 CSV 的实际含义。** 设置分隔符、表头行、独立单位行、小数符号和编码；预览后逐列确认字段、类型、单位与用途，保留原始字节及排除列的记录。
+- **复用已确认导入设置。** 保存解析选项和字段声明，载入下一份同类文件；可见结构变化先显示差异，来源事实仍需逐文件确认。
 - **按规则检查数据。** 数据规则（schema）声明字段、类型、形状、单位、缺失值、索引、范围与科学约定。检查结果分别列出错误和警告。
 - **显式统一字段和单位。** 字段映射（mapping）用于改名与单位转换；向量、矩阵和张量按声明的形状处理。CSV 确认导入可直接填写这些声明。
 - **保存可追查的结果。** CPDataKit HDF5 可保存规则、单位来源、源文件摘要、验证结果和处理记录；报告支持离线 HTML、Markdown 与 JSON。
@@ -52,7 +52,7 @@ Windows PowerShell：
 
 ```powershell
 python -m venv .venv-cpdatakit
-.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.10.2"
+.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.11.0"
 .venv-cpdatakit\Scripts\cpdatakit.exe --version
 .venv-cpdatakit\Scripts\cpdatakit.exe ui --workspace ./csv-demo-workspace
 ```
@@ -61,12 +61,12 @@ macOS / Linux：
 
 ```bash
 python3 -m venv .venv-cpdatakit
-.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.10.2"
+.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.11.0"
 .venv-cpdatakit/bin/cpdatakit --version
 .venv-cpdatakit/bin/cpdatakit ui --workspace ./csv-demo-workspace
 ```
 
-版本输出应为 `cpdatakit 0.10.2`。工作台只绑定本机回环地址，默认打开浏览器；
+版本输出应为 `cpdatakit 0.11.0`。工作台只绑定本机回环地址，默认打开浏览器；
 如未打开，访问终端显示的地址。保持终端运行，结束后按 `Ctrl+C` 停止服务。
 首次安装需要下载依赖；安装后，下面的本地 CSV 流程不需要外部服务或 AI 模型。
 
@@ -77,7 +77,7 @@ python3 -m venv .venv-cpdatakit
 
 这个合成示例只演示文件处理，没有实验或材料验证含义。
 将下列内容保存为 UTF-8 文件 `instrument-demo.csv`；也可使用仓库中的
-[instrument.csv](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/instrument.csv)。
+[instrument.csv](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/instrument.csv)。
 
 ```csv
 (sec);(mm);(N);;(MPa);(mm/mm)
@@ -127,7 +127,7 @@ python3 -m venv .venv-cpdatakit
 快照被改动、原规则不可用或结果来自另一项目时，不能继续使用。
 
 详细操作、可运行的示例脚本及常见错误见
-[CSV 完整示例](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/README.md)和[中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/workbench-guide.md)。
+[CSV 完整示例](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/README.md)和[中文工作台指南](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/workbench-guide.md)。
 普通 wheel 不包含仓库的 `examples/` 目录；上面的手动流程只需已安装的软件包。
 
 ## 得到哪些文件
@@ -187,9 +187,9 @@ print(validation.valid)
 print(summary)
 ```
 
-自定义字段和单位见[规则与映射指南](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/schema-authoring.md)。
-更多完整操作见[五分钟教程](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/quickstart.md)，选择性读取、多维查看、规则草案和批处理见
-[进阶工作流](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/post-v07-workflows.md)。
+自定义字段和单位见[规则与映射指南](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/schema-authoring.md)。
+更多完整操作见[五分钟教程](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/quickstart.md)，选择性读取、多维查看、规则草案和批处理见
+[进阶工作流](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/post-v07-workflows.md)。
 
 ## 输入格式与适用范围
 
@@ -203,27 +203,31 @@ print(summary)
 
 内置 `curve`、`point`、`field2d` 规则来自原有 CP 场景。
 外部 JSON 规则可以使用其他非空 profile 名称，但仍须显式声明类型、形状、单位和约定。
-格式合同与适配器边界见[数据格式文档](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/data-format.md)。
+格式合同与适配器边界见[数据格式文档](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/data-format.md)。
 
 以下边界需要保留：
 
 - 数字单位、应力应变定义、张量分量顺序、取向表达和 ID 含义由数据提供者确认；工具不补写未知科学含义。
 - CSV 确认导入遇到异常行、缺失数字单位或无法保证精度的转换时停止，不丢弃异常行来得到通过结果。
 - 新写出的 HDF5 保留列创建顺序；旧文件若没有顺序元数据，不能恢复最初输入列序。按位置使用特征数组时，应显式指定字段与顺序。
-- v0.10.1 通过临时 ASCII 副本修复 Windows 中文路径下的原生 NetCDF3 读取。日期坐标可以读出，通用日期规则仍未实现。见[问题记录](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/known-issues/netcdf3-datetime.md)。
+- v0.10.1 通过临时 ASCII 副本修复 Windows 中文路径下的原生 NetCDF3 读取。日期坐标可以读出，通用日期规则仍未实现。见[问题记录](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/known-issues/netcdf3-datetime.md)。
 - 工具不运行晶体塑性或有限元求解器；已有集成案例演示数据整理与交接，不构成独立项目间的自动接入。
 
 ## 示例与验证
 
 先用合成数据熟悉流程，再按自己的来源记录建立规则。
 
-- [三行仪器 CSV](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/README.md)：逐列确认、单位换算、原字节保留与转换结果复用。
-- [热循环](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/thermal-cycle/README.md)：自定义 profile，摄氏度/开尔文与时间单位转换、HDF5 往返及通用 x-y 绘图。
-- [KupferDigital/FE 拉伸案例](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/cpfe-tensile/README.md)：使用有署名的 CC BY 4.0 处理后数据，演示实验数据交接。
-- [Surfalex HF 公开参考流程](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/public-datasets/surfalex-aa6016a/README.md)：显式张量映射与来源核对，原始第三方数据按需从上游获取。
+- [三行仪器 CSV](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/README.md)：逐列确认、单位换算、原字节保留与转换结果复用。
+- [热循环](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/thermal-cycle/README.md)：自定义 profile，摄氏度/开尔文与时间单位转换、HDF5 往返及通用 x-y 绘图。
+- [KupferDigital/FE 拉伸案例](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/cpfe-tensile/README.md)：使用有署名的 CC BY 4.0 处理后数据，演示实验数据交接。
+- [Surfalex HF 公开参考流程](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/public-datasets/surfalex-aa6016a/README.md)：显式张量映射与来源核对，原始第三方数据按需从上游获取。
 
-本轮修复的验证条件见
-[v0.10.2 验收记录](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/verification/2026-10-06-v0102.md)。
+本轮验证条件见
+[v0.11.0 验收记录](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/verification/2026-10-07-v0110.md)。
+[重复导入案例](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/repeated-import/README.md)
+核对了 echemdb 曲线和 PyIRoGlass 光谱的独立来源与下游读取。它们证明减少了 CPDataKit
+内部重复声明，没有测得相对原生项目的整体便利优势，也不构成科学有效性验证。
+PyIRoGlass 使用未改写的读取器源码对照；完整包未在本次 Windows 环境安装成功。
 以下为历史 v0.10.0 发布提交 `7ef4ece` 的
 [完整 CI](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526428)已通过：
 Windows、Linux、macOS 的 Python 3.12/3.13 六套完整测试各 **1559 项通过**；
@@ -235,14 +239,14 @@ Windows、Linux、macOS 的 Python 3.12/3.13 六套完整测试各 **1559 项通
 原始压缩包中 12 个 CSV、24,073 行的来源字节、声明单位和数值。
 仓库不附带该原始压缩包；仅包含来源指纹和合成 CSV。
 测试通过说明被测路径满足声明与断言，不证明实验数据的物理正确性。
-历史审核快照与测量条件保存在 [verification 目录](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/verification/)，其中发布前快照不等同于最终发布收据。
+历史审核快照与测量条件保存在 [verification 目录](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/verification/)，其中发布前快照不等同于最终发布收据。
 
 ## 贡献与许可
 
 问题和功能建议提交到 [Issues](https://github.com/koocmitwho/cpdatakit/issues)。
 请附最小合成样例、预期字段/单位和复现步骤；不要提交私有实验数据或凭据。
-代码贡献见 [CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CONTRIBUTING.md)，安全问题见 [SECURITY.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/SECURITY.md)，
-历史版本变化见 [CHANGELOG.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CHANGELOG.md)。
+代码贡献见 [CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CONTRIBUTING.md)，安全问题见 [SECURITY.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/SECURITY.md)，
+历史版本变化见 [CHANGELOG.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CHANGELOG.md)。
 
-项目采用 [Apache-2.0](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/LICENSE)，依赖与第三方材料说明见 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/NOTICE)，
-引用信息见 [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CITATION.cff)。第三方数据遵循各自许可和署名要求。
+项目采用 [Apache-2.0](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/LICENSE)，依赖与第三方材料说明见 [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/NOTICE)，
+引用信息见 [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CITATION.cff)。第三方数据遵循各自许可和署名要求。

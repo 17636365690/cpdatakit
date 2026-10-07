@@ -1,0 +1,45 @@
+{
+  "options": {
+    "delimiter": ",",
+    "header_row": 0,
+    "unit_row": 0,
+    "decimal": ".",
+    "encoding": "utf-8-sig"
+  },
+  "columns": [
+    {
+      "index": 0,
+      "source_name": "column_1",
+      "include": true,
+      "target": "Wavenumber",
+      "dtype": "float",
+      "role": "coordinate",
+      "input_unit": "1/cm",
+      "output_unit": "1/cm"
+    },
+    {
+      "index": 1,
+      "source_name": "column_2",
+      "include": true,
+      "target": "Absorbance",
+      "dtype": "float",
+      "role": "measured_quantity",
+      "input_unit": "dimensionless",
+      "output_unit": "dimensionless"
+    }
+  ],
+  "source_columns": [
+    {
+      "index": 0,
+      "source_name": "column_1",
+      "dtype": "float",
+      "suggested_unit": null
+    },
+    {
+      "index": 1,
+      "source_name": "column_2",
+      "dtype": "float",
+      "suggested_unit": null
+    }
+  ]
+}

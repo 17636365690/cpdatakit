@@ -37,6 +37,13 @@ BEHAVIORS = [
     "activation-overlap",
     "authoring-preview-current",
     "csv-error-hint",
+    "csv-settings-reuse",
+    "csv-settings-drift",
+    "csv-settings-stale-load",
+    "csv-settings-invalid-load",
+    "csv-settings-submit",
+    "csv-settings-custom-role",
+    "csv-settings-load-file-change",
     "upload-clears-authoring",
 ]
 

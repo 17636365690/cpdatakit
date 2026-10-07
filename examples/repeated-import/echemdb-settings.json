@@ -1,0 +1,61 @@
+{
+  "options": {
+    "delimiter": ",",
+    "header_row": 1,
+    "unit_row": 0,
+    "decimal": ".",
+    "encoding": "utf-8-sig"
+  },
+  "columns": [
+    {
+      "index": 0,
+      "source_name": "t",
+      "include": true,
+      "target": "t",
+      "dtype": "float",
+      "role": "time",
+      "input_unit": "s",
+      "output_unit": "s"
+    },
+    {
+      "index": 1,
+      "source_name": "E",
+      "include": true,
+      "target": "E",
+      "dtype": "float",
+      "role": "measured_quantity",
+      "input_unit": "V",
+      "output_unit": "V"
+    },
+    {
+      "index": 2,
+      "source_name": "I",
+      "include": true,
+      "target": "I",
+      "dtype": "float",
+      "role": "measured_quantity",
+      "input_unit": "A",
+      "output_unit": "A"
+    }
+  ],
+  "source_columns": [
+    {
+      "index": 0,
+      "source_name": "t",
+      "dtype": "float",
+      "suggested_unit": null
+    },
+    {
+      "index": 1,
+      "source_name": "E",
+      "dtype": "float",
+      "suggested_unit": null
+    },
+    {
+      "index": 2,
+      "source_name": "I",
+      "dtype": "float",
+      "suggested_unit": null
+    }
+  ]
+}

@@ -34,6 +34,11 @@
         <details id="csv-intake" class="advanced-panel" open><summary>CSV 导入 · 预览并确认字段</summary>
           <p class="hint">适合仪器导出的 CSV、TSV 和文本表格。先查看实际列，再确认名称、单位与用途。原文件原样保留，未选列记录在导入清单中。</p>
           <form id="csv-preview-form">
+            <fieldset id="csv-saved-controls">
+              <label for="csv-settings-file">载入已确认导入设置（可选）</label><input id="csv-settings-file" type="file" accept=".json">
+              <button type="button" id="csv-settings-clear" class="secondary">取消设置复用</button>
+              <p id="csv-settings-status" class="hint" role="status" aria-live="polite">首次导入成功后可保存设置，用于下一份同类文件。实验身份、来源说明和文件哈希不会复用。</p>
+            </fieldset>
             <fieldset id="csv-input-controls">
               <label for="csv-file">原始表格文件</label><input id="csv-file" type="file" accept=".csv,.tsv,.txt" required>
               <div class="csv-options">
@@ -51,6 +56,7 @@
           <form id="csv-confirm-form" hidden>
             <fieldset id="csv-review-controls">
               <p id="csv-counts"></p>
+              <div id="csv-settings-review" class="table-scroll" aria-live="polite"></div>
               <div class="table-scroll"><table id="csv-columns"><thead><tr><th>保留</th><th>来源列与样本</th><th>输出字段名</th><th>类型</th><th>来源单位</th><th>输出单位</th><th>数据用途</th></tr></thead><tbody></tbody></table></div>
               <label for="csv-conventions">数据定义与来源说明</label><textarea id="csv-conventions" rows="2" maxlength="4000" required placeholder="例如：仪器导出的载荷与位移；单位来自表头。应力应变定义以实验记录为准。"></textarea>
               <label class="check"><input id="csv-confirmed" type="checkbox" required> 我已核对所选字段、单位、用途和排除列</label>
