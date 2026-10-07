@@ -4,6 +4,18 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-07
+
+### Added
+- Save and load confirmed CSV import settings in the workbench, reusing the existing parsing and
+  field-declaration contracts. Matching files reuse field names, units, roles and excluded columns.
+- Preview changes in column order, names, visible units, detected types and parsing options before
+  reuse. Changed files and legacy settings without a source signature require fresh declarations.
+- Keep experiment descriptions, source identity and hashes separate for each file; record settings
+  comparisons in import manifests and verify saved bytes before exporting reusable settings.
+- Document two real repeated-import and downstream handoff cases, including independent metadata,
+  sample-ID failures and the limits of headerless data and native reader integration.
+
 ## [0.10.2] - 2026-10-06
 
 ### Fixed

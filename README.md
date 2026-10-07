@@ -1,6 +1,6 @@
 # CPDataKit
 
-[简体中文](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/README.zh-CN.md) | English
+[简体中文](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/README.zh-CN.md) | English
 
 [![CI](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml/badge.svg)](https://github.com/koocmitwho/cpdatakit/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/koocmitwho/cpdatakit)](https://github.com/koocmitwho/cpdatakit/releases/latest)
@@ -20,11 +20,11 @@ downstream script expects `kN`. Preview the actual columns, confirm the field na
 source units, and output units, then save the converted data, original file, and schema.
 Anyone checking or receiving the result can see which declarations governed the conversion.
 
-This guide covers **v0.10.2**, which preserves public source URLs and recognised unit quotients
-in reports while retaining path and credential redaction. Install from
-[PyPI](https://pypi.org/project/cpdatakit/0.10.2/); see the
-[release notes](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/.github/release-notes/v0.10.2.md) and
-[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.10.2) for changes.
+This guide covers **v0.11.0**, which saves and reloads confirmed CSV import settings and previews
+changes before reuse. Each new file retains its own source description and hash. Install from
+[PyPI](https://pypi.org/project/cpdatakit/0.11.0/); see the
+[release notes](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/.github/release-notes/v0.11.0.md) and
+[GitHub Release](https://github.com/koocmitwho/cpdatakit/releases/tag/v0.11.0) for changes.
 
 > CPDataKit checks declared data rules and conversions. It does not establish experimental validity
 > or infer scientific definitions such as engineering versus true stress and strain.
@@ -34,6 +34,8 @@ in reports while retaining path and credential redaction. Install from
 - **Confirm what a CSV contains.** Set the delimiter, header row, separate unit row, decimal separator,
   and encoding. Preview the file, then confirm each field's name, type, units, and role.
   Retain the original bytes and a record of excluded columns.
+- **Reuse confirmed CSV settings.** Save parsing and field declarations for the next matching file.
+  Review visible structure changes before applying settings; source facts require fresh confirmation.
 - **Validate against explicit rules.** A schema declares fields, types, shapes, units, missing-value
   policies, indexes, ranges, and scientific conventions. Findings distinguish errors from warnings.
 - **Normalize names and units explicitly.** A field mapping handles renaming and unit conversion.
@@ -67,7 +69,7 @@ Windows PowerShell:
 
 ```powershell
 python -m venv .venv-cpdatakit
-.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.10.2"
+.venv-cpdatakit\Scripts\python.exe -m pip install "cpdatakit==0.11.0"
 .venv-cpdatakit\Scripts\cpdatakit.exe --version
 .venv-cpdatakit\Scripts\cpdatakit.exe ui --workspace ./csv-demo-workspace
 ```
@@ -76,12 +78,12 @@ macOS / Linux:
 
 ```bash
 python3 -m venv .venv-cpdatakit
-.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.10.2"
+.venv-cpdatakit/bin/python -m pip install "cpdatakit==0.11.0"
 .venv-cpdatakit/bin/cpdatakit --version
 .venv-cpdatakit/bin/cpdatakit ui --workspace ./csv-demo-workspace
 ```
 
-The version output should be `cpdatakit 0.10.2`.
+The version output should be `cpdatakit 0.11.0`.
 The workbench binds only to a loopback address and opens the browser by default.
 If it does not open, visit the address printed in the terminal.
 Keep the terminal running; press `Ctrl+C` when finished to stop the service.
@@ -97,7 +99,7 @@ that can reach the service.
 
 This synthetic example demonstrates file processing; it has no experimental or material-validation
 meaning. Save the following text as a UTF-8 file named `instrument-demo.csv`,
-or use the repository's [instrument.csv](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/instrument.csv).
+or use the repository's [instrument.csv](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/instrument.csv).
 
 ```csv
 (sec);(mm);(N);;(MPa);(mm/mm)
@@ -166,8 +168,8 @@ Previously registered conversion snapshots retain their original content.
 Reuse is rejected if a snapshot has changed, its original schema is unavailable,
 or the result belongs to another project.
 
-See the [complete CSV example](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/README.md) and
-[Chinese workbench guide](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/workbench-guide.md) for detailed steps, a runnable example script,
+See the [complete CSV example](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/README.md) and
+[Chinese workbench guide](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/workbench-guide.md) for detailed steps, a runnable example script,
 and troubleshooting. Ordinary wheels do not include the repository's `examples/` directory.
 The manual workflow above needs only the installed package.
 
@@ -235,9 +237,9 @@ print(validation.valid)
 print(summary)
 ```
 
-See the [schema and mapping guide](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/schema-authoring.md) for custom fields and units,
-the [five-minute quickstart](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/quickstart.md) for more complete commands,
-and [advanced workflows](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/post-v07-workflows.md) for selective reads,
+See the [schema and mapping guide](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/schema-authoring.md) for custom fields and units,
+the [five-minute quickstart](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/quickstart.md) for more complete commands,
+and [advanced workflows](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/post-v07-workflows.md) for selective reads,
 multidimensional viewing, schema drafts, and batches.
 
 ## Input formats and scope
@@ -253,7 +255,7 @@ multidimensional viewing, schema drafts, and batches.
 Built-in `curve`, `point`, and `field2d` schemas come from the original CP workflows.
 External JSON schemas may use other non-empty profile names,
 but types, shapes, units, and conventions must remain explicit.
-See the [data-format documentation](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/data-format.md) for contracts and adapter boundaries.
+See the [data-format documentation](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/data-format.md) for contracts and adapter boundaries.
 
 Keep these limits in mind:
 
@@ -265,7 +267,7 @@ Keep these limits in mind:
   their original input order. Specify fields and order explicitly when building positional feature arrays.
 - v0.10.1 fixes native NetCDF3 reading from Windows Unicode paths using a temporary ASCII snapshot.
   Date coordinates can be read, but general date-coordinate schema support remains unimplemented.
-  See the [known issue](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/known-issues/netcdf3-datetime.md).
+  See the [known issue](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/known-issues/netcdf3-datetime.md).
 - CPDataKit does not run crystal-plasticity or finite-element solvers.
   Existing integration examples demonstrate data preparation and handoff, not automatic integration
   between independent projects.
@@ -274,17 +276,22 @@ Keep these limits in mind:
 
 Start with synthetic data, then build schemas from your own source records.
 
-- [Three-row instrument CSV](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/csv-intake/README.md):
+- [Three-row instrument CSV](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/csv-intake/README.md):
   column confirmation, unit conversion, original-byte retention, and conversion-result reuse.
-- [Thermal cycle](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/thermal-cycle/README.md):
+- [Thermal cycle](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/thermal-cycle/README.md):
   a custom profile, Celsius/kelvin and time-unit conversions, HDF5 round trips, and general x-y plots.
-- [KupferDigital/FE tensile case](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/cpfe-tensile/README.md):
+- [KupferDigital/FE tensile case](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/cpfe-tensile/README.md):
   attributed CC BY 4.0 processed data demonstrating experimental-data handoff.
-- [Surfalex HF public reference workflow](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/examples/public-datasets/surfalex-aa6016a/README.md):
+- [Surfalex HF public reference workflow](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/public-datasets/surfalex-aa6016a/README.md):
   explicit tensor mappings and source checks, with third-party raw data fetched from upstream on request.
 
-Current repair validation is recorded in the
-[v0.10.2 verification report](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/verification/2026-10-06-v0102.md).
+Current validation is recorded in the
+[v0.11.0 verification report](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/verification/2026-10-07-v0110.md).
+The [repeated-import cases](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/examples/repeated-import/README.md)
+check echemdb curves and PyIRoGlass spectra with separate source identities and downstream readback.
+They demonstrate fewer repeated declarations within CPDataKit, not a measured net advantage over
+the native projects or scientific validity. PyIRoGlass validation uses its unchanged reader source;
+the complete package did not install on the tested Windows environment.
 For the historical v0.10.0 release commit `7ef4ece`,
 [full CI](https://github.com/koocmitwho/cpdatakit/actions/runs/36811526428) passed:
 all six Windows/Linux/macOS and Python 3.12/3.13 combinations had **1559 passing tests** each.
@@ -299,7 +306,7 @@ That raw archive is not included in the repository; only its source fingerprint 
 are included. Passing tests establish that the tested paths satisfy their declarations and assertions,
 not that experimental data is physically correct.
 Historical review snapshots and measurement conditions are in the
-[verification directory](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/docs/verification/).
+[verification directory](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/docs/verification/).
 Prepublication snapshots are distinct from final publication receipts.
 
 ## Contributions and license
@@ -307,10 +314,10 @@ Prepublication snapshots are distinct from final publication receipts.
 Report issues and suggest features through [Issues](https://github.com/koocmitwho/cpdatakit/issues).
 Include a minimal synthetic sample, expected fields and units, and reproduction steps.
 Do not submit private experimental data or credentials.
-See [CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CONTRIBUTING.md) for code contributions,
-[SECURITY.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/SECURITY.md) for security reports, and [CHANGELOG.md](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CHANGELOG.md) for version history.
+See [CONTRIBUTING.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CONTRIBUTING.md) for code contributions,
+[SECURITY.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/SECURITY.md) for security reports, and [CHANGELOG.md](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CHANGELOG.md) for version history.
 
-CPDataKit uses the [Apache-2.0 license](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/LICENSE).
-See [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/NOTICE) for dependencies and third-party materials,
-and [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/v0.10.2/CITATION.cff) for citation details.
+CPDataKit uses the [Apache-2.0 license](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/LICENSE).
+See [NOTICE](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/NOTICE) for dependencies and third-party materials,
+and [CITATION.cff](https://github.com/koocmitwho/cpdatakit/blob/v0.11.0/CITATION.cff) for citation details.
 Third-party data follows its own license and attribution requirements.

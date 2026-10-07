@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import tempfile
@@ -15,6 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 
 from .._atomic import publish_directory
 from ..application.csv_intake import prepare_csv, preview_csv
+from ..application.csv_settings import review_csv_settings, settings_from_csv
 from ..application.data_access import path_sha256
 from ..exceptions import CatalogError, CPDataKitError, DataValidationError
 from ..io import write_hdf5
@@ -31,7 +33,7 @@ def _json_object(text: str, expected: type):
         raise DataValidationError("导入设置过大。请减少字段数量。")
     try:
         value = json.loads(text)
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError, RecursionError) as exc:
         raise DataValidationError("导入设置无效。请重新预览文件。") from exc
     if not isinstance(value, expected):
         raise DataValidationError("导入设置类型无效。请重新预览文件。")
@@ -58,6 +60,7 @@ def install_csv_workflow(app, *, require_csrf):
         project_id: int,
         file: Annotated[UploadFile, File()],
         options_json: Annotated[str, Form()] = "{}",
+        settings_json: Annotated[str | None, Form()] = None,
         csrf_token_form: Annotated[str | None, Form(alias="csrf_token")] = None,
     ) -> Response:
         try:
@@ -70,6 +73,10 @@ def install_csv_workflow(app, *, require_csrf):
                 _json_object(options_json, dict),
                 max_bytes=app.state.upload_limit,
             )
+            if settings_json is not None:
+                result["settings_review"] = review_csv_settings(
+                    result, _json_object(settings_json, dict)
+                )
             return JSONResponse(result)
         except DataValidationError as exc:
             return invalid(exc)
@@ -93,6 +100,7 @@ def install_csv_workflow(app, *, require_csrf):
         source_sha256: Annotated[str, Form()] = "",
         confirmed: Annotated[bool, Form()] = False,
         conventions: Annotated[str, Form()] = "",
+        settings_json: Annotated[str | None, Form()] = None,
         csrf_token_form: Annotated[str | None, Form(alias="csrf_token")] = None,
     ) -> Response:
         staged = None
@@ -119,6 +127,14 @@ def install_csv_workflow(app, *, require_csrf):
                 source_sha256=source_sha256,
                 max_bytes=app.state.upload_limit,
             )
+            settings_review = None
+            if settings_json is not None:
+                settings_review = review_csv_settings(
+                    preview_csv(
+                        payload, prepared.manifest["options"], max_bytes=app.state.upload_limit
+                    ),
+                    _json_object(settings_json, dict),
+                )
             schema = replace(
                 prepared.schema,
                 conventions={
@@ -138,6 +154,10 @@ def install_csv_workflow(app, *, require_csrf):
             (staged / "source.csv").write_bytes(payload)
             prepared.value.source = staged / "source.csv"
             manifest = {**prepared.manifest, "confirmed_source_definition": conventions.strip()}
+            if settings_review is not None:
+                manifest["settings_review"] = {
+                    key: settings_review[key] for key in ("matches", "changes", "warnings")
+                }
             prepared.value.metadata["provenance"]["csv_import"] = manifest
             (staged / "schema.json").write_text(
                 json.dumps(schema_to_dict(schema), ensure_ascii=False, indent=2), encoding="utf-8"
@@ -222,12 +242,40 @@ def install_csv_workflow(app, *, require_csrf):
             record = app.state.catalog.get_dataset(dataset_id)
             if record.project_id != project_id or not record.metadata.get("csv_import"):
                 raise CatalogError("Not a CSV import")
+            directory = (app.state.workspace / record.relative_path).parent
+            if part == "settings":
+                verified = {}
+                for name, hash_key, limit in (
+                    ("source.csv", "source_sha256", app.state.upload_limit),
+                    ("manifest.json", "manifest_sha256", 4 * 1024 * 1024),
+                ):
+                    path = directory / name
+                    if path.is_symlink() or not path.resolve().is_relative_to(root):
+                        raise CatalogError("Import record has changed")
+                    with path.open("rb") as stream:
+                        payload = stream.read(limit + 1)
+                    if (
+                        len(payload) > limit
+                        or hashlib.sha256(payload).hexdigest() != record.metadata[hash_key]
+                    ):
+                        raise CatalogError("Import record has changed")
+                    verified[name] = payload
+                manifest = json.loads(verified["manifest.json"])
+                settings = settings_from_csv(
+                    verified["source.csv"],
+                    manifest["options"],
+                    manifest["columns"],
+                    max_bytes=app.state.upload_limit,
+                )
+                return JSONResponse(
+                    settings,
+                    headers={"Content-Disposition": 'attachment; filename="settings.json"'},
+                )
             filename, key = {
                 "source": ("source.csv", "source_sha256"),
                 "schema": ("schema.json", "schema_sha256"),
                 "manifest": ("manifest.json", "manifest_sha256"),
             }[part]
-            directory = (app.state.workspace / record.relative_path).parent
             path = directory / filename
             if (
                 path.is_symlink()
@@ -240,7 +288,7 @@ def install_csv_workflow(app, *, require_csrf):
                 filename=filename,
                 media_type="application/json" if part != "source" else "text/csv",
             )
-        except (CPDataKitError, OSError, KeyError):
+        except (CPDataKitError, OSError, KeyError, ValueError, TypeError):
             return _json_error(
                 404,
                 "import_record_unavailable",

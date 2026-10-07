@@ -38,6 +38,7 @@ class Node {
     return this.querySelectorAll(selector)[0] || null;
   }
   get options() { return this.querySelectorAll('option'); }
+  get rows() { return this.querySelectorAll('tr'); }
   get selectedOptions() { return this.options.filter(node => String(node.value) === String(this.value)); }
 }
 
@@ -68,7 +69,9 @@ function environment(initial, responder, {authoring = false, csvIntake = false} 
     for (const id of ['csv-preview-form', 'csv-file', 'csv-input-controls', 'csv-review-controls',
                      'csv-confirm-form', 'csv-status', 'csv-columns tbody', 'csv-confirmed',
                      'csv-delimiter', 'csv-header-row', 'csv-unit-row', 'csv-decimal',
-                     'csv-encoding', 'csv-preview-button', 'csv-counts', 'csv-conventions']) {
+                     'csv-encoding', 'csv-preview-button', 'csv-counts', 'csv-conventions',
+                     'csv-settings-file', 'csv-settings-clear', 'csv-settings-status',
+                     'csv-settings-review', 'csv-saved-controls']) {
       nodes.set('#' + id, new Node());
     }
     nodes.get('#csv-file').files = [{name: 'malformed.csv'}];
@@ -124,7 +127,7 @@ function environment(initial, responder, {authoring = false, csvIntake = false} 
       if (selector === 'form[data-operation]') return forms;
       return [];
     },
-    createElement: tag => new Node(tag), addEventListener() {}, dispatchEvent() {},
+    createElement: tag => new Node(tag), createTextNode: text => { const item = new Node(); item.textContent = text; return item; }, addEventListener() {}, dispatchEvent() {},
   };
   class FormData {
     constructor(form) { this.values = new Map(); for (const node of form?.children || []) if (node.name && (node.type !== 'checkbox' || node.checked)) this.set(node.name, node.value); }
@@ -165,7 +168,95 @@ function environment(initial, responder, {authoring = false, csvIntake = false} 
 const visibleText = node => [node.textContent, ...node.children.filter(child => child.tagName !== 'details').map(visibleText)].join(' ');
 
 async function check(name) {
-  if (name === 'csv-error-hint') {
+  if (name.startsWith('csv-settings-')) {
+    const options = {delimiter: ',', header_row: 1, unit_row: 0, decimal: '.', encoding: 'utf-8-sig'};
+    const declarations = [{index: 0, include: true, target: 'elapsed', dtype: 'float', input_unit: 's', output_unit: 's', role: 'time'},
+      {index: 1, include: false}];
+    const expectedRole = name === 'csv-settings-custom-role' ? 'coordinate' : 'time';
+    declarations[0].role = expectedRole;
+    const sourceColumns = [{index: 0, source_name: 't', dtype: 'float', suggested_unit: null},
+      {index: 1, source_name: 'unused', dtype: 'string', suggested_unit: null}];
+    const saved = {options, columns: declarations, source_columns: sourceColumns,
+      confirmed_source_definition: 'OLD experiment and electrode', source_sha256: 'old-hash'};
+    const result = {source_sha256: 'new-hash', record_count: 2, options,
+      columns: sourceColumns.map(column => ({...column, samples: ['1.1', '2.2']})), warnings: [],
+      settings_review: {matches: name !== 'csv-settings-drift',
+        columns: name === 'csv-settings-drift' ? [] : declarations,
+        changes: name === 'csv-settings-drift' ? [{field: '第 1 列名称', before: 't', after: 'potential'}] : [],
+        warnings: ['请独立核对本文件的单位与来源。']}};
+    const env = environment(page(), url => {
+      if (url.endsWith('/csv-import')) {
+        assert.equal(env.nodes.get('#csv-saved-controls').disabled, true, 'Settings changes must be disabled during import');
+        return {dataset_id: 1, schema_selector: 'schema:1', filename: 'new.csv', schema_name: 'new-rules', operation: 'csv_import'};
+      }
+      return url.includes('?limit=') ? page() : result;
+    }, {csvIntake: true});
+    const upload = env.nodes.get('#csv-settings-file');
+    upload.files = [{name: 'settings.json', size: 400, text: async () => JSON.stringify(saved)}];
+    env.nodes.get('#csv-conventions').value = 'OLD experiment and electrode';
+    env.nodes.get('#csv-confirmed').checked = true;
+    await upload.dispatchEvent({type: 'change'});
+    if (name === 'csv-settings-stale-load' || name === 'csv-settings-load-file-change') {
+      let release;
+      upload.files = [{name: 'slow.json', size: 400, text: () => new Promise(resolve => { release = resolve; })}];
+      const loading = upload.dispatchEvent({type: 'change'});
+      if (name === 'csv-settings-load-file-change') {
+        await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'change'});
+      } else await env.nodes.get('#csv-settings-clear').click();
+      release(JSON.stringify(saved)); await loading;
+      await env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+      assert.equal(env.posted.at(-1).get('settings_json'), undefined);
+      if (name === 'csv-settings-load-file-change') {
+        assert.match(visibleText(env.nodes.get('#csv-settings-status')), /取消.*重新选择/);
+        assert.equal(upload.value, '');
+      }
+    } else if (name === 'csv-settings-invalid-load') {
+      upload.files = [{name: 'broken.json', size: 1, text: async () => '{'}];
+      await upload.dispatchEvent({type: 'change'});
+      await env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+      assert.equal(env.posted.at(-1).get('settings_json'), undefined);
+      assert.match(visibleText(env.nodes.get('#csv-settings-status')), /无法|无效/);
+    } else {
+      assert.equal(env.nodes.get('#csv-delimiter').value, ',');
+      assert.equal(env.nodes.get('#csv-conventions').value, '', 'Old experiment facts must not be copied');
+      assert.equal(env.nodes.get('#csv-confirmed').checked, false);
+      await env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+      const transmitted = JSON.parse(env.posted.at(-1).get('settings_json'));
+      assert.equal(transmitted.confirmed_source_definition, undefined);
+      assert.equal(transmitted.source_sha256, undefined);
+      const rows = env.nodes.get('#csv-columns tbody').rows;
+      if (name === 'csv-settings-drift') {
+        assert.equal(rows[0].querySelector('[data-key="role"]').value, '');
+        assert.equal(rows[0].querySelector('[data-key="input_unit"]').value, '');
+        assert.match(visibleText(env.nodes.get('#csv-settings-review')), /potential/);
+        assert.match(visibleText(env.nodes.get('#csv-settings-review')), /t/);
+      } else {
+        assert.equal(rows[0].querySelector('[data-key="target"]').value, 'elapsed');
+        assert.equal(rows[0].querySelector('[data-key="input_unit"]').value, 's');
+        assert.equal(rows[0].querySelector('[data-key="output_unit"]').value, 's');
+        const roleControl = rows[0].querySelector('[data-key="role"]');
+        assert.equal(roleControl.value, expectedRole);
+        assert.ok(roleControl.options.some(option => option.value === expectedRole), 'Saved roles must be available in the real select');
+        assert.equal(rows[1].querySelector('[data-key="include"]').checked, false);
+        env.nodes.get('#csv-conventions').value = 'new per-file facts';
+        env.nodes.get('#csv-confirmed').checked = true;
+        if (name === 'csv-settings-submit') {
+          await env.nodes.get('#csv-confirm-form').dispatchEvent({type: 'submit'});
+          const request = env.posted.at(-1);
+          assert.equal(request.get('source_sha256'), 'new-hash');
+          assert.equal(request.get('conventions'), 'new per-file facts');
+          assert.equal(JSON.parse(request.get('settings_json')).columns[0].target, 'elapsed');
+          assert.equal(JSON.parse(request.get('columns_json'))[0].role, 'time');
+          const links = env.nodes.get('#csv-status').querySelectorAll('a');
+          assert.ok(links.some(link => link.href === '/api/projects/1/csv-imports/1/settings'));
+        }
+        await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'change'});
+        assert.equal(env.nodes.get('#csv-conventions').value, '');
+        assert.equal(env.nodes.get('#csv-confirmed').checked, false);
+        assert.equal(env.nodes.get('#csv-confirm-form').hidden, true);
+      }
+    }
+  } else if (name === 'csv-error-hint') {
     const env = environment(page(), () => ({httpStatus: 400, payload: {error: {
       code: 'csv_review_required', message: 'CSV row 3 has 5 columns; expected 6.',
       action: '请核对文件解析设置及表格中的字段、单位和用途。',
