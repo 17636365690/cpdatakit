@@ -200,7 +200,11 @@ def preview_csv(
     max_bytes: int = 64 * 1024 * 1024,
     max_rows: int = 100000,
 ) -> dict:
-    """Preview every column without accepting any scientific or unit declaration."""
+    """Preview every column without accepting any scientific or unit declaration.
+
+    ``sample_rows`` holds the same first records as the column samples, aligned by
+    record with their one-based physical line numbers; cell text is not converted.
+    """
     parsed = _parse(payload, options, max_bytes, max_rows)
     return {
         "source_sha256": parsed.sha256,
@@ -216,6 +220,7 @@ def preview_csv(
             }
             for i, name in enumerate(parsed.names)
         ],
+        "sample_rows": [{"line": line, "cells": list(cells)} for line, cells in parsed.rows[:5]],
         "warnings": parsed.warnings,
     }
 

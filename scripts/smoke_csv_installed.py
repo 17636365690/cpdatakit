@@ -87,6 +87,23 @@ def browser_workflow(base: str, root: Path, rows: int, evidence: dict) -> None:
                 assert response.status == expected_status, response.text()
                 return response.json()
 
+            def edit(index: int, **values: str):
+                """Open the single-row editor and fill its controls in declaration order."""
+                page.locator(f'#csv-columns tr[data-index="{index}"] [data-edit-column]').click()
+                editor = page.locator(f'#csv-columns tr[data-editor-for="{index}"]')
+                for key, value in values.items():
+                    control = editor.locator(f'[data-edit="{key}"]')
+                    if key in ("dtype", "role"):
+                        control.select_option(value)
+                    else:
+                        control.fill(value)
+                return editor
+
+            def apply(editor) -> None:
+                editor.get_by_role("button", name="应用", exact=True).click()
+                expect(editor).to_have_count(0)
+
+            page.get_by_role("button", name="解析设置", exact=True).click()
             page.locator("#csv-delimiter").select_option(";")
             preview(root / "malformed.csv", 400)
             expect(page.locator("#csv-status")).to_contain_text("CSV row 2")
@@ -103,25 +120,26 @@ def browser_workflow(base: str, root: Path, rows: int, evidence: dict) -> None:
             expect(page.locator("#csv-columns tbody tr")).to_have_count(6)
 
             force = page.locator('#csv-columns tr[data-index="2"]')
-            force.locator('[data-key="dtype"]').select_option("string")
-            expect(force.locator('[data-key="input_unit"]')).to_be_disabled()
-            expect(force.locator('[data-key="input_unit"]')).to_have_value("")
-            force.locator('[data-key="dtype"]').select_option("float")
+            expect(page.locator("#csv-columns tbody input:not([type=checkbox])")).to_have_count(0)
+            editor = edit(2, dtype="string")
+            expect(editor.locator('[data-edit="input_unit"]')).to_be_disabled()
+            expect(editor.locator('[data-edit="input_unit"]')).to_have_value("")
+            editor.get_by_role("button", name="取消", exact=True).click()
+            expect(force.locator('[data-field="unit"]')).to_have_text("N")
             settings = json.loads(
                 (Path(__file__).parents[1] / "examples/csv-intake/settings.json").read_text(
                     encoding="utf-8"
                 )
             )
             declarations = settings["columns"]
+            keys = ["target", "dtype", "input_unit", "output_unit", "role"]
             for column in declarations:
                 row = page.locator(f'#csv-columns tr[data-index="{column["index"]}"]')
                 if not column["include"]:
                     row.locator('[data-key="include"]').uncheck()
                     continue
-                for key in ["dtype", "role"]:
-                    row.locator(f'[data-key="{key}"]').select_option(column[key])
-                for key in ["target", "input_unit", "output_unit"]:
-                    row.locator(f'[data-key="{key}"]').fill(column[key])
+                apply(edit(column["index"], **{key: column[key] for key in keys}))
+            expect(force.locator('[data-field="unit"]')).to_have_text("N → kN")
             description = settings["confirmed_source_definition"]
             if evidence["source_archive_sha256"]:
                 description = (
@@ -130,14 +148,17 @@ def browser_workflow(base: str, root: Path, rows: int, evidence: dict) -> None:
                     "Engineering/true stress-strain definitions are not inferred."
                 )
             page.locator("#csv-conventions").fill(description)
-            force.locator('[data-key="input_unit"]').fill("unconfirmed_unit_xyz")
+            apply(edit(2, input_unit="unconfirmed_unit_xyz"))
             page.locator("#csv-confirmed").check()
             with page.expect_response(lambda r: r.url.endswith("/csv-import")) as rejected:
                 page.locator("#csv-import-button").click()
             assert rejected.value.status == 400, rejected.value.text()
-            expect(page.locator("#csv-status")).to_contain_text("请核对文件解析设置")
+            expect(page.locator("#csv-problems")).to_contain_text("请核对文件解析设置")
+            expect(force).to_have_attribute("data-problem", "invalid")
+            expect(page.locator("#csv-import-button")).to_be_disabled()
             assert resources()["datasets"] == []
-            force.locator('[data-key="input_unit"]').fill("N")
+            apply(edit(2, input_unit="N"))
+            expect(page.locator("#csv-confirmed")).not_to_be_checked()
             page.locator("#csv-confirmed").check()
             page.locator("#csv-intake").screenshot(path=str(root / "csv-confirmation.png"))
             with page.expect_response(lambda r: r.url.endswith("/csv-import")) as imported:
@@ -145,7 +166,7 @@ def browser_workflow(base: str, root: Path, rows: int, evidence: dict) -> None:
             assert imported.value.status == 201, imported.value.text()
             result = imported.value.json()
             selector = result["schema_selector"]
-            expect(page.locator("#csv-status")).to_contain_text("当前数据与规则已选中")
+            expect(page.locator("#csv-status")).to_contain_text("已选中这份数据与规则")
             expect(page.locator("#schema")).to_have_value(selector)
             for label, filename in [
                 ("下载原文件", "downloaded-source.csv"),
@@ -202,11 +223,13 @@ def browser_workflow(base: str, root: Path, rows: int, evidence: dict) -> None:
             page.screenshot(path=str(root / "reused-result.png"), full_page=True)
 
             # Exercise the ordinary-upload selection boundary identified in review.
+            page.locator("#advanced > summary").click()
             page.locator("#schema-authoring > summary").click()
             page.get_by_role("button", name="从数据生成规则草案", exact=True).click()
             expect(page.locator("#draft-editor")).to_be_visible()
-            page.get_by_text("转换时使用的字段映射", exact=True).click()
+            page.locator("#mapping-tool > summary").click()
             page.locator("#mapping-json").fill('{"mappings":[{"source":"force","target":"force"}]}')
+            page.get_by_role("button", name="上传文件", exact=True).click()
             page.locator("#data-file").set_input_files(root / "converted.h5")
             with page.expect_response(lambda r: r.url.endswith("/inspect")) as uploaded:
                 page.get_by_role("button", name="上传并检查", exact=True).click()

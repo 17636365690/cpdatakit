@@ -1,7 +1,9 @@
 # Roadmap
 
-The current release documented here is **v0.11.0**. Start with the
+The current release documented here is **v0.12.0**. Start with the
 [Chinese workbench guide](workbench-guide.md) or the [command-line quickstart](quickstart.md).
+v0.12.0 simplifies the workbench into one column with summary-first CSV field review and one-row
+editing; v0.11.0 added reuse of confirmed CSV import settings.
 v0.9.2 fixes validation/write consistency, records unit origins, extends explicit load limits,
 and improves catalog concurrency, atomic text output, and cancellation diagnostics.
 v0.9.1 fixes schema-upload error disclosure, permits pandas 3, updates the CodeQL action,
