@@ -15,6 +15,7 @@ const jobContexts = new Map();
 const terminal = status => ['succeeded', 'failed', 'cancelled'].includes(status);
 const statusLabels = {queued: '等待处理', running: '处理中', succeeded: '已完成', failed: '失败', cancelled: '已取消'};
 const operationLabels = {convert: '转换数据', convert_and_write: '转换数据', report: '生成报告', build_report: '生成报告', plot: '绘图', slice: '绘制切片', plot_scientific_slice: '绘制切片', compare: '比较报告'};
+const artifactLabels = {report: '报告', convert: '数据转换', plot: '图表', compare: '比较'};
 let pendingRefresh;
 let refreshEpoch = 0;
 let validationSnapshot;
@@ -54,12 +55,8 @@ function selectedContext() {
 
 function updateWorkflow() {
   const current = selectedContext();
-  const fileLabel = document.querySelector('#current-dataset');
-  const ruleLabel = document.querySelector('#current-schema');
-  if (fileLabel) fileLabel.textContent = current.filename || '尚未选择数据';
-  if (ruleLabel) ruleLabel.textContent = current.schemaLabel || '尚未选择数据规则';
   const status = document.querySelector('#workflow-status');
-  let message = '请选择数据并运行校验';
+  let message = '';
   if (validationSnapshot) {
     const previous = validationSnapshot.context;
     const matches = previous && previous.datasetId === current.datasetId && previous.schemaSelector === current.schemaSelector;
@@ -68,11 +65,13 @@ function updateWorkflow() {
       ? (validationSnapshot.valid ? (validationSnapshot.mapped ? '映射后的数据通过校验；转换完成后请使用该结果继续处理。' : `${subject}校验通过，可生成报告或转换文件。`) : `${subject}校验未通过，请检查下方错误。`)
       : '历史校验结果：当前数据或规则已切换，或该任务未记录选择；请对当前选择重新校验。';
     if (resultNotice) {
-      resultNotice.textContent = matches ? '此结果对应当前选择。' : '历史结果，仅对应下方记录的文件与规则。';
-      resultNotice.className = matches ? 'hint' : 'status-badge is-warning';
+      resultNotice.textContent = matches ? '' : '历史结果，仅对应下方记录的文件与规则。';
+      resultNotice.className = 'attention';
+      resultNotice.hidden = Boolean(matches);
     }
+    if (status) status.dataset.state = !matches ? 'history' : validationSnapshot.valid ? 'valid' : 'invalid';
   }
-  if (status) status.textContent = message;
+  if (status) { status.textContent = message; status.hidden = !message; }
 }
 
 function artifactActions(payload) {
@@ -89,7 +88,7 @@ function artifactActions(payload) {
 }
 
 function reuseButton(id) {
-  const button = element('button', '使用此结果继续处理', 'secondary');
+  const button = element('button', '使用此结果继续处理', 'link-button');
   button.type = 'button'; button.dataset.useArtifact = String(id); return button;
 }
 
@@ -153,9 +152,9 @@ function showResult(title, payload, context) {
   const actualSchema = report.schema?.profile || report.schema?.schema?.profile || context?.schemaLabel;
   validationSnapshot = validation ? {context, valid: validation.valid, mapped: payload.operation === 'preview_mapping' || payload.operation === 'convert_and_write'} : null;
   resultNotice = null;
-  if (actualFile) content.append(element('p', `本次文件：${actualFile}`));
-  if (actualSchema) content.append(element('p', `本次规则：${actualSchema}`));
-  else if (validation) content.append(element('p', '本次结果未记录规则名称，请查看详细记录。', 'hint'));
+  const subject = [actualFile && `文件 ${actualFile}`, actualSchema && `规则 ${actualSchema}`].filter(Boolean).join(' · ');
+  if (subject) content.append(element('p', subject, 'note'));
+  if (validation && !actualSchema) content.append(element('p', '本次结果未记录规则名称，请查看详细记录。', 'attention'));
   if (payload.error) {
     content.append(element('p', typeof payload.error === 'string' ? payload.error : payload.error.message, 'error'));
     if (payload.error.action) content.append(element('p', payload.error.action));
@@ -164,22 +163,21 @@ function showResult(title, payload, context) {
   if (validation) {
     const errors = validation.errors || [], warnings = validation.warnings || [];
     content.append(element('p', validation.valid ? '校验通过' : '校验未通过',
-                           `status-badge ${validation.valid ? (warnings.length ? 'is-warning' : 'is-success') : 'is-error'}`));
-    resultNotice = element('p'); content.append(resultNotice);
-    const metrics = element('div', undefined, 'summary-grid');
+                           `verdict ${validation.valid ? (warnings.length ? 'is-warning' : 'is-success') : 'is-error'}`));
+    resultNotice = element('p'); resultNotice.hidden = true; content.append(resultNotice);
+    const metrics = element('p', undefined, 'summary-grid');
     const recordCount = summary.record_count ?? report.record_count;
     const fieldCount = summary.field_count ?? (summary.fields ? Object.keys(summary.fields).length : undefined);
     for (const [label, count] of [['记录', recordCount], ['字段', fieldCount], ['错误', errors.length], ['警告', warnings.length]]) {
-      if (count !== undefined) metrics.append(element('p', `${label} ${count}`, 'metric'));
+      if (count !== undefined) metrics.append(element('span', `${label} ${count}`, 'metric'));
     }
     content.append(metrics);
     for (const [label, issues] of [['错误', errors], ['警告', warnings]]) for (const issue of issues) {
       const affected = issue.affected_records !== undefined ? `；涉及数量 ${issue.affected_records}` : '';
-      content.append(element('p', `${label} · ${issue.field || '整个数据集'}：${issue.message}${affected}`));
-      if (issue.suggestion) content.append(element('p', `处理建议：${issue.suggestion}`, 'hint'));
+      content.append(element('p', `${label} · ${issue.field || '整个数据集'}：${issue.message}${affected}`, label === '错误' ? 'issue-error' : 'issue-warning'));
+      if (issue.suggestion) content.append(element('p', `处理建议：${issue.suggestion}`, 'note'));
     }
-    content.append(element('p', '校验逐项检查规则中声明的字段、维度、单位和数据质量要求。', 'hint'));
-    if (payload.operation === 'preview_mapping') content.append(element('p', '此处校验的是映射后的预览值，尚未写出或保存转换文件。', 'hint'));
+    if (payload.operation === 'preview_mapping') content.append(element('p', '此处校验的是映射后的预览值，尚未写出或保存转换文件。', 'note'));
   }
   if (value.file?.format) content.append(element('p', `数据格式：${value.file.format}`));
   const dimensions = summary.dimensions || report.dimensions;
@@ -205,8 +203,10 @@ function uniqueRecords(items) {
 
 function updatePaging(kind) {
   const total = resourceState.pagination.counts[kind];
-  document.querySelector(`[data-resource-count="${kind}"]`).textContent =
-    `已显示 ${resourceState[kind].length} 项，共 ${total} 项${{datasets: '数据', artifacts: '结果', schemas: '规则', jobs: '任务'}[kind]}`;
+  const count = document.querySelector(`[data-resource-count="${kind}"]`);
+  // Paging text only matters while older records remain unloaded.
+  count.textContent = `已显示 ${resourceState[kind].length} 项，共 ${total} 项${{datasets: '数据', artifacts: '结果', schemas: '规则', jobs: '任务'}[kind]}`;
+  count.hidden = offsets[kind] >= total;
   document.querySelector(`[data-load-more="${kind}"]`).hidden = offsets[kind] >= total;
 }
 
@@ -219,9 +219,14 @@ function renderDatasets(current) {
     option.value = String(item.id);
     dataset.append(option);
   }
+  if (!resourceState.datasets.length) {
+    const placeholder = element('option', '尚未添加数据'); placeholder.value = ''; dataset.append(placeholder);
+  }
   if (resourceState.datasets.some(item => String(item.id) === current)) dataset.value = current;
   dataset.disabled = !resourceState.datasets.length;
   document.querySelectorAll('[data-needs-dataset]').forEach(button => { button.disabled = dataset.disabled; });
+  const checks = document.querySelector('#check');
+  if (checks) checks.hidden = dataset.disabled;
   document.dispatchEvent(new Event('datasets-refreshed'));
   updateWorkflow();
 }
@@ -247,28 +252,28 @@ function renderArtifacts() {
     link.target = '_blank'; link.rel = 'noopener';
     const download = element('a', '下载');
     download.href = `${link.href}?download=true`;
-    row.append(link, element('span', operationLabels[item.kind] || item.kind, 'hint'), download);
+    row.append(link, element('span', artifactLabels[item.kind] || item.kind, 'note'), download);
     if (item.kind === 'convert') row.append(reuseButton(item.id));
     artifacts.append(row);
   }
-  if (!resourceState.artifacts.length) artifacts.append(element('p', '完成转换或生成报告后，可在这里查看和下载结果。', 'hint'));
+  if (!resourceState.artifacts.length) artifacts.append(element('p', '暂无结果。', 'empty-state'));
 }
 
 function renderJob(job, row) {
   row.dataset.jobStatus = job.status;
   row.className = 'job-row';
   const label = operationLabels[job.operation] || job.operation || '任务';
-  const state = element('span', statusLabels[job.status] || job.status, `status-badge ${job.status === 'succeeded' ? 'is-success' : job.status === 'failed' ? 'is-error' : 'is-warning'}`);
+  const state = element('span', statusLabels[job.status] || job.status, `job-status ${job.status === 'succeeded' ? 'is-success' : job.status === 'failed' ? 'is-error' : 'is-warning'}`);
   row.replaceChildren(element('span', label), state);
   if (job.output_filename || job.input_filename) row.append(element('span', job.output_filename || job.input_filename));
   const step = job.operation_log?.at(-1);
-  if (step && !terminal(job.status) && !['running', 'queued', job.operation].includes(step)) row.append(element('span', `进度：${step}`, 'hint'));
+  if (step && !terminal(job.status) && !['running', 'queued', job.operation].includes(step)) row.append(element('span', `进度：${step}`, 'note'));
   if (job.persistence?.state === 'pending') {
-    const pending = element('span', '结果等待保存，请保留此任务记录。', 'hint');
+    const pending = element('span', '结果等待保存，请保留此任务记录。', 'attention');
     pending.dataset.persistence = 'pending'; row.append(pending);
   }
   const detailsOnly = terminal(job.status) || job.active === false;
-  const button = element('button', detailsOnly ? '查看详情' : '取消任务', 'secondary');
+  const button = element('button', detailsOnly ? '查看详情' : '取消任务', 'link-button');
   button.type = 'button';
   button.addEventListener('click', async () => {
     button.disabled = true;
@@ -297,8 +302,15 @@ function renderJobs() {
   // An older running job stays visible until its current operation finishes.
   for (const [id, row] of previous) if (watching.has(id)) rows.push(row);
   jobs.replaceChildren(...rows);
-  if (!rows.length) jobs.append(element('p', '尚无任务。转换、报告和绘图任务会显示在这里。', 'hint'));
+  if (!rows.length) jobs.append(element('p', '暂无任务。', 'empty-state'));
+  // History stays folded; progress and results awaiting persistence are never hidden.
+  if (visible.some(job => (!terminal(job.status) && job.active !== false) || job.persistence?.state === 'pending')) openJobs();
   for (const job of visible) if (!terminal(job.status) && job.active !== false) void followJob(job.id);
+}
+
+function openJobs() {
+  const panel = document.querySelector('#jobs-panel');
+  if (panel) panel.open = true;
 }
 
 function applyPage(project, kind, append = false, selectedDataset) {
@@ -354,6 +366,7 @@ async function followJob(id) {
   id = String(id);
   if (watching.has(id)) return;
   watching.add(id);
+  openJobs();
   const jobs = document.querySelector('#jobs');
   document.querySelector('#no-jobs')?.remove();
   let row = jobs.querySelector(`[data-job-id="${CSS.escape(id)}"]`);
@@ -401,7 +414,7 @@ document.querySelectorAll('form[data-operation]').forEach(form => {
     const operation = form.dataset.operation; const data = new FormData(form);
     const context = selectedContext();
     const feedback = document.querySelector(`#output-feedback-${operation}`);
-    if (feedback) { feedback.textContent = ''; feedback.className = 'hint'; }
+    if (feedback) { feedback.textContent = ''; feedback.className = 'feedback'; }
     data.set('schema', schema.value); data.set('dataset_id', dataset.value);
     if (operation === 'convert') data.set('mapping_json', document.querySelector('#mapping-json').value);
     if (operation === 'zarr') {
@@ -418,8 +431,8 @@ document.querySelectorAll('form[data-operation]').forEach(form => {
         showResult('已添加数据规则', result);
       } else if (result.job_id) {
         jobContexts.set(String(result.job_id), context);
-        if (feedback) feedback.textContent = `输出路径：${data.get('output')}。任务完成后可查看或下载结果。`;
-        showResult('任务已排队', {message: '可在下方任务列表查看进度。'}, context); void followJob(result.job_id);
+        if (feedback) feedback.textContent = `已提交：${data.get('output')}`;
+        showResult('任务已排队', {message: '进度见任务记录，完成后结果出现在结果列表。'}, context); void followJob(result.job_id);
       } else {
         if (result.dataset_id) await refreshResources(result.dataset_id);
         showResult(operation === 'validate' ? '校验结果' : '上传完成', result, operation === 'validate' ? context : undefined);
@@ -428,8 +441,8 @@ document.querySelectorAll('form[data-operation]').forEach(form => {
       const conflict = error.status === 409 && ['overwrite_confirmation', 'output_exists'].includes(error.payload?.error?.code);
       if (conflict && ['convert', 'report'].includes(operation)) {
         const path = data.get('output');
-        const message = `输出路径已存在：${path}。请更名，或明确勾选“我确认替换”以覆盖同名文件后重新提交。`;
-        if (feedback) { feedback.textContent = message; feedback.className = 'error'; }
+        const message = `输出路径已存在：${path}。请更名，或勾选“替换同名文件”明确确认覆盖后重新提交。`;
+        if (feedback) { feedback.textContent = message; feedback.className = 'feedback error'; }
         document.querySelector(`#${operation}-output`)?.focus();
         showResult('输出文件重名', {error: {message}, details: error.payload}, context);
       } else showResult('操作失败', error.payload || {error: {message: error.message}}, context);
@@ -483,6 +496,18 @@ document.addEventListener('click', async event => {
   finally { button.disabled = false; }
 });
 schema?.addEventListener('change', () => { selectionVersion++; updateWorkflow(); });
+// Ways of adding data share one place; only the chosen one is expanded.
+const addPanels = [...document.querySelectorAll('[data-add-panel]')];
+for (const button of addPanels) {
+  button.addEventListener('click', () => {
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    for (const other of addPanels) {
+      const expanded = other === button && open;
+      other.setAttribute('aria-expanded', String(expanded));
+      document.querySelector(`#${other.dataset.addPanel}`).hidden = !expanded;
+    }
+  });
+}
 updateWorkflow();
 setupFields({request, showResult, followJob});
 setupAuthoring({request, showResult, selectedContext});

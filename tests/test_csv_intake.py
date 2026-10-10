@@ -73,6 +73,19 @@ def test_preview_samples_are_bounded(intake):
     result = intake.preview_csv(b"x\n0\n1\n2\n3\n4\n5\n")
     assert result["record_count"] == 6
     assert result["columns"][0]["samples"] == ["0", "1", "2", "3", "4"]
+    assert [row["line"] for row in result["sample_rows"]] == [2, 3, 4, 5, 6]
+
+
+def test_preview_sample_rows_are_aligned_records_with_physical_line_numbers(intake):
+    """The raw preview may only show records whose row alignment the parser guarantees."""
+    raw = "﻿Instrument export\nTime;Force;Note\n(sec);(kN);\n\n0;1,25; start \n1;2.5;\n"
+    result = intake.preview_csv(raw.encode(), {"delimiter": ";", "header_row": 2, "unit_row": 3})
+    assert result["sample_rows"] == [
+        {"line": 5, "cells": ["0", "1,25", " start "]},
+        {"line": 6, "cells": ["1", "2.5", ""]},
+    ]
+    for column in result["columns"]:
+        assert column["samples"] == [row["cells"][column["index"]] for row in result["sample_rows"]]
 
 
 def test_no_header_and_gb18030_decimal_comma(intake):

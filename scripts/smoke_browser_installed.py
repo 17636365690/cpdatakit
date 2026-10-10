@@ -122,11 +122,15 @@ def browser_workflow(base: str, root: Path, evidence: dict) -> None:
             page.wait_for_url("**/projects/*")
             # Hidden pagination must remain hidden after author CSS is applied.
             expect(page.locator('[data-load-more="datasets"]')).to_be_hidden()
-            page.get_by_text("添加自定义规则", exact=True).click()
+            # Without data, checks are not offered yet; custom rules sit under advanced tools.
+            expect(page.locator("#check")).to_be_hidden()
+            page.get_by_text("高级工具", exact=True).click()
+            page.get_by_text("自定义规则", exact=True).click()
             page.get_by_label("规则 JSON 文件", exact=True).set_input_files(root / "schema.json")
             page.get_by_role("button", name="添加数据规则", exact=True).click()
             expect(page.locator("#result-title")).to_have_text("已添加数据规则")
             expect(page.locator("#schema")).to_have_value(re.compile(r"schema:\d+"))
+            page.get_by_role("button", name="上传文件", exact=True).click()
             page.get_by_label("上传数据文件", exact=True).set_input_files(root / "curve.csv")
             page.get_by_role("button", name="上传并检查", exact=True).click()
             expect(page.locator("#result-title")).to_have_text("上传完成")

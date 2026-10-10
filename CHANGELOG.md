@@ -4,6 +4,25 @@ All notable changes follow Keep a Changelog; versions follow Semantic Versioning
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-10
+
+### Changed
+- Simplify the local workbench into one column with one sans-serif family, three type sizes and
+  two weights. Remove the step sidebar, outer cards, duplicated context bar, status badges and
+  explanatory banners; project switching and output recovery stay in the top bar.
+- Show CSV field declarations as text summaries. Editing expands one row at a time; Escape or
+  Cancel keeps prior values, and applied values update the summary immediately.
+- Open parsing options, settings reuse, the raw preview, job history and advanced tools on demand.
+  Running jobs and results awaiting persistence still open the job list automatically.
+- Block CSV import while a row is being edited, a required declaration or the source description is
+  missing, no column is kept, or a column-located server error is unresolved. Changing a field,
+  kept column or source description clears the previous confirmation.
+
+### Added
+- Return `sample_rows` from CSV preview: up to five aligned records with one-based physical line
+  numbers and unconverted cell text. The raw preview uses only these records; reusable settings
+  do not include them.
+
 ## [0.11.0] - 2026-10-07
 
 ### Added

@@ -75,6 +75,7 @@ def test_download_settings_contains_reusable_contract_without_source_facts(clien
     assert "source_sha256" not in response.text
     assert "specimen.csv" not in response.text
     assert "samples" not in response.text
+    assert "sample_rows" not in response.text
 
 
 def test_same_structure_reuses_declarations_but_binds_new_bytes_and_facts(client):

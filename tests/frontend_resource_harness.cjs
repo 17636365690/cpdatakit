@@ -12,11 +12,23 @@ class Node {
   }
   append(...nodes) { for (const node of nodes) { node.parent = this; this.children.push(node); } }
   prepend(node) { node.parent = this; this.children.unshift(node); }
+  after(node) {
+    node.remove(); node.parent = this.parent;
+    this.parent.children.splice(this.parent.children.indexOf(this) + 1, 0, node);
+  }
   replaceChildren(...nodes) { this.children = []; this.append(...nodes); }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(node => node !== this); }
+  contains(node) { return node === this || this.children.some(child => child.contains(node)); }
   addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
-  setAttribute(name, value) { (this.attributes ||= {})[name] = value; }
-  get classList() { return {toggle() {}}; }
+  setAttribute(name, value) { (this.attributes ||= {})[name] = String(value); }
+  getAttribute(name) { return this.attributes?.[name] ?? null; }
+  removeAttribute(name) { if (this.attributes) delete this.attributes[name]; }
+  get classList() {
+    const classes = this.classes ||= new Set();
+    return {add: (...names) => names.forEach(name => classes.add(name)), remove: (...names) => names.forEach(name => classes.delete(name)),
+      contains: name => classes.has(name),
+      toggle: (name, force = !classes.has(name)) => { if (force) classes.add(name); else classes.delete(name); return force; }};
+  }
   async dispatchEvent(event) { await Promise.all((this.listeners[event.type] || []).map(fn => fn({preventDefault() {}, ...event, currentTarget: this, target: this}))); }
   async click() { await this.dispatchEvent({type: 'click'}); }
   focus() { this.focused = true; }
@@ -53,9 +65,9 @@ function page(overrides = {}, offset = 0, counts = {}) {
 
 function environment(initial, responder, {authoring = false, csvIntake = false} = {}) {
   const nodes = new Map();
-  for (const id of ['dataset', 'schema', 'artifacts', 'jobs', 'operation-result', 'result-title', 'result-content',
+  for (const id of ['dataset', 'schema', 'artifacts', 'jobs', 'jobs-panel', 'check', 'operation-result', 'result-title', 'result-content',
                     'project-resources', 'slice-image', 'slice-caption', 'slice-download', 'slice-preview',
-                    'current-dataset', 'current-schema', 'workflow-status', 'output-feedback-convert',
+                    'workflow-status', 'output-feedback-convert',
                     'output-feedback-report', 'convert-output', 'report-output', 'mapping-json']) {
     nodes.set('#' + id, new Node(['dataset', 'schema'].includes(id) ? 'select' : 'div'));
   }
@@ -71,7 +83,10 @@ function environment(initial, responder, {authoring = false, csvIntake = false} 
                      'csv-delimiter', 'csv-header-row', 'csv-unit-row', 'csv-decimal',
                      'csv-encoding', 'csv-preview-button', 'csv-counts', 'csv-conventions',
                      'csv-settings-file', 'csv-settings-clear', 'csv-settings-status',
-                     'csv-settings-review', 'csv-saved-controls']) {
+                     'csv-settings-review', 'csv-saved-controls', 'csv-import-button', 'csv-problems',
+                     'csv-confirm-note', 'csv-options-toggle', 'csv-options', 'csv-options-summary',
+                     'csv-raw-toggle', 'csv-raw', 'csv-source-toggle', 'csv-source-state',
+                     'csv-source-editor', 'csv-keep-count']) {
       nodes.set('#' + id, new Node());
     }
     nodes.get('#csv-file').files = [{name: 'malformed.csv'}];
@@ -167,7 +182,336 @@ function environment(initial, responder, {authoring = false, csvIntake = false} 
 
 const visibleText = node => [node.textContent, ...node.children.filter(child => child.tagName !== 'details').map(visibleText)].join(' ');
 
+// The three-row synthetic instrument export from examples/csv-intake, as returned by csv-preview.
+const instrumentColumns = [
+  {index: 0, source_name: '(sec)', dtype: 'integer', suggested_unit: 'sec', samples: ['0', '1', '2']},
+  {index: 1, source_name: '(mm)', dtype: 'float', suggested_unit: 'mm', samples: ['0', '0.5', '1.25']},
+  {index: 2, source_name: '(N)', dtype: 'integer', suggested_unit: 'N', samples: ['100', '250', '375']},
+  {index: 3, source_name: '', dtype: 'integer', suggested_unit: null, samples: ['0', '0', '0']},
+  {index: 4, source_name: '(MPa)', dtype: 'integer', suggested_unit: 'MPa', samples: ['20', '40', '60']},
+  {index: 5, source_name: '(mm/mm)', dtype: 'float', suggested_unit: 'mm/mm', samples: ['0', '0.01', '0.02']},
+];
+const instrumentPreview = (overrides = {}) => ({
+  source_sha256: 'a'.repeat(64), record_count: 3,
+  options: {delimiter: ';', header_row: 1, unit_row: 0, decimal: '.', encoding: 'utf-8-sig'},
+  columns: instrumentColumns.map(column => ({...column, samples: [...column.samples]})),
+  sample_rows: [2, 3, 4].map((line, row) => ({line, cells: instrumentColumns.map(column => column.samples[row])})),
+  warnings: ['Units from headers are suggestions and require explicit confirmation.'], ...overrides,
+});
+const importedCsv = {dataset_id: 7, schema_selector: 'schema:3', filename: 'instrument.csv · 已确认数据',
+  schema_name: 'imported-csv', operation: 'csv_import'};
+const validInstrument = {
+  0: {target: 'time', dtype: 'float', input_unit: 's', output_unit: 's', role: 'time'},
+  1: {target: 'extension', role: 'measured_quantity'},
+  2: {target: 'force', dtype: 'float', output_unit: 'kN', role: 'measured_quantity'},
+  4: {target: 'reported_stress', dtype: 'float', role: 'measured_quantity'},
+  5: {target: 'reported_strain', output_unit: 'dimensionless', role: 'measured_quantity'},
+};
+const csvEnv = responder => environment(page(), (url, options) => url.includes('?limit=') ? page() : responder(url, options), {csvIntake: true});
+const csvBody = env => env.nodes.get('#csv-columns tbody');
+const csvRow = (env, index) => csvBody(env).children.find(row => row.dataset.index === String(index));
+const csvEditor = env => csvBody(env).children.find(row => row.dataset.editorFor !== undefined);
+async function previewCsv(env) { await env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'}); }
+async function setControl(control, value) {
+  control.value = value; await control.dispatchEvent({type: control.tagName === 'select' ? 'change' : 'input'});
+}
+async function setKept(env, index, checked) {
+  const keep = csvRow(env, index).querySelector('[data-key="include"]');
+  keep.checked = checked; await keep.dispatchEvent({type: 'change'});
+}
+async function openCsvEditor(env, index) { await csvRow(env, index).querySelector('[data-edit-column]').click(); return csvEditor(env); }
+async function editCsvRow(env, index, values, action = 'apply') {
+  const editor = await openCsvEditor(env, index);
+  for (const [key, value] of Object.entries(values)) await setControl(editor.querySelector(`[data-edit="${key}"]`), value);
+  if (action) await editor.querySelector(`[data-editor-${action}]`).click();
+  return editor;
+}
+async function completeInstrument(env) {
+  await setKept(env, 3, false);
+  for (const [index, values] of Object.entries(validInstrument)) await editCsvRow(env, Number(index), values);
+  const conventions = env.nodes.get('#csv-conventions');
+  conventions.value = 'Synthetic example; units from the header row.';
+  await conventions.dispatchEvent({type: 'input'});
+}
+async function confirmCsv(env) {
+  const confirmed = env.nodes.get('#csv-confirmed');
+  confirmed.checked = true; await confirmed.dispatchEvent({type: 'change'});
+}
+const cellText = (env, index, field) => visibleText(csvRow(env, index).querySelector(`[data-field="${field}"]`));
+
+async function checkCsvReview(name) {
+  if (name === 'csv-edit-summary') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : page());
+    await previewCsv(env);
+    const tbody = csvBody(env);
+    assert.equal(env.nodes.get('#csv-confirm-form').hidden, false);
+    assert.equal(tbody.rows.length, 6);
+    assert.deepEqual(tbody.querySelectorAll('input').map(input => input.type), Array(6).fill('checkbox'),
+      'Summary rows must not expose every declaration control at once');
+    assert.equal(tbody.querySelectorAll('select').length, 0);
+    assert.match(cellText(env, 2, 'source'), /03.*\(N\)/);
+    assert.match(cellText(env, 3, 'source'), /04.*无列名/);
+    assert.match(cellText(env, 2, 'target'), /column_3/);
+    assert.match(cellText(env, 2, 'unit'), /N/);
+    assert.match(cellText(env, 2, 'kind'), /整数.*未选用途/);
+    assert.equal(csvRow(env, 2).dataset.problem, 'pending', 'Missing declarations are visible pending items');
+    let editor = await openCsvEditor(env, 2);
+    assert.equal(tbody.children.indexOf(editor), tbody.children.indexOf(csvRow(env, 2)) + 1,
+      'Only the current field expands, directly below its summary');
+    assert.equal(tbody.querySelectorAll('select').length, 2);
+    assert.equal(editor.querySelector('[data-edit="target"]').value, 'column_3');
+    assert.equal(editor.querySelector('[data-edit="input_unit"]').value, 'N');
+    assert.equal(editor.querySelector('[data-edit="role"]').value, '');
+    assert.equal(editor.querySelector('[data-edit="target"]').focused, true, 'The editor receives keyboard focus');
+    assert.match(visibleText(editor), /100 \/ 250 \/ 375/, 'The editor shows this column\'s own raw samples');
+    for (const index of [0, 1, 3, 4, 5]) {
+      assert.equal(csvRow(env, index).querySelector('[data-edit-column]').disabled, true);
+      assert.equal(csvRow(env, index).querySelector('[data-key="include"]').disabled, true);
+    }
+    assert.equal(env.nodes.get('#csv-confirmed').disabled, true);
+    assert.equal(env.nodes.get('#csv-import-button').disabled, true, 'An open editor blocks import');
+    await setControl(editor.querySelector('[data-edit="target"]'), 'discarded');
+    await editor.querySelector('[data-editor-cancel]').click();
+    assert.equal(csvEditor(env), undefined);
+    assert.match(cellText(env, 2, 'target'), /column_3/, 'Cancel keeps the original value');
+    assert.doesNotMatch(visibleText(csvRow(env, 2)), /discarded/);
+    assert.equal(csvRow(env, 2).querySelector('[data-edit-column]').focused, true, 'Focus returns to the row action');
+    editor = await openCsvEditor(env, 2);
+    assert.equal(editor.querySelector('[data-edit="target"]').value, 'column_3');
+    await setControl(editor.querySelector('[data-edit="target"]'), 'escaped');
+    await editor.querySelector('[data-edit="target"]').dispatchEvent({type: 'keydown', key: 'Escape'});
+    assert.equal(csvEditor(env), undefined, 'Escape cancels the editor');
+    assert.match(cellText(env, 2, 'target'), /column_3/);
+    await editCsvRow(env, 2, {target: 'force', dtype: 'float', output_unit: 'kN', role: 'measured_quantity'});
+    assert.match(cellText(env, 2, 'target'), /force/, 'Applied values update the summary immediately');
+    assert.match(cellText(env, 2, 'unit'), /N\s*→\s*kN/);
+    assert.match(cellText(env, 2, 'kind'), /小数.*测量值/);
+    assert.equal(csvRow(env, 2).dataset.problem, '');
+    assert.equal(csvRow(env, 2).querySelector('[data-edit-column]').focused, true);
+    editor = await editCsvRow(env, 5, {output_unit: 'dimensionless', role: 'measured_quantity'}, null);
+    await editor.querySelector('[data-edit="role"]').dispatchEvent({type: 'keydown', key: 'Enter'});
+    assert.equal(csvEditor(env), undefined, 'Enter applies the current field');
+    assert.match(cellText(env, 5, 'unit'), /mm\/mm\s*→\s*无量纲/);
+  } else if (name === 'csv-reconfirm') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : url.endsWith('/csv-import') ? importedCsv : page());
+    await previewCsv(env);
+    await completeInstrument(env);
+    const confirmed = env.nodes.get('#csv-confirmed'), button = env.nodes.get('#csv-import-button');
+    const conventions = env.nodes.get('#csv-conventions'), note = env.nodes.get('#csv-confirm-note');
+    assert.equal(button.disabled, true, 'An unconfirmed review cannot be submitted');
+    await confirmCsv(env);
+    assert.equal(button.disabled, false);
+    const editor = await openCsvEditor(env, 0);
+    assert.equal(button.disabled, true);
+    await editor.querySelector('[data-editor-cancel]').click();
+    assert.equal(confirmed.checked, true, 'Cancelling without changes keeps the confirmation');
+    assert.equal(button.disabled, false);
+    await editCsvRow(env, 0, {target: 'time'});
+    assert.equal(confirmed.checked, true, 'Applying identical values keeps the confirmation');
+    await editCsvRow(env, 0, {target: 'elapsed'});
+    assert.equal(confirmed.checked, false, 'A changed field invalidates the old confirmation');
+    assert.equal(button.disabled, true);
+    assert.equal(note.hidden, false);
+    assert.match(visibleText(note), /重新核对/);
+    await confirmCsv(env);
+    assert.equal(note.hidden, true);
+    await setKept(env, 3, true);
+    assert.equal(confirmed.checked, false, 'Changing kept columns invalidates the confirmation');
+    assert.equal(csvRow(env, 3).dataset.problem, 'pending', 'A newly kept column needs its own declaration');
+    await confirmCsv(env);
+    assert.equal(button.disabled, true, 'Pending declarations still block import');
+    await setKept(env, 3, false);
+    await confirmCsv(env);
+    conventions.value += ' Revised.'; await conventions.dispatchEvent({type: 'input'});
+    assert.equal(confirmed.checked, false, 'Editing the source description invalidates the confirmation');
+    await confirmCsv(env);
+    assert.equal(button.disabled, false);
+    await env.nodes.get('#csv-confirm-form').dispatchEvent({type: 'submit'});
+    const request = env.posted.at(-1);
+    const sent = JSON.parse(request.get('columns_json'));
+    assert.deepEqual(sent.map(item => item.include), [true, true, true, false, true, true]);
+    assert.deepEqual(sent[0], {index: 0, include: true, target: 'elapsed', dtype: 'float', input_unit: 's', output_unit: 's', role: 'time'});
+    assert.deepEqual(sent[2], {index: 2, include: true, target: 'force', dtype: 'float', input_unit: 'N', output_unit: 'kN', role: 'measured_quantity'});
+    assert.equal(sent[5].output_unit, 'dimensionless');
+    assert.equal(request.get('confirmed'), 'true');
+    assert.match(request.get('conventions'), /Revised/);
+    assert.equal(request.get('source_sha256'), 'a'.repeat(64));
+    assert.equal(env.nodes.get('#csv-confirm-form').hidden, true, 'A completed import closes its review');
+    assert.equal(conventions.value, '', 'Source facts are never carried to the next file');
+    assert.ok(env.nodes.get('#csv-status').querySelectorAll('a').some(link => link.href.endsWith('/csv-imports/7/manifest')));
+  } else if (name === 'csv-blocking') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : page());
+    await previewCsv(env);
+    const button = env.nodes.get('#csv-import-button'), problems = env.nodes.get('#csv-problems');
+    const source = env.nodes.get('#csv-source-editor');
+    await confirmCsv(env);
+    assert.equal(button.disabled, true, 'Missing roles and source description block import');
+    assert.match(visibleText(problems), /用途/);
+    assert.match(visibleText(problems), /来源说明/);
+    assert.equal(source.hidden, false, 'A missing source description is shown');
+    await env.nodes.get('#csv-source-toggle').click();
+    assert.equal(source.hidden, false, 'A missing source description cannot be collapsed');
+    await env.nodes.get('#csv-confirm-form').dispatchEvent({type: 'submit'});
+    assert.ok(!env.calls.some(url => url.endsWith('/csv-import')), 'A blocked review must not be submitted');
+    for (const index of [0, 1, 2, 3, 4, 5]) await setKept(env, index, false);
+    assert.match(visibleText(problems), /至少保留一列/);
+    assert.match(visibleText(env.nodes.get('#csv-keep-count')), /保留 0 列/);
+    assert.doesNotMatch(visibleText(problems), /用途/, 'Excluded columns need no declaration');
+    for (const index of [0, 1, 2, 4, 5]) await setKept(env, index, true);
+    for (const [index, values] of Object.entries(validInstrument)) await editCsvRow(env, Number(index), values);
+    let editor = await editCsvRow(env, 1, {target: 'time'}, null);
+    const apply = editor.querySelector('[data-editor-apply]');
+    assert.equal(apply.disabled, true, 'A duplicate output field cannot be applied');
+    assert.match(visibleText(editor.querySelector('[data-editor-error]')), /重复/);
+    await apply.click();
+    assert.ok(csvEditor(env), 'An invalid draft keeps the editor open');
+    await setControl(editor.querySelector('[data-edit="target"]'), 'a/b');
+    assert.equal(apply.disabled, true);
+    assert.match(visibleText(editor.querySelector('[data-editor-error]')), /\//);
+    await setControl(editor.querySelector('[data-edit="target"]'), '  ');
+    assert.equal(apply.disabled, true, 'An empty output field cannot be applied');
+    await editor.querySelector('[data-editor-cancel]').click();
+    assert.match(cellText(env, 1, 'target'), /extension/);
+    await editCsvRow(env, 3, {target: 'time'});
+    assert.equal(csvRow(env, 3).dataset.problem, '', 'Excluded columns do not take part in duplicate checks');
+    await setKept(env, 3, true);
+    assert.equal(csvRow(env, 3).dataset.problem, 'invalid', 'Keeping a column can create a duplicate field');
+    assert.equal(csvRow(env, 0).dataset.problem, 'invalid');
+    assert.match(visibleText(problems), /重复/);
+    await setKept(env, 3, false);
+    await editCsvRow(env, 1, {input_unit: ''});
+    assert.equal(csvRow(env, 1).dataset.problem, 'pending');
+    assert.match(cellText(env, 1, 'unit'), /未填/);
+    assert.match(visibleText(problems), /单位/);
+    const conventions = env.nodes.get('#csv-conventions');
+    conventions.value = 'Synthetic example.'; await conventions.dispatchEvent({type: 'input'});
+    await confirmCsv(env);
+    assert.equal(button.disabled, true, 'A numeric field without units cannot be imported');
+    await editCsvRow(env, 1, {input_unit: 'mm'});
+    await confirmCsv(env);
+    assert.equal(button.disabled, false);
+  } else if (name === 'csv-type-switch') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : page());
+    await previewCsv(env);
+    let editor = await openCsvEditor(env, 3);
+    const control = key => editor.querySelector(`[data-edit="${key}"]`);
+    await setControl(control('dtype'), 'string');
+    assert.equal(control('input_unit').disabled, true, 'Text fields do not use units');
+    assert.equal(control('input_unit').value, '');
+    assert.equal(control('output_unit').disabled, true);
+    await setControl(control('role'), 'identifier');
+    await editor.querySelector('[data-editor-apply]').click();
+    assert.match(cellText(env, 3, 'unit'), /不适用/);
+    assert.match(cellText(env, 3, 'kind'), /文字.*标识/);
+    assert.equal(csvRow(env, 3).dataset.problem, '');
+    editor = await openCsvEditor(env, 3);
+    await setControl(control('dtype'), 'float');
+    assert.equal(control('input_unit').disabled, false);
+    assert.equal(control('input_unit').value, '', 'Units are not invented when switching back to numbers');
+    await editor.querySelector('[data-editor-apply]').click();
+    assert.equal(csvRow(env, 3).dataset.problem, 'pending', 'A numeric field needs explicit units');
+    assert.match(cellText(env, 3, 'unit'), /未填/);
+    editor = await openCsvEditor(env, 2);
+    await setControl(control('dtype'), 'boolean');
+    assert.equal(control('input_unit').value, '');
+    await editor.querySelector('[data-editor-apply]').click();
+    assert.match(cellText(env, 2, 'unit'), /不适用/);
+    assert.match(cellText(env, 2, 'kind'), /布尔/);
+  } else if (name === 'csv-server-error') {
+    let reject = true;
+    const env = csvEnv(url => {
+      if (url.endsWith('/csv-preview')) return instrumentPreview();
+      if (url.endsWith('/csv-import')) return reject ? {httpStatus: 400, payload: {error: {code: 'csv_review_required',
+        message: 'Column 3 has invalid/incompatible units', action: '请核对文件解析设置及表格中的字段、单位和用途。'}}} : importedCsv;
+      return page();
+    });
+    await previewCsv(env);
+    await completeInstrument(env);
+    await editCsvRow(env, 2, {output_unit: 'MPa'});
+    await confirmCsv(env);
+    await env.nodes.get('#csv-confirm-form').dispatchEvent({type: 'submit'});
+    const problems = env.nodes.get('#csv-problems'), button = env.nodes.get('#csv-import-button');
+    assert.equal(env.nodes.get('#csv-confirm-form').hidden, false, 'A rejected import keeps the review open');
+    assert.equal(csvRow(env, 2).dataset.problem, 'invalid', 'The column named by the server is marked');
+    assert.match(visibleText(problems), /第 3 列/);
+    assert.match(visibleText(problems), /Column 3 has invalid\/incompatible units/, 'The original diagnostic remains traceable');
+    assert.match(visibleText(problems), /请核对文件解析设置/);
+    assert.equal(button.disabled, true, 'An unresolved located error blocks resubmission');
+    assert.equal(env.run('resourceState.datasets.length'), 0);
+    reject = false;
+    await editCsvRow(env, 2, {output_unit: 'kN'});
+    assert.equal(csvRow(env, 2).dataset.problem, '');
+    assert.doesNotMatch(visibleText(problems), /第 3 列/);
+    assert.equal(env.nodes.get('#csv-confirmed').checked, false);
+    await confirmCsv(env);
+    await env.nodes.get('#csv-confirm-form').dispatchEvent({type: 'submit'});
+    assert.equal(env.nodes.get('#csv-confirm-form').hidden, true);
+  } else if (name === 'csv-preview-stale') {
+    const releases = [];
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? new Promise(resolve => releases.push(resolve)) : page());
+    const first = env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+    // Browsers deliver both input and change for one select change.
+    await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'input'});
+    await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'change'});
+    releases[0](instrumentPreview()); await first;
+    assert.equal(env.nodes.get('#csv-confirm-form').hidden, true, 'A response for old parse settings cannot open a review');
+    assert.equal(csvBody(env).children.length, 0);
+    assert.match(env.nodes.get('#csv-status').textContent, /重新预览/, 'Cancelling an in-flight preview is stated');
+    const older = env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+    const latest = env.nodes.get('#csv-preview-form').dispatchEvent({type: 'submit'});
+    releases[2](instrumentPreview({record_count: 1, columns: [{index: 0, source_name: 'latest', dtype: 'float', suggested_unit: null, samples: ['1']}],
+      sample_rows: [{line: 2, cells: ['1']}]}));
+    await latest;
+    releases[1](instrumentPreview()); await older;
+    assert.equal(csvBody(env).rows.length, 1, 'An older preview response cannot replace the latest one');
+    assert.match(cellText(env, 0, 'source'), /latest/);
+  } else if (name === 'csv-raw-preview') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : page());
+    await previewCsv(env);
+    const raw = env.nodes.get('#csv-raw'), toggle = env.nodes.get('#csv-raw-toggle');
+    assert.equal(raw.hidden, true, 'The raw preview opens on demand');
+    assert.equal(toggle.hidden, false);
+    await toggle.click();
+    assert.equal(raw.hidden, false);
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    const texts = raw.querySelectorAll('tr').map(row => row.children.map(cell => cell.textContent));
+    assert.deepEqual(texts.at(-3), ['2', '0', '0', '100', '0', '20', '0']);
+    assert.deepEqual(texts.at(-1), ['4', '2', '1.25', '375', '0', '60', '0.02']);
+    assert.ok(texts.some(row => row[0] === '1' && row.includes('(sec)')), 'The header line keeps its physical line number');
+    await toggle.click();
+    assert.equal(raw.hidden, true);
+    const legacy = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview({sample_rows: undefined}) : page());
+    await previewCsv(legacy);
+    assert.equal(legacy.nodes.get('#csv-raw-toggle').hidden, true, 'Column samples are never stitched into a raw table');
+    assert.equal(legacy.nodes.get('#csv-raw').querySelectorAll('tr').length, 0);
+  } else if (name === 'csv-source-collapse') {
+    const env = csvEnv(url => url.endsWith('/csv-preview') ? instrumentPreview() : page());
+    await previewCsv(env);
+    const editor = env.nodes.get('#csv-source-editor'), toggle = env.nodes.get('#csv-source-toggle');
+    const state = env.nodes.get('#csv-source-state'), text = env.nodes.get('#csv-conventions');
+    assert.equal(editor.hidden, false);
+    assert.match(visibleText(state), /必填/);
+    text.value = 'Synthetic instrument export; units from the header row.'; await text.dispatchEvent({type: 'input'});
+    await toggle.click();
+    assert.equal(editor.hidden, true, 'A filled description may collapse');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+    assert.match(visibleText(state), /Synthetic instrument export/, 'A collapsed description keeps a readable summary');
+    await toggle.click();
+    assert.equal(editor.hidden, false);
+    await toggle.click();
+    await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'input'});
+    await env.nodes.get('#csv-input-controls').dispatchEvent({type: 'change'});
+    assert.match(env.nodes.get('#csv-status').textContent, /重新预览/, 'Both events of one change keep the invalidation notice');
+    await previewCsv(env);
+    assert.equal(text.value, '', 'A new file starts with its own empty description');
+    assert.equal(editor.hidden, false, 'An empty description reopens automatically');
+  } else {
+    throw new Error(`Unknown frontend behavior: ${name}`);
+  }
+}
+
 async function check(name) {
+  if (name.startsWith('csv-') && !name.startsWith('csv-settings-') && name !== 'csv-error-hint') return checkCsvReview(name);
   if (name.startsWith('csv-settings-')) {
     const options = {delimiter: ',', header_row: 1, unit_row: 0, decimal: '.', encoding: 'utf-8-sig'};
     const declarations = [{index: 0, include: true, target: 'elapsed', dtype: 'float', input_unit: 's', output_unit: 's', role: 'time'},
@@ -224,20 +568,25 @@ async function check(name) {
       const transmitted = JSON.parse(env.posted.at(-1).get('settings_json'));
       assert.equal(transmitted.confirmed_source_definition, undefined);
       assert.equal(transmitted.source_sha256, undefined);
-      const rows = env.nodes.get('#csv-columns tbody').rows;
+      const editor = await openCsvEditor(env, 0);
+      const control = key => editor.querySelector(`[data-edit="${key}"]`);
       if (name === 'csv-settings-drift') {
-        assert.equal(rows[0].querySelector('[data-key="role"]').value, '');
-        assert.equal(rows[0].querySelector('[data-key="input_unit"]').value, '');
+        assert.equal(control('role').value, '');
+        assert.equal(control('input_unit').value, '');
+        assert.match(cellText(env, 0, 'kind'), /未选用途/, 'Drifted settings must not show old declarations');
         assert.match(visibleText(env.nodes.get('#csv-settings-review')), /potential/);
         assert.match(visibleText(env.nodes.get('#csv-settings-review')), /t/);
+        await editor.querySelector('[data-editor-cancel]').click();
       } else {
-        assert.equal(rows[0].querySelector('[data-key="target"]').value, 'elapsed');
-        assert.equal(rows[0].querySelector('[data-key="input_unit"]').value, 's');
-        assert.equal(rows[0].querySelector('[data-key="output_unit"]').value, 's');
-        const roleControl = rows[0].querySelector('[data-key="role"]');
-        assert.equal(roleControl.value, expectedRole);
-        assert.ok(roleControl.options.some(option => option.value === expectedRole), 'Saved roles must be available in the real select');
-        assert.equal(rows[1].querySelector('[data-key="include"]').checked, false);
+        assert.equal(control('target').value, 'elapsed');
+        assert.equal(control('input_unit').value, 's');
+        assert.equal(control('output_unit').value, 's');
+        assert.equal(control('role').value, expectedRole);
+        assert.ok(control('role').options.some(option => option.value === expectedRole), 'Saved roles must be available in the real select');
+        await editor.querySelector('[data-editor-cancel]').click();
+        assert.match(cellText(env, 0, 'target'), /elapsed/);
+        assert.match(cellText(env, 0, 'unit'), /s/);
+        assert.equal(csvRow(env, 1).querySelector('[data-key="include"]').checked, false);
         env.nodes.get('#csv-conventions').value = 'new per-file facts';
         env.nodes.get('#csv-confirmed').checked = true;
         if (name === 'csv-settings-submit') {
@@ -324,7 +673,7 @@ async function check(name) {
     assert.match(env.nodes.get('#dataset').options[1].textContent, /curve-B.csv.*#9/);
     assert.match(env.nodes.get('#dataset').options[2].textContent, /转换结果.*#10/);
     assert.equal(env.nodes.get('#schema').value, 'schema:77');
-    assert.match(visibleText(env.nodes.get('#current-dataset')), /curve-A.csv.*#8/);
+    assert.match(env.nodes.get('#dataset').selectedOptions[0].textContent, /curve-A.csv.*#8/, 'The visible selector names the current input');
     env.nodes.get('#dataset').value = '9'; await env.nodes.get('#dataset').dispatchEvent({type: 'change'});
     assert.equal(env.nodes.get('#schema').value, 'schema:78', 'Bound rules outside the first catalog page must remain selectable');
   } else if (name === 'activation-refresh-race') {
@@ -394,7 +743,7 @@ async function check(name) {
     await env.nodes.get('#save-draft').click();
     assert.equal(env.nodes.get('#schema').value, 'schema:5');
     assert.match(visibleText(env.nodes.get('#workflow-status')), /历史|已切换/, 'Saving and selecting a new rule invalidates the current-selection status');
-    assert.match(visibleText(env.nodes.get('#current-schema')), /custom/);
+    assert.match(env.nodes.get('#schema').selectedOptions[0].textContent, /custom/);
     assert.equal(env.nodes.get('#mapping-json').value, '{"mappings":[{"source":"raw","target":"value"}]}', 'Saving this draft must preserve its matching mapping');
   } else if (name === 'authoring-context') {
     let resolve;
@@ -430,7 +779,7 @@ async function check(name) {
     assert.match(result, /警告\s*1|1\s*项警告/);
     assert.match(result, /记录\s*3|3\s*条记录/);
     assert.match(visibleText(env.nodes.get('#workflow-status')), /历史|已切换/, 'Outdated validation must remain explicitly historical');
-    assert.match(visibleText(env.nodes.get('#current-dataset')), /other.csv/);
+    assert.match(env.nodes.get('#dataset').selectedOptions[0].textContent, /other.csv/);
     assert.equal(env.posted[0].get('dataset_id'), '1');
     assert.equal(env.posted[0].get('schema'), 'curve');
   } else if (name === 'validation-history') {
@@ -440,7 +789,7 @@ async function check(name) {
     await env.nodes.get('#schema').dispatchEvent({type: 'change'});
     assert.match(visibleText(env.nodes.get('#workflow-status')), /历史|已切换/);
     assert.match(visibleText(env.nodes.get('#result-content')), /curve/);
-    assert.match(visibleText(env.nodes.get('#current-schema')), /point/);
+    assert.match(env.nodes.get('#schema').selectedOptions[0].textContent, /point/);
   } else if (name === 'output-conflict') {
     let retry = false;
     const env = environment(page({datasets: [{id: 1, relative_path: 'sample.csv'}]}), url => retry
@@ -549,6 +898,33 @@ async function check(name) {
     assert.ok(button, 'Terminal job should offer on-demand details');
     await button.click();
     assert.deepEqual(env.calls, ['/api/jobs/old-0']);
+  } else if (name === 'jobs-attention') {
+    const quiet = environment(page({jobs: [{id: 'done', operation: 'report', status: 'succeeded', active: false}]}), () => page());
+    assert.ok(!quiet.nodes.get('#jobs-panel').open, 'Completed history stays behind a secondary entry');
+    const pending = environment(page({jobs: [{id: 'unsaved', operation: 'report', status: 'succeeded', active: false,
+      persistence: {state: 'pending'}}]}), () => page());
+    assert.equal(pending.nodes.get('#jobs-panel').open, true, 'A result waiting to be saved cannot be folded away');
+    let finish;
+    const active = {id: 'live', operation: 'convert', status: 'running', active: true};
+    const running = environment(page({jobs: [], active_jobs: [active]}), url => url === '/api/jobs/live'
+      ? new Promise(resolve => { finish = resolve; }) : page());
+    assert.equal(running.nodes.get('#jobs-panel').open, true, 'Running jobs show their progress and cancel action');
+    finish({...active, status: 'failed', active: false, error: 'stopped'});
+    await new Promise(resolve => setTimeout(resolve, 150));
+    assert.equal(running.nodes.get('#jobs').querySelector('[data-job-id="live"]').dataset.jobStatus, 'failed');
+  } else if (name === 'paging-quiet') {
+    const env = environment(page({datasets: [{id: 1, relative_path: 'one.csv'}]}), () => page());
+    assert.equal(env.nodes.get('[data-resource-count="datasets"]').hidden, true, 'Complete lists need no paging text');
+    assert.equal(env.nodes.get('[data-load-more="datasets"]').hidden, true);
+    const more = environment(page({datasets: [{id: 2, relative_path: 'two.csv'}]}, 0, {datasets: 60}), () => page());
+    assert.equal(more.nodes.get('[data-resource-count="datasets"]').hidden, false);
+    assert.match(more.nodes.get('[data-resource-count="datasets"]').textContent, /共 60/);
+  } else if (name === 'check-visibility') {
+    const env = environment(page(), () => page({datasets: [{id: 3, relative_path: 'uploaded.csv'}]}));
+    assert.equal(env.nodes.get('#check').hidden, true, 'Checks are not offered before any data exists');
+    await env.run('refreshResources(3)');
+    assert.equal(env.nodes.get('#check').hidden, false);
+    assert.equal(env.nodes.get('#dataset').value, '3');
   } else if (name === 'selection') {
     const initial = page({datasets: [{id: 1, relative_path: 'old.csv'}]});
     const recent = page({datasets: [{id: 100, relative_path: 'new.csv'}]}, 0, {datasets: 100});

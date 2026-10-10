@@ -45,6 +45,17 @@ BEHAVIORS = [
     "csv-settings-custom-role",
     "csv-settings-load-file-change",
     "upload-clears-authoring",
+    "csv-edit-summary",
+    "csv-reconfirm",
+    "csv-blocking",
+    "csv-type-switch",
+    "csv-server-error",
+    "csv-preview-stale",
+    "csv-raw-preview",
+    "csv-source-collapse",
+    "jobs-attention",
+    "paging-quiet",
+    "check-visibility",
 ]
 
 
